@@ -11,13 +11,33 @@
   # npm ci, а не npm install: ставит ровно то, что в package-lock.json.
   # install поднял бы минорные версии и мог собрать не тот код, что
   # проверен локально.
-  command = "npm ci && npm run build"
+  #
+  # ── Почему --include=dev ──
+  # В образе сборки Netlify выставлен NODE_ENV=production, а npm ci при
+  # этом ЗНАЧЕНИИ молча пропускает devDependencies. Локально этого не
+  # видно никогда: там NODE_ENV не задан, и ставится всё.
+  #
+  # Tailwind и его PostCSS-плагин лежат в devDependencies — как и
+  # положено инструментам сборки. Без них next build падает на первом
+  # же импорте globals.css: «Cannot find module @tailwindcss/postcss».
+  # Ровно это и случилось на первой сборке.
+  #
+  # Флаг решает причину, а не симптом. Переносить tailwind в
+  # dependencies было бы неправдой: в рантайме его нет, он отрабатывает
+  # на сборке и исчезает.
+  command = "npm ci --include=dev && npm run build"
   publish = ".next"
 
 [build.environment]
   # package.json требует >=22; на Netlify по умолчанию версия ниже,
   # и сборка падала бы на --experimental-strip-types в скриптах.
   NODE_VERSION = "22"
+  # Подстраховка ко второй строке команды: NODE_ENV=development на
+  # время установки заставляет npm ставить devDependencies при любой
+  # версии npm, даже если --include=dev когда-нибудь поведёт себя иначе.
+  # На сам next build это не влияет: Next выставляет production сам,
+  # исходя из того, что запущена сборка, а не dev-сервер.
+  NODE_ENV = "development"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
