@@ -1,0 +1,44 @@
+{
+  "name": "aktiv-alb",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "predev": "node scripts/check-groq.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "studio": "sanity dev",
+    "prestudio": "node scripts/check-schema.mjs",
+    "studio:build": "sanity build",
+    "seed": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs",
+    "check": "npm run typecheck && npm run check:schema && npm run check:groq && npm run check:quiz",
+    "check:schema": "node scripts/check-schema.mjs",
+    "check:groq": "node scripts/check-groq.mjs",
+    "check:quiz": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-quiz.mjs",
+    "sanity:doctor": "node scripts/doctor.mjs"
+  },
+  "dependencies": {
+    "@portabletext/react": "^8.0.1",
+    "@sanity/image-url": "^2.1.1",
+    "@sanity/vision": "^6.14.0",
+    "next": "latest",
+    "next-sanity": "^13.3.4",
+    "react": "latest",
+    "react-dom": "latest",
+    "sanity": "^6.14.0",
+    "styled-components": "^6.5.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

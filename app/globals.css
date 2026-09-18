@@ -1,0 +1,341 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════
+   ПАЛИТРА
+
+   Акцент #FA2163 — цвет логотипа, не тронут: это идентичность.
+   Всё остальное перенастроено относительно него, потому что исходное
+   окружение со старого сайта с ним спорило:
+
+   • #070143 — чистый синий при 96 % затемнения. Рядом с малиновым
+     читается как две разные системы. Ушли в сливовый: тот же вес,
+     но один температурный ряд с акцентом.
+   • #FAFBFE и #687693 — холодные, отдавали в синеву. Нейтрали
+     потеплели, бумага тоже: малиновый на тёплой бумаге выглядит
+     дорого, на холодной — кричит.
+   • #FA2163 на белом даёт 3.8:1 — мелкий текст в 10 px им набирать
+     нельзя. Для него добавлен --color-accent-ink (5.0:1),
+     для тёмных секций --color-accent-soft (6.4:1).
+
+   Вернуть исходную палитру = откатить этот блок. Больше нигде
+   в проекте цветов нет.
+   ═══════════════════════════════════════════════════════════════════ */
+@theme {
+  /* чернила */
+  --color-ink: #140b33;        /* заголовки */
+  --color-ink-2: #1c1242;      /* тёмные секции */
+  --color-ink-3: #241a4d;      /* футер */
+
+  /* акцент */
+  --color-accent: #fa2163;     /* логотип — крупные заливки, цифры, графика */
+  --color-accent-ink: #d81b52; /* мелкий текст и ссылки на светлом */
+  --color-accent-soft: #ff6b92;/* акцентный текст на тёмном */
+  --color-accent-wash: #fdf0f3;/* бледная подложка */
+
+  /* бумага */
+  --color-paper: #fbf9f8;
+  --color-paper-2: #f5f1ef;
+
+  /* нейтрали */
+  --color-slate: #6b6478;      /* основной текст body */
+  --color-slate-2: #9b94a6;
+  --color-hair: #e7e1e3;
+  --color-hair-soft: #f0ebec;
+
+  /* текст на тёмном */
+  --color-on-dark: #b8b2c8;
+  --color-on-dark-2: #8a83a0;
+  --color-on-dark-hair: #372c5e;
+
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: "Onest", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-mask: cubic-bezier(0.62, 0, 0.2, 1);
+}
+
+@layer base {
+  :root {
+    /* Ширина рельса линии дела. Меняется в одном месте: от неё зависит
+       и отступ контента, и геометрия SVG. */
+    --rail: 0px;
+    --gut: clamp(18px, 4.2vw, 40px);
+    --shell: 1200px;
+    --hdr: 66px;
+    color-scheme: light;
+  }
+  /* Порог линии дела: 1000px, а не 1120. Ниже него линии нет вовсе,
+     и --rail обязан быть нулём — иначе контент получит отступ под
+     рельс, которого на экране не существует.
+
+     104px рельсу больше не нужны: столько требовала вертикальная
+     подпись станции. Подписи стали всплывающими, и рельсу хватает
+     полос 16 и 44 плюс точка — 76px с запасом. */
+  @media (min-width: 1000px) {
+    :root { --rail: 76px; --hdr: 74px; }
+  }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    /* тёплая бумага, а не чистый белый: под малиновым белый читается
+       клинически. Белый остаётся карточкам — они всплывают над фоном. */
+    background: var(--color-paper);
+    color: var(--color-slate);
+    font-family: var(--font-sans);
+    font-weight: 300;
+    font-size: 16.5px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    color: var(--color-ink);
+    font-weight: 600;
+    letter-spacing: -0.021em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  /* крупный дисплей — лёгкий вес: 600 в 68px забивает полосу набора */
+  h1 { font-weight: 400; letter-spacing: -0.024em; }
+  ::selection { background: var(--color-accent); color: #fff; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; border-radius: 2px; }
+  a { color: inherit; text-decoration: none; }
+  img, svg { max-width: 100%; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}
+
+@layer components {
+  .shell { max-width: var(--shell); margin-inline: auto; padding-inline: var(--gut); }
+  /* Отступ под рельс линии.
+     ВАЖНО: rail ПРИБАВЛЯЕТСЯ к полю .shell, а не заменяет его.
+     Раньше здесь стояло `padding-left: var(--rail)`, и на телефоне,
+     где --rail равен 0, это обнуляло левое поле секции: весь текст
+     главной лип к краю экрана. На десктопе тот же промах оставлял
+     между линией дела и заголовком 20px вместо 60. */
+  .inner { padding-left: calc(var(--gut) + var(--rail)); }
+
+  /* ── Раскрытие заголовка clip-path маской ──
+     Без JS и в первом кадре — видимо. «Заряжается» только то,
+     что вне первого экрана: страница при загрузке всегда читаемая. */
+  .mask { clip-path: inset(0 0 0 0); }
+  .mask[data-armed="true"] {
+    clip-path: inset(0 0 105% 0);
+    transition: clip-path 1.05s var(--ease-mask);
+  }
+  .mask[data-armed="true"][data-in="true"] { clip-path: inset(0 0 0% 0); }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 0 0 20px;
+  }
+  .eyebrow { color: var(--color-accent-ink); }
+  .eyebrow::after { content: ""; height: 1px; flex: 1; max-width: 120px; background: var(--color-hair); }
+  .eyebrow[data-plain="true"]::after { display: none; }
+  .on-dark .eyebrow { color: var(--color-accent-soft); }
+  .on-dark .eyebrow::after { background: var(--color-on-dark-hair); }
+
+  /* Верх рельса гасится на высоту шапки: над тёмным первым экраном
+     шапка прозрачная, и без маски линия перечёркивала логотип. */
+  .caseline-rail {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, transparent calc(var(--hdr) + 6px), #000 calc(var(--hdr) + 52px));
+    mask-image: linear-gradient(180deg, transparent 0, transparent calc(var(--hdr) + 6px), #000 calc(var(--hdr) + 52px));
+  }
+
+  /* ── Линия дела ──
+     Кольцо прибытия на станцию живёт в CSS, чтобы не гонять его через
+     rAF: браузер анимирует его на композиторе.
+
+     Дыхание головы (.caseline-breathe) отсюда убрано. Оно шло по своему
+     циклу в 3.6 с и накладывалось на отклик головы на скорость —
+     получалась дрожь вместо приёма. Движение целиком отдано следу. */
+
+  /* кольцо расходится один раз — в момент, когда голова дошла до станции.
+     Срабатывает на смене data-on, потому что до неё селектор не совпадал. */
+  .caseline-station[data-on="true"] .caseline-dot::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 9px;
+    height: 9px;
+    margin: -4.5px 0 0 -4.5px;
+    border-radius: 999px;
+    border: 1px solid var(--color-accent);
+    animation: caseline-arrive 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes caseline-arrive {
+    from { transform: scale(1);   opacity: 0.85; }
+    to   { transform: scale(3.4); opacity: 0; }
+  }
+
+  .lede { font-size: clamp(17px, 2vw, 20px); line-height: 1.56; max-width: 44ch; font-weight: 300; }
+  .lede strong { color: var(--color-ink); font-weight: 500; }
+  .on-dark .lede strong { color: #fff; }
+
+  /* ── Проявка фотографии ──
+     Не «fade-up при скролле», а проявка в момент загрузки кадра:
+     масштаб идёт медленнее непрозрачности, поэтому движение читается
+     как наведение резкости, а не как выезд блока.
+
+     saturate(0.86) постоянный: стоковая насыщенность спорит с
+     малиновым акцентом и делает страницу пёстрой. */
+  .photo-img {
+    opacity: 0;
+    transform: scale(1.045);
+    filter: saturate(0.86);
+    transition:
+      opacity 820ms var(--ease-out-quint),
+      transform 1500ms var(--ease-out-quint);
+  }
+  .photo-img[data-ready="true"] { opacity: 1; transform: none; }
+
+  /* ── Бегущая лента клиентов ──
+     Движение делает один transform на composited-слое: никакого JS,
+     никакого пересчёта раскладки на кадр. Внутри дорожки ровно две
+     одинаковые копии списка, поэтому сдвиг на −50 % возвращает ленту
+     в исходное положение — шва не видно, и он не зависит от того,
+     сколько клиентов в Sanity.
+
+     Скорость постоянная, а не длительность: --marquee-duration
+     считается от числа записей, иначе список из четырёх компаний
+     летел бы, а из двадцати полз. */
+  /* ── Полоса ленты ──
+     Начинается ровно там, где начинается текстовая колонка, и уходит
+     за правый край экрана. Раньше лента шла во всю ширину, и линия
+     дела перечёркивала её слева: получалось, что карусель проезжает
+     ПОД приёмом, а не рядом с ним.
+
+     Отступ считается тем же выражением, что позиция рельса в CaseLine,
+     поэтому лента и линия выровнены по построению.
+
+     ВАЖНО: 100%, а не 100vw. Единица vw включает полосу прокрутки,
+     а .shell центрируется по ширине КОНТЕНТА — разница в половину
+     полосы, порядка 8px, и лента уезжала бы вправо относительно
+     колонки набора. Полоса — прямой ребёнок полноширинной секции,
+     поэтому её 100% и есть ширина контента. */
+  /* Лента идёт от края до края — так она и была задумана, и так её
+     просили вернуть. Отступ под колонку набора я пробовал: выравнивание
+     получалось аккуратным, но полоса переставала читаться как лента и
+     становилась просто ещё одним блоком в сетке. Через весь экран она
+     работает как перебивка между двумя текстовыми блоками. */
+  .ticker-band {
+    position: relative;
+  }
+
+  /* Растушёвка с обеих сторон: лента уходит за оба края экрана, и
+     резкий обрубленный край читался бы как ошибка вёрстки, а не как
+     продолжение движения. */
+  .marquee {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 6%,
+      #000 94%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee var(--marquee-duration, 42s) linear infinite;
+    will-change: transform;
+  }
+  /* display задан здесь, а не утилитой `flex` в разметке: утилиты Tailwind
+     лежат в слое выше компонентов, и `display:none` в блоке
+     prefers-reduced-motion ниже проигрывал бы им кашель в кашель. */
+  .marquee-copy { display: flex; flex-shrink: 0; }
+
+  /* Наведение и заход клавиатурой останавливают ленту: иначе прочитать
+     название или попасть по ссылке можно только угадав момент. */
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track { animation-play-state: paused; }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee { -webkit-mask-image: none; mask-image: none; }
+    .marquee-track { animation: none; width: 100%; }
+    /* Остаётся ровно одна группа — то есть список клиентов без единого
+       повтора, перенесённый по строкам. Остальные существуют только
+       ради бесшовной петли и в статике были бы дубликатами. */
+    .marquee-copy { flex-wrap: wrap; justify-content: center; width: 100%; }
+    .marquee-copy + .marquee-copy { display: none; }
+  }
+
+  /* ── Панель меню: ступенчатый приход пунктов ──
+     Задержка живёт в CSS через --i, а не в JS: 40 строк разметки
+     не должны знать о таймингах, и на закрытии всё гаснет разом. */
+  .drawer-item {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 420ms var(--ease-out-quint),
+      transform 560ms var(--ease-out-quint);
+  }
+  [data-open="true"] .drawer-item {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(90ms + var(--i, 0) * 34ms);
+  }
+
+  /* линия, которая прочерчивается под пунктом при открытии */
+  .drawer-rule {
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 620ms var(--ease-out-quint);
+  }
+  [data-open="true"] .drawer-rule {
+    transform: scaleX(1);
+    transition-delay: calc(120ms + var(--i, 0) * 34ms);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ПЕРЕХОДЫ МЕЖДУ СТРАНИЦАМИ
+
+   Все внутренние ссылки на сайте — обычные <a>, а не next/link.
+   Это осознанно: при полной перезагрузке документа работает
+   кроссдокументный View Transitions, то есть переход между страницами
+   получается нативным и без единой строки JS. С next/link пришлось бы
+   тащить экспериментальный ViewTransition из Next.
+
+   Где API нет (сейчас — Firefox), переход просто мгновенный:
+   ничего не ломается, ничего не мигает.
+   ═══════════════════════════════════════════════════════════════════ */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root) {
+  animation: vt-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: vt-in 460ms var(--ease-out-quint) both;
+}
+@keyframes vt-out { to { opacity: 0; transform: translateY(-10px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(18px); } }
+
+/* Шапка и плавающие кнопки не уезжают вместе со страницей: у них
+   собственное имя, значит браузер сопоставляет их между документами
+   и оставляет на месте. Иначе меню моргает на каждом переходе. */
+::view-transition-group(site-header),
+::view-transition-group(site-actions) { animation-duration: 0.01ms; }
+::view-transition-old(site-header),
+::view-transition-new(site-header),
+::view-transition-old(site-actions),
+::view-transition-new(site-actions) { animation: none; opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
