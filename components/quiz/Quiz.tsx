@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import { computeQuote, formatQuote, type Answers, type QuizConfig } from '@/lib/quote'
 import { staticQuizSets, type QuizSet } from '@/lib/quizzes'
 import { newEventId, track } from '@/lib/analytics'
+import { saveQuizHandoff } from '@/lib/leads/client'
 import { Button } from '@/components/ui/Button'
 import { Eyebrow } from '@/components/ui/Button'
 
@@ -190,7 +191,7 @@ export function Quiz({ sets }: { sets?: QuizSet[] }) {
                 </Button>
               )}
               <Button onClick={next} disabled={!chosen}>
-                {step === cfg.steps.length - 1 ? 'Показати вилку' : 'Далі'}
+                {step === cfg.steps.length - 1 ? 'Показати діапазон' : 'Далі'}
               </Button>
             </div>
           </>
@@ -200,7 +201,7 @@ export function Quiz({ sets }: { sets?: QuizSet[] }) {
           <div>
             <Eyebrow plain>Оцінка вартості</Eyebrow>
             <h3 className="text-[clamp(18px,2.2vw,22px)] leading-snug">
-              {quote.mode === 'percent' ? 'Ваш випадок — гонорар успіху' : 'Вилка по вашій ситуації'}
+              {quote.mode === 'percent' ? 'Ваш випадок — гонорар успіху' : 'Діапазон для вашої ситуації'}
             </h3>
 
             {quote.mode === 'percent' ? (
@@ -221,7 +222,7 @@ export function Quiz({ sets }: { sets?: QuizSet[] }) {
                   <span className="ml-[0.22em] text-[0.5em] font-normal text-ink">₴</span>
                 </p>
                 <p className="mt-3 font-mono text-xs tracking-[0.03em] text-slate-2">
-                  В лід як очікувана сума угоди піде середина вилки —{' '}
+                  В лід як очікувана сума угоди піде середина діапазону —{' '}
                   <b className="font-medium text-ink">{nf.format(quote.expected)} ₴</b>
                 </p>
               </>
@@ -247,7 +248,21 @@ export function Quiz({ sets }: { sets?: QuizSet[] }) {
                   arrow
                   onClick={() => {
                     track('form_start', { form_location: 'quiz_result', practice: cfg.practice, event_id: eventId.current })
-                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    /* В форму уезжают ответы, а не сумма: сервер
+                       пересчитает её сам (lib/leads/quote.ts). */
+                    saveQuizHandoff({
+                      quizId: cfg.id,
+                      practice: cfg.practice,
+                      ...(set.category ? { category: set.category } : {}),
+                      answers,
+                      eventId: eventId.current,
+                      label: formatQuote(quote),
+                    })
+                    /* Форма есть только на главной. На странице практики
+                       ведём туда — расчёт уже лежит в sessionStorage. */
+                    const form = document.getElementById('lead-form')
+                    if (form) document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    else window.location.assign(`${window.location.pathname.startsWith('/en') ? '/en' : ''}/#contact`)
                   }}
                 >
                   Отримати письмовий розрахунок

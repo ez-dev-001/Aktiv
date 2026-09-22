@@ -21,6 +21,12 @@ export const CATEGORIES_QUERY = groq`
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
   icon,
   order,
+  "quiz": quiz->slug.current,
+  "photo": photo{
+    asset, crop, hotspot, alt,
+    "lqip": asset->metadata.lqip,
+    "ratio": asset->metadata.dimensions.aspectRatio
+  },
   "practices": *[_type == "practice" && references(^._id)] | order(order asc) {
     "slug": slug.current,
     "title": coalesce(title[$lang], title.ua),
@@ -94,6 +100,19 @@ export const DRAFTS_QUERY = groq`{
   }
 }`
 
+/*
+ * Обложка статьи (cover) во всех трёх запросах блога.
+ *
+ * Поле «Обкладинка» в схеме было с самого начала, редактор мог
+ * загружать картинку — но ни один запрос её не забирал, и на сайте она
+ * не появлялась нигде. Та же история, что с заголовком «Нам довіряють»:
+ * поле, которое выглядит подключённым, но никем не читается.
+ *
+ * Берётся не asset->url, а сам объект картинки: ссылка на файл, кадр и
+ * точка фокуса. По ним lib/sanity/image.ts строит адрес нужного размера
+ * с правильным кадрированием. lqip — крошечное размытое превью, которое
+ * Sanity считает при загрузке: оно лежит под фото, пока то грузится.
+ */
 export const POSTS_QUERY = groq`
 *[_type == "post" && defined(slug.current)] | order(publishedAt desc) [0...$limit] {
   "slug": slug.current,
@@ -101,6 +120,7 @@ export const POSTS_QUERY = groq`
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
   category,
   publishedAt,
+  "cover": cover{ asset, crop, hotspot, alt, "lqip": asset->metadata.lqip },
   "author": author->name.ua
 }`
 
@@ -138,7 +158,7 @@ export const TEAM_QUERY = groq`
 export const QUIZZES_QUERY = groq`
 *[_type == "quiz" && defined(slug.current)] | order(_createdAt asc) {
   "id": slug.current,
-  "categorySlug": category->slug.current,
+  "category": category->slug.current,
   "practice": coalesce(category->title[$lang], category->title.ua, title),
   "heading": coalesce(heading[$lang], heading.ua),
   "disclaimer": coalesce(resultNote[$lang], resultNote.ua),
@@ -234,6 +254,7 @@ export const PRACTICE_QUERY = groq`
     "note":        coalesce(note[$lang], note.ua)
   },
   "includes": includes[]{ "text": coalesce(@[$lang], @.ua) }.text,
+  "quiz": quiz->slug.current,
   "packages": packages[]{
     "name": coalesce(name[$lang], name.ua),
     price,
@@ -274,6 +295,7 @@ export const BLOG_QUERY = groq`
   "title": coalesce(title[$lang], title.ua),
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
   category, publishedAt,
+  "cover": cover{ asset, crop, hotspot, alt, "lqip": asset->metadata.lqip },
   "author": author->name.ua
 }`
 
@@ -284,6 +306,7 @@ export const POST_QUERY = groq`
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
   "body": coalesce(body[$lang], body.ua),
   category, publishedAt,
+  "cover": cover{ asset, crop, hotspot, alt, "lqip": asset->metadata.lqip },
   "author": author->{ "name": coalesce(name[$lang], name.ua), "role": coalesce(role[$lang], role.ua) },
   "practices": practices[]->{ "slug": slug.current, "title": coalesce(title[$lang], title.ua), "category": category->slug.current }
 }`
@@ -438,4 +461,47 @@ export const TEAM_PAGE_QUERY = groq`
   "ctaText":      coalesce(ctaText[$lang], ctaText.ua),
   "ctaPrimary":   coalesce(ctaPrimary[$lang], ctaPrimary.ua),
   "ctaSecondary": coalesce(ctaSecondary[$lang], ctaSecondary.ua)
+}`
+
+/**
+ * Тексты баннера cookie. Кнопки и названия категорий в коде — почему,
+ * сказано в схеме siteSettings у группы «Cookie».
+ */
+export const COOKIE_QUERY = groq`
+*[_type == "siteSettings"][0] {
+  "title":      coalesce(cookieTitle[$lang], cookieTitle.ua),
+  "text":       coalesce(cookieText[$lang], cookieText.ua),
+  "privacyUrl": privacyUrl
+}`
+
+/**
+ * Всё, что нужно карте сайта: адреса и даты правок.
+ *
+ * Отдельный запрос, а не CATEGORIES_QUERY: карте не нужны ни цены, ни
+ * описания, зато нужен _updatedAt — дата, когда документ последний раз
+ * меняли в студии. Google берёт её за lastmod и решает, какие страницы
+ * перечитать в первую очередь.
+ *
+ * Практика без категории отбрасывается прямо в запросе: адрес практики
+ * строится как /practices/<категория>/<практика>, и без категории у неё
+ * нет страницы. Ссылка в карте на несуществующий адрес — это 404 в
+ * отчёте Search Console, и таких отчётов лучше не плодить.
+ */
+export const SITEMAP_QUERY = groq`{
+  "categories": *[_type == "practiceCategory" && defined(slug.current)] {
+    "slug": slug.current,
+    _updatedAt
+  },
+  "practices": *[_type == "practice" && defined(slug.current) && defined(category->slug.current)] {
+    "slug": slug.current,
+    "category": category->slug.current,
+    _updatedAt
+  },
+  "posts": *[_type == "post" && defined(slug.current)] {
+    "slug": slug.current,
+    _updatedAt
+  },
+  "home":  *[_type == "homePage"][0]._updatedAt,
+  "about": *[_type == "aboutPage"][0]._updatedAt,
+  "team":  *[_type == "teamPage"][0]._updatedAt
 }`

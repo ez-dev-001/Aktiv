@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
-import type { PhotoName } from '@/lib/photos'
-import { getContacts } from '@/lib/sanity/content'
+import type { PhotoName, PhotoSource } from '@/lib/photos'
+import { getCategories, getContacts } from '@/lib/sanity/content'
+import { toMenu } from '@/lib/menu'
 import { CaseLine, ScrollProgress } from './CaseLine'
 import { FloatingActions } from './FloatingActions'
 import { Header } from './Header'
@@ -39,12 +40,12 @@ export async function PageShell({
   /* Контакты читаются здесь, а не в каждой странице: шапка, футер и
      плавающие кнопки есть на всех, и один запрос на страницу лучше,
      чем три одинаковых пропа, протянутых сквозь маршруты. */
-  const { data: contacts } = await getContacts(lang)
+  const [{ data: contacts }, { data: cats }] = await Promise.all([getContacts(lang), getCategories(lang)])
 
   return (
     <>
       <ScrollProgress />
-      <Header lang={lang} overDark={overDark} contacts={contacts} />
+      <Header lang={lang} overDark={overDark} contacts={contacts} categories={toMenu(cats)} />
       <main id="top" className="relative">
         <CaseLine stations={stations} />
         {children}
@@ -77,7 +78,7 @@ export function PageHead({
   title: ReactNode
   lede?: ReactNode
   aside?: ReactNode
-  photo?: PhotoName
+  photo?: PhotoName | PhotoSource
 }) {
   if (photo) {
     return (

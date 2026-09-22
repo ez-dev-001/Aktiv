@@ -58,21 +58,21 @@ export const quiz = defineType({
                     }),
                     defineField({
                       name: 'factor', title: 'Множник', type: 'number',
-                      description: '1 — не влияет. 1.6 — дороже на 60 %.',
+                      description: '1 — не впливає. 1.6 — дорожче на 60 %.',
                       validation: (r) => r.min(0.1).max(20),
                     }),
                     defineField({ name: 'add', title: 'Надбавка, ₴', type: 'number' }),
                     defineField({
                       name: 'successFeePercent', title: 'Перевести в гонорар успіху, %', type: 'number',
                       description:
-                        'Если заполнено — результат перестаёт быть вилкой и становится процентом. ' +
-                        'Для «є рішення, потрібне виконання»: там работает приватный исполнитель, ' +
-                        'и цена считается от суммы взыскания, а не от объёма работы.',
+                        'Якщо заповнено — результат перестає бути діапазоном і стає відсотком. ' +
+                        'Для «є рішення, потрібне виконання»: там працює приватний виконавець, ' +
+                        'і ціна рахується від суми стягнення, а не від обсягу роботи.',
                       validation: (r) => r.min(1).max(100),
                     }),
                     defineField({
                       name: 'reason', title: 'Чому сума така', type: 'localeString',
-                      description: 'Строка в разборе результата. Без неё вилка выглядит как выдумка.',
+                      description: 'Рядок у розборі результату. Без нього діапазон виглядає як вигадка.',
                     }),
                   ],
                   preview: {
@@ -100,17 +100,17 @@ export const quiz = defineType({
     }),
 
     defineField({
-      name: 'spreadLow', title: 'Нижня межа вилки', type: 'number', initialValue: 0.85,
+      name: 'spreadLow', title: 'Нижня межа діапазону', type: 'number', initialValue: 0.85,
       description: 'Множник розрахункової суми. 0.85 = мінус 15 %.',
       validation: (r) => r.required().min(0.3).max(1),
     }),
     defineField({
-      name: 'spreadHigh', title: 'Верхня межа вилки', type: 'number', initialValue: 1.3,
+      name: 'spreadHigh', title: 'Верхня межа діапазону', type: 'number', initialValue: 1.3,
       validation: (r) => r.required().min(1).max(3),
     }),
     defineField({
       name: 'roundTo', title: 'Округлювати до, ₴', type: 'number', initialValue: 1000,
-      description: 'Вилка «28 000 – 46 000» читається як оцінка. «27 413 – 45 892» — як помилка.',
+      description: 'Діапазон «28 000 – 46 000» читається як оцінка. «27 413 – 45 892» — як помилка.',
     }),
     defineField({
       name: 'floor', title: 'Мінімальна сума, ₴', type: 'number', initialValue: 8000,
@@ -118,7 +118,7 @@ export const quiz = defineType({
     }),
     defineField({
       name: 'resultNote', title: 'Дисклеймер під результатом', type: 'localeText',
-      description: 'Обовʼязково: вилка — оцінка, а не оферта. Точна сума — після ознайомлення з документами.',
+      description: 'Обовʼязково: діапазон — оцінка, а не оферта. Точна сума — після ознайомлення з документами.',
       validation: (r) => r.required(),
     }),
   ],

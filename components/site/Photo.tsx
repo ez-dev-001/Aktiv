@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { PHOTOS, photoBlur, photoSrcSet, photoUrl, type PhotoName } from '@/lib/photos'
+import { resolvePhoto, type PhotoName, type PhotoSource } from '@/lib/photos'
 
 /**
  * Фотография.
@@ -46,7 +46,8 @@ export function Photo({
   imgClassName = '',
   children,
 }: {
-  name: PhotoName
+  /** имя заглушки из lib/photos.ts или кадр из Sanity (см. PhotoSource) */
+  name: PhotoName | PhotoSource
   /** переопределить кадрирование: 1.5 — альбом, 0.75 — портрет */
   ratio?: number
   /** растянуть по родителю вместо собственных пропорций */
@@ -58,7 +59,7 @@ export function Photo({
   imgClassName?: string
   children?: React.ReactNode
 }) {
-  const photo = PHOTOS[name]
+  const photo = resolvePhoto(name)
   const img = useRef<HTMLImageElement>(null)
   const [ready, setReady] = useState(false)
 
@@ -77,15 +78,17 @@ export function Photo({
       style={fill ? undefined : { aspectRatio: String(ratio ?? photo.ratio) }}
     >
       {/* подложка: тот же кадр в 24px, растянутый и размытый */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-0 scale-110 bg-cover bg-center blur-xl"
-        style={{ backgroundImage: `url(${photoBlur(photo)})` }}
-      />
+      {photo.blur && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 scale-110 bg-cover bg-center blur-xl"
+          style={{ backgroundImage: `url(${photo.blur})`, backgroundPosition: photo.position }}
+        />
+      )}
       <img
         ref={img}
-        src={photoUrl(photo, 1440)}
-        srcSet={photoSrcSet(photo)}
+        src={photo.src}
+        srcSet={photo.srcSet}
         sizes={sizes}
         alt={photo.alt}
         loading={priority ? 'eager' : 'lazy'}
@@ -97,6 +100,8 @@ export function Photo({
         fetchPriority={priority ? 'high' : undefined}
         onLoad={() => setReady(true)}
         data-ready={ready ? 'true' : 'false'}
+        /* точка фокуса из студии важнее кадрирования по умолчанию */
+        style={photo.position ? { objectPosition: photo.position } : undefined}
         className={`photo-img absolute inset-0 size-full object-cover ${imgClassName}`}
       />
       {children && <div className="relative z-[2] size-full">{children}</div>}
@@ -118,7 +123,7 @@ export function PhotoBand({
   className = '',
   children,
 }: {
-  name: PhotoName
+  name: PhotoName | PhotoSource
   tone?: Tone
   minHeight?: string
   className?: string

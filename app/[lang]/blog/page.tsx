@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
+import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
 import { BLOG_CATEGORIES, getBlog } from '@/lib/sanity/content'
-import { Icon } from '@/components/site/Icon'
 import { PageHead, PageShell } from '@/components/site/PageShell'
 import { ButtonLink } from '@/components/ui/Button'
 
@@ -27,9 +27,6 @@ const STATIONS = [
   { id: 'contact', label: 'Консультація' },
 ]
 
-const fmtDate = (iso?: string) =>
-  iso ? new Date(iso).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : null
-
 export default async function BlogPage({
   params,
   searchParams,
@@ -45,6 +42,9 @@ export default async function BlogPage({
   /* Без Sanity статьи открывать нечего: в статике есть только анонсы.
      Поэтому карточки в этом режиме не кликабельны — лучше, чем 404. */
   const clickable = source === 'sanity'
+  /* Место под обложку — если она есть хоть у одной статьи в списке.
+     Почему решение принимается для всего списка сразу — в PostCard. */
+  const withMedia = needsMedia(posts)
 
   return (
     <PageShell lang={lang} stations={STATIONS}>
@@ -92,50 +92,17 @@ export default async function BlogPage({
               .
             </p>
           ) : (
-            <ul className="grid list-none gap-px border border-hair bg-hair p-0 min-[700px]:grid-cols-2 min-[1060px]:grid-cols-3">
-              {posts.map((a) => {
-                const inner = (
-                  <>
-                    <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[10.5px] uppercase tracking-[0.11em] text-slate-2">
-                      <span className="text-accent-ink">{a.category}</span>
-                      {fmtDate(a.publishedAt) && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span>{fmtDate(a.publishedAt)}</span>
-                        </>
-                      )}
-                    </span>
-                    <span className="font-serif text-[18px] font-semibold leading-snug text-ink">{a.title}</span>
-                    <span className="text-[14px] leading-relaxed text-slate">{a.excerpt}</span>
-                    {a.author && (
-                      <span className="mt-auto pt-1 font-mono text-[10.5px] uppercase tracking-[0.09em] text-slate-2">
-                        {a.author}
-                      </span>
-                    )}
-                  </>
-                )
-                return (
-                  <li key={a.slug} className="bg-white">
-                    {clickable ? (
-                      <a
-                        href={`${prefix}/blog/${a.slug}`}
-                        className="group flex h-full flex-col gap-3 p-[clamp(20px,2.6vw,28px)] transition-colors hover:bg-paper"
-                      >
-                        {inner}
-                        <span className="inline-flex items-center gap-2 text-[14px] font-medium text-accent-ink">
-                          Читати{' '}
-                          <Icon
-                            name="arrow"
-                            className="size-[14px] transition-transform duration-[240ms] group-hover:translate-x-1"
-                          />
-                        </span>
-                      </a>
-                    ) : (
-                      <div className="flex h-full flex-col gap-3 p-[clamp(20px,2.6vw,28px)]">{inner}</div>
-                    )}
-                  </li>
-                )
-              })}
+            <ul className={POST_GRID}>
+              {posts.map((a) => (
+                <li key={a.slug}>
+                  <PostCard
+                    post={a}
+                    href={clickable ? `${prefix}/blog/${a.slug}` : undefined}
+                    withMedia={withMedia}
+                    headingLevel="h2"
+                  />
+                </li>
+              ))}
             </ul>
           )}
 

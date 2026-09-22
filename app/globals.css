@@ -179,6 +179,18 @@
     to   { transform: scale(3.4); opacity: 0; }
   }
 
+  /* ── Баннер cookie ──
+     Выезжает снизу один раз. Анимируется только transform и opacity —
+     композитор, без перерасчёта вёрстки. Задержка небольшая намеренно:
+     первые полсекунды человек смотрит на первый экран, а не на баннер,
+     и карточка, появившаяся одновременно с заголовком, отнимала бы у
+     него внимание. */
+  .consent-card { animation: consent-in 0.5s var(--ease-out-quint) 0.35s both; }
+  @keyframes consent-in {
+    from { transform: translateY(18px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+
   .lede { font-size: clamp(17px, 2vw, 20px); line-height: 1.56; max-width: 44ch; font-weight: 300; }
   .lede strong { color: var(--color-ink); font-weight: 500; }
   .on-dark .lede strong { color: #fff; }
@@ -316,26 +328,69 @@
    ═══════════════════════════════════════════════════════════════════ */
 @view-transition { navigation: auto; }
 
+/* ── Страница: новая проявляется ПОВЕРХ старой ──
+   Раньше старая гасла за 220 мс, новая проявлялась за 460 мс, и
+   посередине обе были полупрозрачными: сквозь них просвечивал
+   светлый фон документа. На переходе между тёмными первыми экранами
+   это давало светлую вспышку на всю ширину.
+
+   Теперь старая страница остаётся непрозрачной и лишь чуть уходит
+   вверх, а новая проявляется над ней. mix-blend-mode: normal —
+   обязательно: по умолчанию браузер складывает кадры (plus-lighter),
+   и непрозрачная старая плюс проявляющаяся новая давали пересвет. */
+::view-transition-old(root),
+::view-transition-new(root) { mix-blend-mode: normal; }
 ::view-transition-old(root) {
-  animation: vt-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: vt-out 460ms var(--ease-out-quint) both;
 }
 ::view-transition-new(root) {
   animation: vt-in 460ms var(--ease-out-quint) both;
 }
-@keyframes vt-out { to { opacity: 0; transform: translateY(-10px); } }
+@keyframes vt-out { to { transform: translateY(-10px); } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(18px); } }
 
-/* Шапка и плавающие кнопки не уезжают вместе со страницей: у них
-   собственное имя, значит браузер сопоставляет их между документами
-   и оставляет на месте. Иначе меню моргает на каждом переходе. */
+/* ── Шапка: стоит на месте и перетекает из одного вида в другой ──
+   У шапки своё имя, поэтому браузер сопоставляет её между документами
+   и не уводит вместе со страницей.
+
+   Раньше оба кадра шапки стояли с opacity: 1. Пока вид шапки совпадал,
+   это было незаметно. Но при переходе из прокрученной страницы
+   (шапка на бумаге, тёмный текст) на страницу с тёмным первым экраном
+   (шапка прозрачная, белый текст) браузер складывал оба кадра, и
+   поверх фотографии полсекунды висела светлая засвеченная полоса.
+
+   Теперь кадры меняются встречным растворением: одинаковая длина,
+   одинаковая кривая, прозрачности в сумме всегда 1. Для этого и
+   нужен родной plus-lighter: одинаковые шапки при таком сложении
+   дают ровно ту же картинку — ничего не мигает, — а разные плавно
+   перетекают: бумага тает, белый логотип проявляется над кадром. */
 ::view-transition-group(site-header),
 ::view-transition-group(site-actions) { animation-duration: 0.01ms; }
-::view-transition-old(site-header),
-::view-transition-new(site-header),
+::view-transition-old(site-header) { animation: vt-fade-out 420ms var(--ease-out-quint) both; }
+::view-transition-new(site-header) { animation: vt-fade-in 420ms var(--ease-out-quint) both; }
 ::view-transition-old(site-actions),
 ::view-transition-new(site-actions) { animation: none; opacity: 1; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   СТРАНИЦА «ДЯКУЄМО»
+   Галочка рисуется штрихом (pathLength=1 → dasharray 1), текст и
+   карточки поднимаются ступенями. Один раз, без повторов.
+   ═══════════════════════════════════════════════════════════════════ */
+.thanks-check-ring,
+.thanks-check-mark {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: thanks-draw 700ms var(--ease-out-quint) forwards;
+}
+.thanks-check-mark { animation-delay: 380ms; animation-duration: 520ms; }
+@keyframes thanks-draw { to { stroke-dashoffset: 0; } }
+
+.thanks-rise { animation: thanks-rise 720ms var(--ease-out-quint) both; }
+@keyframes thanks-rise { from { opacity: 0; transform: translateY(14px); } }

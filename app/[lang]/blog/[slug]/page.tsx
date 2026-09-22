@@ -1,4 +1,7 @@
 import type { Metadata } from 'next'
+import { Cover } from '@/components/site/Cover'
+import { hasImage, imageUrl } from '@/lib/sanity/image'
+import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { getPost, getPostSlugs } from '@/lib/sanity/content'
 import { Icon } from '@/components/site/Icon'
@@ -21,7 +24,7 @@ import { Reveal } from '@/components/ui/Reveal'
 
 export async function generateStaticParams() {
   const slugs = await getPostSlugs()
-  return ['ua', 'en', 'ru'].flatMap((lang) => slugs.map((slug) => ({ lang, slug })))
+  return LOCALES.flatMap((lang) => slugs.map((slug) => ({ lang, slug })))
 }
 
 export async function generateMetadata({
@@ -32,10 +35,19 @@ export async function generateMetadata({
   const { lang, slug } = await params
   const p = await getPost(slug, lang)
   if (!p) return { title: 'Стаття' }
+  /* Превью для соцсетей и мессенджеров — из той же обложки, кадром
+     1200×630: этот размер Facebook, Telegram, Viber и LinkedIn
+     показывают без обрезки. Обрезает CDN по точке фокуса из студии,
+     поэтому главное на фото не уедет за край и здесь. Без обложки
+     превью будет без картинки — это честнее, чем чужое стоковое фото. */
+  const og = hasImage(p.cover)
+    ? [{ url: imageUrl(p.cover, 1200, 630), width: 1200, height: 630, alt: p.cover.alt?.trim() || p.title }]
+    : undefined
   return {
     title: p.title,
     description: p.excerpt?.slice(0, 180),
-    openGraph: { type: 'article', publishedTime: p.publishedAt },
+    openGraph: { type: 'article', publishedTime: p.publishedAt, ...(og ? { images: og } : {}) },
+    twitter: og ? { card: 'summary_large_image', images: og.map((i) => i.url) } : undefined,
   }
 }
 
@@ -91,6 +103,18 @@ export default async function PostPage({
                 </span>
               )}
             </div>
+
+            {/* Обложка на первом экране статьи: грузится сразу, а не лениво,
+                иначе она стала бы самым медленным элементом страницы. */}
+            <Cover
+              image={post.cover}
+              alt={post.title}
+              ratio={16 / 9}
+              widths={[640, 960, 1280, 1600, 2000]}
+              sizes="(min-width: 1260px) 1100px, 92vw"
+              priority
+              className="mt-[clamp(26px,3.6vw,40px)] rounded-[6px]"
+            />
           </div>
         </section>
 

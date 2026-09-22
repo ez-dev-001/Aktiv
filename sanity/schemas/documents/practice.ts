@@ -1,5 +1,6 @@
 import { defineArrayMember, defineField, defineType } from 'sanity'
 import { localeMax } from '../objects/locale'
+import { iconField } from '../objects/icon'
 
 /**
  * practice — одно направление. 37 документов на украинском (см. разведку этапа 1).
@@ -34,17 +35,7 @@ export const practice = defineType({
       name: 'category', title: 'Категорія', type: 'reference', to: [{ type: 'practiceCategory' }],
       group: 'content', validation: (r) => r.required(),
     }),
-    defineField({
-      name: 'icon', title: 'Іконка', type: 'string', group: 'content',
-      options: {
-        list: [
-          'court', 'liquidation', 'bankruptcy', 'assets', 'debt', 'registration', 'deed',
-          'realestate', 'land', 'construction', 'tax', 'labour', 'family', 'military', 'ip', 'energy', 'retainer',
-        ].map((v) => ({ value: v, title: v })),
-      },
-      description: 'Зі власного набору 17 іконок. Файл: components/icons/sprite.tsx',
-      validation: (r) => r.required(),
-    }),
+    iconField({ required: true, group: 'content' }),
     defineField({
       name: 'excerpt', title: 'Короткий опис', type: 'localeText', group: 'content',
       description: 'Два рядки на картці практики й у мета-описі. До 180 знаків.',

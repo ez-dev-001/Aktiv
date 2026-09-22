@@ -52,8 +52,8 @@ export const priceSpec = defineType({
       name: 'amountMax',
       title: 'Верхня межа, ₴',
       description:
-        'Необовʼязково. Якщо заповнено — на сторінці показується вилка «10 000 – 18 000 ₴», ' +
-        'і ця ж вилка йде в лід як очікувана сума угоди без калькулятора.',
+        'Необовʼязково. Якщо заповнено — на сторінці показується діапазон «10 000 – 18 000 ₴», ' +
+        'і цей же діапазон іде в лід як очікувана сума угоди без калькулятора.',
       type: 'number',
       hidden: ({ parent }) => parent?.mode !== 'fixed',
       validation: (r) =>
@@ -131,7 +131,7 @@ export const priceSpec = defineType({
       if (mode === 'onRequest') return { title: 'за запитом', subtitle: 'договірна' }
       if (mode === 'percent') return { title: `${percent ?? '—'} %`, subtitle: 'гонорар успіху' }
       if (typeof amountMax === 'number' && typeof amount === 'number')
-        return { title: `${uah(amount)} – ${uah(amountMax)} ₴${suffix}`, subtitle: 'вилка' }
+        return { title: `${uah(amount)} – ${uah(amountMax)} ₴${suffix}`, subtitle: 'діапазон' }
       return { title: `від ${amount ? uah(amount) : '—'} ₴${suffix}`, subtitle: 'нижня межа' }
     },
   },

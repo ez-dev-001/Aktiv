@@ -1,26 +1,7 @@
 import { defineField, defineType } from 'sanity'
 import { localeMax } from './locale'
+import { iconField } from './icon'
 
-/** Набор иконок — тот же, что у практик. Один список на проект. */
-export const ICON_NAMES = [
-  'court',
-  'liquidation',
-  'bankruptcy',
-  'assets',
-  'debt',
-  'registration',
-  'deed',
-  'realestate',
-  'land',
-  'construction',
-  'tax',
-  'labour',
-  'family',
-  'military',
-  'ip',
-  'energy',
-  'retainer',
-] as const
 
 /**
  * tenet — «пункт со заголовком и абзацем».
@@ -50,14 +31,10 @@ export const tenet = defineType({
       type: 'localeText',
       validation: (r) => r.custom(localeMax(420)),
     }),
-    defineField({
-      name: 'icon',
-      title: 'Іконка',
-      type: 'string',
+    iconField({
       description:
         'Не обовʼязково. Показується лише в блоці «Цінності»; у принципах ' +
         'замість неї стоїть номер, який рахується від порядку в списку.',
-      options: { list: ICON_NAMES.map((v) => ({ value: v, title: v })) },
     }),
   ],
   preview: { select: { title: 'title.ua', subtitle: 'text.ua' } },

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import {
   categories as staticCategories,
   contacts as staticContacts,
@@ -11,7 +11,20 @@ import type { Contacts } from '@/lib/sanity/content'
 import { track, trackMessenger, trackPhone, newEventId } from '@/lib/analytics'
 import { Button, Eyebrow } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
+import { Icon } from '@/components/site/Icon'
 import { PracticeSelect, buildOptions } from '@/components/ui/PracticeSelect'
+import { submitLead } from '@/app/actions/lead'
+import {
+  QUIZ_HANDOFF_EVENT,
+  captureAttribution,
+  clearQuizHandoff,
+  readAttribution,
+  readQuizHandoff,
+  saveReceipt,
+  type QuizHandoff,
+} from '@/lib/leads/client'
+import { FORMATS, FORMAT_LABEL, type ConsultFormat, type FieldErrors, type LeadKind } from '@/lib/leads/types'
+import { validateLead } from '@/lib/leads/validate'
 
 /**
  * Форма заявки.
@@ -21,9 +34,21 @@ import { PracticeSelect, buildOptions } from '@/components/ui/PracticeSelect'
  * без практики лида некому назначить, без email не отправить письменную вилку.
  *
  * Антиспам: honeypot (поле company_url вне видимой области) плюс
- * rate limit в server action по IP — этап 4.
+ * ограничение частоты по IP в server action.
  *
- * Пока запись идёт в консоль: server action появится вместе с Firestore.
+ * ── Путь заявки ──
+ * submitLead (app/actions/lead.ts) проверяет поля, пересчитывает сумму
+ * калькулятора и пишет заявку в хранилище (lib/leads/store.ts — пока
+ * демо в памяти, дальше Firestore). При успехе — переход на страницу
+ * «Дякуємо»: у неё свой адрес, и именно его GTM и реклама считают
+ * конверсией. Счёт по «кнопка нажата» врёт: нажатие с ошибкой в
+ * телефоне конверсией не является.
+ *
+ * ── Что форма знает сама ──
+ *  • расчёт калькулятора — если человек пришёл из него (sessionStorage);
+ *  • направление — из ?practice= в адресе: так ведут кнопки
+ *    «Отримати консультацію» со страниц практик;
+ *  • источник визита — UTM и страница входа (lib/leads/client.ts).
  */
 
 const FIELD =
@@ -41,9 +66,20 @@ export function LeadSection({
   /** из Sanity, если практики там заведены; иначе статика */
   categories?: Category[]
 }) {
-  const [sent, setSent] = useState(false)
   const [touched, setTouched] = useState(false)
   const [practice, setPractice] = useState('unknown')
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [pending, start] = useTransition()
+  const [done, setDone] = useState(false)
+  const [handoff, setHandoff] = useState<QuizHandoff | null>(null)
+  /* Консультация по умолчанию: это самый частый и самый мягкий шаг.
+     Заявку на услугу форма выбирает сама, если человек пришёл из
+     калькулятора или кнопкой «Обрати цей варіант» с пакетом. */
+  const [kind, setKind] = useState<LeadKind>('consultation')
+  const [format, setFormat] = useState<ConsultFormat | ''>('')
+  const [pkg, setPkg] = useState<string | null>(null)
+  const fieldA11y = fieldA11yFor(errors)
 
   /* Плоский указатель slug → направление и его категория.
      Нужен дважды: подписать выбор под полем и положить в лид
@@ -65,35 +101,116 @@ export function LeadSection({
   const chosen = index.get(practice)
   const chosenPrice = formatPrice(chosen?.practice?.price)
 
+  /* Направление из адреса и расчёт из калькулятора. Читаются после
+     монтирования: на сервере ни адресной строки, ни sessionStorage нет. */
+  useEffect(() => {
+    captureAttribution()
+    const qs = new URLSearchParams(window.location.search)
+    const fromUrl = qs.get('practice')
+    const pkgFromUrl = qs.get('package')?.slice(0, 80) || null
+    if (qs.get('kind') === 'order' || pkgFromUrl) setKind('order')
+    if (pkgFromUrl) setPkg(pkgFromUrl)
+    const known = (key: string | null | undefined) => (key && index.has(key) ? key : null)
+
+    const applyHandoff = () => {
+      const h = readQuizHandoff()
+      setHandoff(h)
+      if (h) setKind('order')
+      if (h?.category) {
+        const k = known(`cat:${h.category}`)
+        if (k) setPractice((cur) => (cur === 'unknown' ? k : cur))
+      }
+    }
+    const k = known(fromUrl)
+    if (k) setPractice(k)
+    applyHandoff()
+    window.addEventListener(QUIZ_HANDOFF_EVENT, applyHandoff)
+    return () => window.removeEventListener(QUIZ_HANDOFF_EVENT, applyHandoff)
+  }, [index])
+
   function onFirstInput() {
     if (touched) return
     setTouched(true)
     track('form_start', { form_location: 'contact_section' })
   }
 
+  /* Ошибка поля гаснет, как только его начали править: висящее красное
+     под полем, которое уже исправлено, раздражает сильнее самой ошибки. */
+  function clearError(field: keyof FieldErrors) {
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
+  }
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
-    if (fd.get('company_url')) return /* honeypot: бот заполнил скрытое поле */
+    if (pending || done) return
+    const form = e.currentTarget
+    const fd = new FormData(form)
 
-    const eventId = newEventId('f')
-    /* В dataLayer и в лид уходит человекочитаемое название, а не slug:
-       отчёт по практикам должен читаться без словаря. */
-    const picked = index.get(String(fd.get('practice') ?? ''))
-    const practiceName = picked?.title ?? 'Ще не знаю'
-    track('form_submit', {
-      form_location: 'contact_section',
-      practice: practiceName,
-      event_id: eventId,
-      /* value подставится из квиза, когда он пройден — этап 5 */
-      currency: 'UAH',
+    /* Та же проверка, что на сервере, — чтобы не гонять запрос ради
+       пустого телефона. Решение всё равно принимает сервер. */
+    const { errors: local } = validateLead({
+      name: String(fd.get('name') ?? ''),
+      phone: String(fd.get('phone') ?? ''),
+      email: String(fd.get('email') ?? ''),
+      message: String(fd.get('message') ?? ''),
     })
-    track('consultation_request', { practice: practiceName, event_id: eventId })
+    if (Object.keys(local).length) {
+      setErrors(local)
+      const first = Object.keys(local)[0]
+      form.querySelector<HTMLElement>(`[name="${first}"]`)?.focus()
+      return
+    }
 
-    // TODO(этап 4): server action → Admin SDK → Firestore + Telegram + Meta CAPI
-    // eslint-disable-next-line no-console
-    console.info('[lead]', Object.fromEntries(fd.entries()), { eventId })
-    setSent(true)
+    const eventId = handoff?.eventId ?? newEventId('f')
+    fd.set('event_id', eventId)
+    fd.set('form_location', handoff ? 'quiz_result' : 'contact_section')
+    fd.set('kind', kind)
+    if (kind === 'consultation' && format) fd.set('format', format)
+    if (kind === 'order' && pkg) fd.set('package', pkg)
+    fd.set('page', window.location.pathname)
+    fd.set('attribution', JSON.stringify(readAttribution()))
+    if (handoff) {
+      fd.set('quiz_id', handoff.quizId)
+      fd.set('quiz_answers', JSON.stringify(handoff.answers))
+    }
+
+    setFormError(null)
+    start(async () => {
+      let res
+      try {
+        res = await submitLead(fd)
+      } catch {
+        res = { ok: false as const, message: 'Немає звʼязку із сервером. Спробуйте ще раз або зателефонуйте.' }
+      }
+      if (!res.ok) {
+        setErrors(res.errors ?? {})
+        setFormError(res.message ?? null)
+        return
+      }
+
+      /* В dataLayer — человекочитаемое название, а не slug: отчёт по
+         практикам должен читаться без словаря. Событие — после ответа
+         сервера: заявка, которую он отклонил, конверсией не считается. */
+      const picked = index.get(String(fd.get('practice') ?? ''))
+      const practiceName = picked?.title ?? 'Ще не знаю'
+      /* lead_type разводит два вида обращений в GA4 и рекламе: запись
+         на бесплатную консультацию и заявка на услугу стоят по-разному,
+         и оптимизировать кампании на их сумму нельзя. */
+      track('form_submit', {
+        form_location: handoff ? 'quiz_result' : 'contact_section',
+        lead_type: kind,
+        practice: practiceName,
+        event_id: eventId,
+        currency: 'UAH',
+      })
+      if (kind === 'consultation') track('consultation_request', { practice: practiceName, event_id: eventId })
+
+      saveReceipt(res.receipt)
+      clearQuizHandoff()
+      setDone(true)
+      const prefix = window.location.pathname.startsWith('/en') ? '/en' : ''
+      window.location.assign(`${prefix}/dyakuyemo`)
+    })
   }
 
   return (
@@ -146,19 +263,61 @@ export function LeadSection({
             </dl>
           </div>
 
-          <form onSubmit={onSubmit} onInput={onFirstInput} noValidate className="grid gap-3.5">
+          <form id="lead-form" onSubmit={onSubmit} onInput={onFirstInput} noValidate className="grid gap-3.5" aria-busy={pending}>
+            {/* ── Консультация или заявка ──
+                Два разных разговора, и в CRM — две разные воронки.
+                Человек выбирает сам; по умолчанию стоит консультация,
+                калькулятор и выбор пакета переключают на заявку. */}
+            <div role="radiogroup" aria-label="Що вам потрібно" className="grid gap-2 min-[560px]:grid-cols-2">
+              {(
+                [
+                  { k: 'consultation', t: 'Безкоштовна консультація', d: 'Розберемося в ситуації й скажемо, чи бачимо шлях' },
+                  { k: 'order', t: 'Замовити послугу', d: 'Знаєте, що потрібно, — назвемо вартість письмово' },
+                ] as const
+              ).map((o) => {
+                const on = kind === o.k
+                return (
+                  <button
+                    key={o.k}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setKind(o.k)}
+                    className={`grid gap-1 rounded-[12px] border-0 px-4 py-3.5 text-left transition-[background-color,box-shadow] duration-200 ${
+                      on
+                        ? 'bg-white/[0.09] shadow-[inset_0_0_0_1.5px_var(--color-accent)]'
+                        : 'bg-transparent shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5 text-[15px] font-medium text-white">
+                      <span
+                        aria-hidden="true"
+                        className={`grid size-[16px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.5px_currentColor] ${on ? 'text-accent' : 'text-on-dark-2'}`}
+                      >
+                        {on && <span className="size-[7px] rounded-full bg-accent" />}
+                      </span>
+                      {o.t}
+                    </span>
+                    <span className="pl-[26px] text-[12.5px] leading-snug text-on-dark">{o.d}</span>
+                  </button>
+                )
+              })}
+            </div>
+
             <div className="grid gap-3.5 min-[560px]:grid-cols-2">
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-name" className={LABEL}>
                   Ім&apos;я
                 </label>
-                <input id="lead-name" name="name" type="text" autoComplete="name" placeholder="Як до вас звертатися" className={FIELD} />
+                <input id="lead-name" name="name" type="text" autoComplete="name" placeholder="Як до вас звертатися" className={FIELD} {...fieldA11y('name')} onChange={() => clearError('name')} />
+                <FieldError id="name" text={errors.name} />
               </div>
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-phone" className={LABEL}>
                   Телефон
                 </label>
-                <input id="lead-phone" name="phone" type="tel" autoComplete="tel" placeholder="+38 (0__) ___-__-__" className={FIELD} required />
+                <input id="lead-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="067 123 45 67" className={FIELD} required {...fieldA11y('phone')} onChange={() => clearError('phone')} />
+                <FieldError id="phone" text={errors.phone} />
               </div>
             </div>
             <div className="grid gap-3.5 min-[560px]:grid-cols-2">
@@ -166,7 +325,8 @@ export function LeadSection({
                 <label htmlFor="lead-email" className={LABEL}>
                   Пошта
                 </label>
-                <input id="lead-email" name="email" type="email" autoComplete="email" placeholder="для письмової вилки вартості" className={FIELD} />
+                <input id="lead-email" name="email" type="email" autoComplete="email" placeholder="щоб надіслати діапазон вартості письмово" className={FIELD} {...fieldA11y('email')} onChange={() => clearError('email')} />
+                <FieldError id="email" text={errors.email} />
               </div>
               {/* ── выбор направления ──
                   Раньше здесь были только четыре категории, и человек,
@@ -183,7 +343,7 @@ export function LeadSection({
                   для тех, кто знает блок, но не знает точной услуги. */}
               <div className="grid gap-[7px]">
                 <span id="lead-practice-label" className={LABEL}>
-                  Практика
+                  {kind === 'consultation' ? 'Тема, якщо знаєте' : 'Послуга'}
                 </span>
                 <PracticeSelect
                   options={options}
@@ -223,9 +383,16 @@ export function LeadSection({
                 id="lead-message"
                 name="message"
                 rows={4}
-                placeholder="Коротко: що сталося, на якій стадії, чого хочете досягти"
+                placeholder={
+                  kind === 'consultation'
+                    ? 'Коротко: що сталося і яке питання хочете розібрати'
+                    : 'Що потрібно зробити, на якій стадії справа, які строки'
+                }
                 className={`${FIELD} min-h-[92px] resize-y`}
+                {...fieldA11y('message')}
+                onChange={() => clearError('message')}
               />
+              <FieldError id="message" text={errors.message} />
             </div>
 
             {/* honeypot */}
@@ -234,18 +401,116 @@ export function LeadSection({
               <input id="lead-hp" name="company_url" type="text" tabIndex={-1} autoComplete="off" />
             </div>
 
-            <Button type="submit" arrow className="mt-1.5 justify-self-start" disabled={sent}>
-              {sent ? 'Заявку прийнято' : 'Надіслати'}
+            {/* ── расчёт из калькулятора ──
+                Показываем, что сумма доехала, — иначе человек не знает,
+                видим ли мы его ответы, и пересказывает их в «Суть справи». */}
+            {/* Формат — только для консультации и необязательный: не
+                выбрали — уточним по телефону. */}
+            {kind === 'consultation' && (
+              <div className="grid gap-[7px]">
+                <span id="lead-format-label" className={LABEL}>
+                  Як зручніше
+                </span>
+                <div role="radiogroup" aria-labelledby="lead-format-label" className="flex flex-wrap gap-2">
+                  {FORMATS.map((f) => {
+                    const on = format === f
+                    return (
+                      <button
+                        key={f}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setFormat(on ? '' : f)}
+                        className={`min-h-10 rounded-full border-0 px-4 text-[13.5px] transition-[background-color,box-shadow,color] ${
+                          on
+                            ? 'bg-accent text-white'
+                            : 'bg-transparent text-on-dark shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] hover:text-white'
+                        }`}
+                      >
+                        {FORMAT_LABEL[f]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {kind === 'order' && pkg && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[10px] bg-white/[0.055] px-4 py-3 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
+                <span className={LABEL}>Пакет</span>
+                <span className="text-[13.5px] text-white">{pkg}</span>
+                <button
+                  type="button"
+                  onClick={() => setPkg(null)}
+                  className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-[12px] text-on-dark-2 transition-colors hover:text-white"
+                  aria-label="Прибрати пакет із заявки"
+                >
+                  <Icon name="close" className="size-3" /> прибрати
+                </button>
+              </div>
+            )}
+
+            {handoff && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[10px] bg-white/[0.055] px-4 py-3 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
+                <span className={LABEL}>Розрахунок</span>
+                <span className="font-mono text-[13px] text-accent-soft">{handoff.label}</span>
+                <span className="text-[13px] text-on-dark">{handoff.practice}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearQuizHandoff()
+                    setHandoff(null)
+                  }}
+                  className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-[12px] text-on-dark-2 transition-colors hover:text-white"
+                  aria-label="Не додавати розрахунок до заявки"
+                >
+                  <Icon name="close" className="size-3" /> прибрати
+                </button>
+              </div>
+            )}
+
+            {formError && (
+              <p role="alert" className="m-0 rounded-[10px] bg-accent/10 px-4 py-3 text-[13.5px] leading-snug text-white shadow-[inset_0_0_0_1px_rgb(250_33_99/0.45)]">
+                {formError}{' '}
+                <a href={contacts.phoneHref} className="whitespace-nowrap font-medium text-accent-soft underline underline-offset-2">
+                  {contacts.phone}
+                </a>
+              </p>
+            )}
+
+            <Button type="submit" arrow={!pending && !done} className="mt-1.5 justify-self-start" disabled={pending || done}>
+              {pending || done ? (
+                <span className="inline-flex items-center gap-2.5">
+                  <span aria-hidden="true" className="size-[15px] animate-spin rounded-full border-2 border-white/35 border-t-white" />
+                  Надсилаємо…
+                </span>
+              ) : (
+                kind === 'consultation' ? 'Записатися на консультацію' : 'Надіслати заявку'
+              )}
             </Button>
 
-            <p className={`m-0 mt-1 max-w-[44ch] text-[12.5px] leading-relaxed ${sent ? 'text-accent-soft' : 'text-on-dark-2'}`}>
-              {sent
-                ? 'Прототип: заявка вывелась в консоль. Server action со записью в Firestore, уведомлением в Telegram и Meta CAPI — этап 4.'
-                : 'Надсилаючи форму, ви погоджуєтесь на обробку даних для звʼязку у вашій справі.'}
+            <p className="m-0 mt-1 max-w-[44ch] text-[12.5px] leading-relaxed text-on-dark-2">
+              Надсилаючи форму, ви погоджуєтесь на обробку даних для звʼязку у вашій справі.
             </p>
           </form>
         </div>
       </div>
     </section>
+  )
+}
+
+/** aria для поля с ошибкой: читалка экрана озвучит текст под ним. */
+function fieldA11yFor(errors: FieldErrors) {
+  return (name: keyof FieldErrors) =>
+    errors[name] ? { 'aria-invalid': true as const, 'aria-describedby': `lead-${name}-error` } : {}
+}
+
+function FieldError({ id, text }: { id: string; text?: string }) {
+  if (!text) return null
+  return (
+    <span id={`lead-${id}-error`} className="flex items-center gap-1.5 text-[12.5px] leading-snug text-accent-soft">
+      <span aria-hidden="true" className="size-[5px] shrink-0 rounded-full bg-accent-soft" />
+      {text}
+    </span>
   )
 }

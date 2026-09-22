@@ -79,3 +79,31 @@ export function photoSrcSet(photo: Photo): string {
 export function photoBlur(photo: Photo): string {
   return `https://images.unsplash.com/photo-${photo.id}?auto=format&fit=crop&q=40&w=24&blur=60`
 }
+
+/**
+ * Кадр, готовый к показу: адреса уже посчитаны на сервере.
+ *
+ * Заглушки Unsplash и фото, загруженные в Sanity, приходят в Photo
+ * одной и той же формой — компоненту всё равно, откуда кадр. Считать
+ * адреса Sanity в браузере незачем: Photo — клиентский компонент, и
+ * конструктор адресов уехал бы в бандл.
+ */
+export interface PhotoSource {
+  src: string
+  srcSet: string
+  /** крошечный кадр под размытие или data:-URI от Sanity */
+  blur?: string
+  alt: string
+  ratio: number
+  /** object-position из точки фокуса, выставленной в студии */
+  position?: string
+}
+
+export function unsplashSource(name: PhotoName): PhotoSource {
+  const photo: Photo = PHOTOS[name]
+  return { src: photoUrl(photo, 1440), srcSet: photoSrcSet(photo), blur: photoBlur(photo), alt: photo.alt, ratio: photo.ratio }
+}
+
+/** Имя заглушки или готовый кадр → готовый кадр. */
+export const resolvePhoto = (p: PhotoName | PhotoSource): PhotoSource =>
+  typeof p === 'string' ? unsplashSource(p) : p

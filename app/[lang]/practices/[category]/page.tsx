@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories, formatPrice } from '@/lib/content'
 import { getCategories, getQuizzes } from '@/lib/sanity/content'
@@ -6,7 +7,8 @@ import { Icon } from '@/components/site/Icon'
 import { PageHead, PageShell, SectionHead } from '@/components/site/PageShell'
 import { ButtonLink } from '@/components/ui/Button'
 import { Quiz } from '@/components/quiz/Quiz'
-import { CATEGORY_PHOTO } from '@/lib/photos'
+import { pickQuizzes } from '@/lib/quizzes'
+import { categoryPhoto } from '@/lib/sanity/image'
 import { TrustedBy } from '@/components/home/TrustedBy'
 
 /**
@@ -17,10 +19,8 @@ import { TrustedBy } from '@/components/home/TrustedBy'
  * где он есть, и явный ответ на вопрос «сколько это стоит».
  */
 
-const LANGS = ['ua', 'en', 'ru'] as const
-
 export function generateStaticParams() {
-  return LANGS.flatMap((lang) => staticCategories.map((c) => ({ lang, category: c.slug })))
+  return LOCALES.flatMap((lang) => staticCategories.map((c) => ({ lang, category: c.slug })))
 }
 
 export async function generateMetadata({
@@ -29,7 +29,7 @@ export async function generateMetadata({
   params: Promise<{ lang: string; category: string }>
 }): Promise<Metadata> {
   const { lang, category } = await params
-  const [{ data }, quizzes] = await Promise.all([getCategories(lang), getQuizzes(lang)])
+  const { data } = await getCategories(lang)
   const cat = data.find((c) => c.slug === category)
   if (!cat) return { title: 'Практика' }
   return {
@@ -48,10 +48,11 @@ export default async function CategoryPage({
   const cat = data.find((c) => c.slug === category)
   if (!cat) notFound()
 
-  /* Калькулятор есть у ликвидации и у судебной практики — у остальных
-     вилка не считается формулой, и показывать пустой квиз хуже, чем не
-     показывать вовсе. */
-  const hasQuiz = category === 'likvidatsiya-bankrutstvo' || category === 'sudova-praktyka'
+  /* Калькулятор — тот, что выбран у категории, или любой, привязанный
+     к ней. Нет ни одного — блока «Вартість» нет: пустой квиз хуже,
+     чем никакого. */
+  const quizSets = pickQuizzes(quizzes.data, { categoryQuiz: cat.quiz, category })
+  const hasQuiz = quizSets.length > 0
 
   const stations = [
     { id: 'head', label: cat.title.split(/\s|,/)[0] ?? 'Практика' },
@@ -62,7 +63,7 @@ export default async function CategoryPage({
   ]
 
   const priced = cat.practices.filter((p) => p.price)
-  const photo = CATEGORY_PHOTO[cat.slug]
+  const photo = categoryPhoto(cat)
 
   return (
     <PageShell lang={lang} stations={stations} overDark={!!photo}>
@@ -150,15 +151,11 @@ export default async function CategoryPage({
           <div className="shell inner">
             <SectionHead
               eyebrow="Вартість"
-              title="Чотири питання — і вилка по вашій ситуації"
+              title="Чотири питання — і діапазон вартості для вашої ситуації"
               lede="Прайс показує нижню межу. Калькулятор уточнює її під конкретні обставини: борги, активи, строки."
             />
             <div className="max-w-[640px]">
-              {/* Калькулятор именно этой категории, если он заведён;
-                  иначе все — пусть посетитель выберет сам. */}
-              <Quiz sets={quizzes.data.filter((q) => q.key === category).length
-                ? quizzes.data.filter((q) => q.key === category)
-                : quizzes.data} />
+              <Quiz sets={quizSets} />
             </div>
           </div>
         </section>
@@ -180,7 +177,7 @@ export default async function CategoryPage({
               </p>
             </div>
             <div className="flex flex-wrap gap-2.5">
-              <ButtonLink href={lang === 'ua' ? '/#contact' : `/${lang}/#contact`} arrow>
+              <ButtonLink href={`${lang === 'ua' ? '' : `/${lang}`}/?practice=cat:${encodeURIComponent(cat.slug)}#contact`} arrow>
                 Отримати консультацію
               </ButtonLink>
               <ButtonLink href={lang === 'ua' ? '/#practices' : `/${lang}/#practices`} variant="ghost">

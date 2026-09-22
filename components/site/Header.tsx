@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { categories, contacts as staticContacts } from '@/lib/content'
+import { categories as staticCategories, contacts as staticContacts } from '@/lib/content'
+import { toMenu, type MenuCategory } from '@/lib/menu'
 import type { Contacts } from '@/lib/sanity/content'
 import { trackPhone } from '@/lib/analytics'
 import { Icon } from './Icon'
 import { ButtonLink } from '@/components/ui/Button'
 import { Logo } from './Logo'
+import { LOCALES, LOCALE_LABEL, localeHome } from '@/lib/i18n'
 
 /**
  * Навигация в два слоя.
@@ -45,23 +47,41 @@ const NAV = [
   { href: '/#contact', label: 'Контакти' },
 ]
 
-const LANGS = [
-  { id: 'ua', label: 'UA', href: '/' },
-  { id: 'en', label: 'EN', href: '/en' },
-  { id: 'ru', label: 'RU', href: '/ru' },
-]
+/* Переключатель строится из общего списка языков (lib/i18n.ts), а
+   не записан руками: русская версия убрана в одном месте, и здесь она
+   исчезла сама. Ссылка на /ru из шапки вела бы теперь на редирект. */
+const LANGS = LOCALES.map((id) => ({ id, label: LOCALE_LABEL[id], href: localeHome(id) }))
+
+const STATIC_MENU = toMenu(staticCategories)
+
+/**
+ * До скольких направлений меню остаётся колонками.
+ *
+ * Четыре колонки по ~260px — это предел: пятая сузила бы каждую до
+ * 200px, и «Представництво в органах державної влади» ломалось бы
+ * на три строки. С пятого направления меню переходит в две панели:
+ * слева список направлений, справа услуги выбранного.
+ */
+const MAX_COLUMNS = 4
 
 export function Header({
   lang = 'ua',
   overDark = false,
   contacts = staticContacts,
+  categories = STATIC_MENU,
 }: {
   lang?: string
   overDark?: boolean
   /** из Sanity, если siteSettings заполнен; иначе статика */
   contacts?: Contacts
+  /** направления из Sanity (через toMenu); иначе статика */
+  categories?: MenuCategory[]
 }) {
   const [mega, setMega] = useState(false)
+  /* Направление, раскрытое в правой панели (режим 5+ направлений). */
+  const [active, setActive] = useState(0)
+  /* Направление могли удалить, пока меню открыто на нём. */
+  const act = active < categories.length ? active : 0
   const [drawer, setDrawer] = useState(false)
   const [acc, setAcc] = useState<string | null>(null)
   const [stuck, setStuck] = useState(false)
@@ -72,6 +92,24 @@ export function Header({
      При открытом мега-меню — нет: панель меню светлая, и прозрачная
      шапка над ней выглядела бы как оторванная от неё полоса. */
   const light = drawer || (overDark && !stuck && !mega)
+
+  /* Плавная смена вида шапки включается только после первого кадра.
+     Страница может открыться уже прокрученной: переход по якорю,
+     «назад» в браузере, обновление посреди статьи. Сервер не знает
+     прокрутки и отдаёт прозрачную шапку; если бы переход был включён
+     сразу, она полсекунды наливалась бы бумагой поверх текста —
+     вспышка на пустом месте. Так она сразу встаёт в нужный вид. */
+  const [animate, setAnimate] = useState(false)
+  useEffect(() => {
+    let r2 = 0
+    const r1 = requestAnimationFrame(() => {
+      r2 = requestAnimationFrame(() => setAnimate(true))
+    })
+    return () => {
+      cancelAnimationFrame(r1)
+      cancelAnimationFrame(r2)
+    }
+  }, [])
 
   useEffect(() => {
     let raf = 0
@@ -163,16 +201,18 @@ export function Header({
         onMouseLeave={() => setMega(false)}
         data-light={light ? 'true' : 'false'}
         style={{ viewTransitionName: 'site-header' }}
-        className={`sticky top-[env(safe-area-inset-top,0px)] z-[80] transition-[background-color,border-color,box-shadow,backdrop-filter] duration-[420ms] ease-[cubic-bezier(.4,0,.2,1)] ${
-          light
-            ? 'border-b border-transparent bg-transparent'
-            : 'bg-paper/[0.88] backdrop-blur-[14px] backdrop-saturate-150'
+        /* Линия под шапкой — тенью, а не border-bottom. Рамка добавляла
+           шапке 1px высоты, а тёмный первый экран подтягивается под неё
+           ровно на var(--hdr). Этот лишний пиксель оставался сверху
+           светлой полоской бумаги над фотографией. Тень места не занимает. */
+        className={`sticky top-[env(safe-area-inset-top,0px)] z-[80] ${
+          animate ? 'transition-[background-color,box-shadow,backdrop-filter] duration-[420ms] ease-[cubic-bezier(.4,0,.2,1)]' : ''
+        } ${
+          light ? 'bg-transparent' : 'bg-paper/[0.88] backdrop-blur-[14px] backdrop-saturate-150'
         } ${
           !light && stuck
-            ? 'border-b border-hair-soft shadow-[0_1px_18px_-8px_rgb(20_11_51/0.12)]'
-            : !light
-              ? 'border-b border-transparent'
-              : ''
+            ? 'shadow-[0_1px_0_var(--color-hair-soft),0_1px_18px_-8px_rgb(20_11_51/0.12)]'
+            : ''
         }`}
       >
         <div className="mx-auto flex h-[var(--hdr)] max-w-[var(--shell)] items-center gap-[clamp(14px,2.4vw,34px)] px-[var(--gut)]">
@@ -288,7 +328,7 @@ export function Header({
           </button>
         </div>
 
-        {/* ── мега-меню: 4 колонки, все направления ── */}
+        {/* ── мега-меню: до 4 направлений колонками, дальше — две панели ── */}
         <div
           id="mega"
           data-open={mega}
@@ -301,37 +341,111 @@ export function Header({
              у мобильной панели. */
           className="absolute inset-x-0 top-full hidden origin-top border-b border-hair-soft bg-paper shadow-[0_24px_48px_-28px_rgb(20_11_51/0.20)] [transition:clip-path_380ms_var(--ease-out-quint),visibility_380ms] data-[open=false]:invisible data-[open=false]:[clip-path:inset(0_0_100%_0)] data-[open=true]:visible data-[open=true]:[clip-path:inset(0_0_0%_0)] min-[980px]:block"
         >
-          <div className="mx-auto grid max-w-[var(--shell)] grid-cols-4 gap-[30px] px-[var(--gut)] pb-[34px] pt-9">
-            {categories.map((c) => (
-              <div key={c.slug}>
-                <h5 className="mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
-                  <Icon name={c.icon} className="size-[19px] text-accent" />
-                  {c.title}
-                </h5>
-                {/* Все направления, без обрезки. Раньше здесь стояло
-                    slice(0, 9), и в судовій практиці два пункта из
-                    одиннадцати не показывались вовсе — ровно тот
-                    дефект старого сайта, ради которого меню и делалось. */}
-                {c.practices.map((p) => (
+          {categories.length <= MAX_COLUMNS ? (
+            <div
+              className="mx-auto grid max-w-[var(--shell)] gap-[30px] px-[var(--gut)] pb-[34px] pt-9"
+              style={{ gridTemplateColumns: `repeat(${Math.max(categories.length, 1)}, minmax(0, 1fr))` }}
+            >
+              {categories.map((c) => (
+                <div key={c.slug}>
+                  <h5 className="mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
+                    <Icon name={c.icon} className="size-[19px] text-accent" />
+                    {c.title}
+                  </h5>
+                  {/* Все направления, без обрезки. Раньше здесь стояло
+                      slice(0, 9), и в судовій практиці два пункта из
+                      одиннадцати не показывались вовсе — ровно тот
+                      дефект старого сайта, ради которого меню и делалось. */}
+                  {c.practices.map((p) => (
+                    <a
+                      key={p.slug}
+                      href={`/practices/${c.slug}/${p.slug}`}
+                      onClick={() => setMega(false)}
+                      className="block py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
+                    >
+                      {p.title}
+                    </a>
+                  ))}
                   <a
-                    key={p.slug}
-                    href={`/practices/${c.slug}/${p.slug}`}
+                    href={`/practices/${c.slug}`}
                     onClick={() => setMega(false)}
-                    className="block py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
+                    className="mt-3 block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
                   >
-                    {p.title}
+                    {c.priceHint ?? `Усі ${c.practices.length} напрямів`}
                   </a>
-                ))}
-                <a
-                  href={`/practices/${c.slug}`}
-                  onClick={() => setMega(false)}
-                  className="mt-3 block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
-                >
-                  {c.priceHint ?? `Усі ${c.practices.length} напрямів`}
-                </a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* ── Пять и больше направлений: две панели ──
+               Слева направления, справа услуги того, на котором мышь
+               или фокус. Правые панели лежат стопкой в одной ячейке
+               сетки, видна одна: высота меню — по самой длинной, и
+               оно не прыгает, когда ведёшь мышью по списку. */
+            <div className="mx-auto grid max-w-[var(--shell)] grid-cols-[minmax(250px,300px)_1fr] gap-[clamp(28px,3.4vw,52px)] px-[var(--gut)] pb-[34px] pt-9">
+              <ul className="m-0 list-none border-r border-hair-soft p-0 pr-[clamp(18px,2vw,28px)]">
+                {categories.map((c, i) => {
+                  const on = i === act
+                  return (
+                    <li key={c.slug}>
+                      <a
+                        href={`/practices/${c.slug}`}
+                        onMouseEnter={() => setActive(i)}
+                        onFocus={() => setActive(i)}
+                        onClick={() => setMega(false)}
+                        aria-current={on ? 'true' : undefined}
+                        className={`group/cat flex items-center gap-3 rounded-[8px] px-3 py-2.5 transition-colors ${
+                          on ? 'bg-paper-2 text-ink' : 'text-slate hover:text-ink'
+                        }`}
+                      >
+                        <Icon name={c.icon} className={`size-[19px] shrink-0 ${on ? 'text-accent' : 'text-slate-2'}`} />
+                        <span className="flex-1 text-[14.5px] leading-tight">{c.title}</span>
+                        <span className="font-mono text-[10px] tabular-nums text-slate-2">{c.practices.length}</span>
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              <div className="grid">
+                {categories.map((c, i) => {
+                  const on = i === act
+                  return (
+                    <div
+                      key={c.slug}
+                      aria-hidden={!on}
+                      className={`[grid-area:1/1] transition-opacity duration-200 ${on ? 'visible opacity-100' : 'invisible opacity-0'}`}
+                    >
+                      <h5 className="mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
+                        {c.title}
+                      </h5>
+                      <div className="gap-x-[30px] [column-fill:balance] min-[1180px]:columns-3 columns-2">
+                        {c.practices.map((p) => (
+                          <a
+                            key={p.slug}
+                            href={`/practices/${c.slug}/${p.slug}`}
+                            tabIndex={on ? undefined : -1}
+                            onClick={() => setMega(false)}
+                            className="block break-inside-avoid py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
+                          >
+                            {p.title}
+                          </a>
+                        ))}
+                      </div>
+                      <a
+                        href={`/practices/${c.slug}`}
+                        tabIndex={on ? undefined : -1}
+                        onClick={() => setMega(false)}
+                        className="mt-3 inline-block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
+                      >
+                        {c.priceHint ?? `Усі ${c.practices.length} напрямів`} →
+                      </a>
+                    </div>
+                  )
+                })}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </header>
 

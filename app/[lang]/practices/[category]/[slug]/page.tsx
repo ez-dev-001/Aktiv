@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories, formatPrice } from '@/lib/content'
-import { getPractice, getQuizzes } from '@/lib/sanity/content'
+import { getCategories, getPractice, getQuizzes } from '@/lib/sanity/content'
 import { Icon } from '@/components/site/Icon'
 import { PageShell, SectionHead } from '@/components/site/PageShell'
 import { Prose } from '@/components/site/Prose'
 import { ArrowLink, ButtonLink, Eyebrow } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
 import { Quiz } from '@/components/quiz/Quiz'
+import { pickQuizzes } from '@/lib/quizzes'
 
 /**
  * Страница одного направления.
@@ -22,10 +24,8 @@ import { Quiz } from '@/components/quiz/Quiz'
  * выглядит скромно, но не сломанно.
  */
 
-const LANGS = ['ua', 'en', 'ru'] as const
-
 export function generateStaticParams() {
-  return LANGS.flatMap((lang) =>
+  return LOCALES.flatMap((lang) =>
     staticCategories.flatMap((c) => c.practices.map((p) => ({ lang, category: c.slug, slug: p.slug }))),
   )
 }
@@ -47,16 +47,51 @@ export default async function PracticePage({
   params: Promise<{ lang: string; category: string; slug: string }>
 }) {
   const { lang, category, slug } = await params
-  const [p, quizzes] = await Promise.all([getPractice(slug, lang), getQuizzes(lang)])
+  const [p, quizzes, cats] = await Promise.all([getPractice(slug, lang), getQuizzes(lang), getCategories(lang)])
   if (!p) notFound()
 
   const price = formatPrice(p.price)
   const prefix = lang === 'ua' ? '' : `/${lang}`
-  const hasQuiz = category === 'likvidatsiya-bankrutstvo' || category === 'sudova-praktyka'
+  /* Калькулятор: выбранный у практики → выбранный у категории → любой
+     калькулятор этой категории. Раньше блок стоял только у двух
+     категорий, зашитых в код, а выбор в поле «Калькулятор» не читался. */
+  const quizSets = pickQuizzes(quizzes.data, {
+    practiceQuiz: p.quiz,
+    categoryQuiz: cats.data.find((c) => c.slug === category)?.quiz,
+    category,
+  })
+  const hasQuiz = quizSets.length > 0
+
+  /* Пакет могли добавить, заполнив только название и цену — списки
+     «Кому підходить» и «Що входить» тогда приходят null. Раньше на
+     этом падал рендер всей страницы. */
+  const packages = (p.packages ?? [])
+    .filter((pk) => pk && pk.name)
+    .map((pk) => ({
+      ...pk,
+      audience: (pk.audience ?? []).filter(Boolean),
+      includes: (pk.includes ?? []).filter(Boolean),
+    }))
+
+  /* Заголовок блока раньше был зашит под ликвидацию («Два способи
+     пройти процедуру») и стоял на любой практике с любым числом пакетов. */
+  const n = packages.length
+  const packagesHead =
+    n === 2 && category === 'likvidatsiya-bankrutstvo'
+      ? {
+          title: 'Два способи пройти процедуру',
+          lede: 'Вибір залежить не від бюджету, а від історії підприємства: чим складніша, тим далі має відійти власник.',
+        }
+      : n === 1
+        ? { title: 'Вартість і що входить', lede: undefined }
+        : {
+            title: n === 2 ? 'Два варіанти послуги' : `${n} ${n < 5 ? 'варіанти' : 'варіантів'} послуги`,
+            lede: 'Оберіть варіант, що відповідає вашій ситуації, — або опишіть її, і ми підкажемо.',
+          }
 
   const stations = [
     { id: 'head', label: 'Послуга' },
-    ...(p.packages?.length ? [{ id: 'packages', label: 'Тарифи' }] : []),
+    ...(packages.length ? [{ id: 'packages', label: 'Тарифи' }] : []),
     ...(p.includes?.length ? [{ id: 'includes', label: 'Що входить' }] : []),
     ...(p.stages?.length ? [{ id: 'stages', label: 'Етапи' }] : []),
     ...(hasQuiz ? [{ id: 'price', label: 'Вартість' }] : []),
@@ -148,18 +183,22 @@ export default async function PracticePage({
           колонками с ценой и двумя списками — «кому підходить» и
           «що входить». Здесь то же самое, но цена вынесена в шапку
           карточки, а не тонет в середине столбца. */}
-      {p.packages && p.packages.length > 0 && (
+      {packages.length > 0 && (
         <section id="packages" className="bg-paper-2 py-[clamp(48px,7vw,96px)]">
           <div className="shell inner">
-            <SectionHead
-              eyebrow="Тарифи"
-              title="Два способи пройти процедуру"
-              lede="Вибір залежить не від бюджету, а від історії підприємства: чим складніша, тим далі має відійти власник."
-            />
-            <div className="grid gap-[clamp(12px,1.6vw,18px)] min-[820px]:grid-cols-2">
-              {p.packages.map((pk) => (
+            <SectionHead eyebrow="Тарифи" title={packagesHead.title} lede={packagesHead.lede} />
+            <div
+              className={`grid gap-[clamp(12px,1.6vw,18px)] ${
+                n === 1
+                  ? 'max-w-[640px]'
+                  : n === 2
+                    ? 'min-[820px]:grid-cols-2'
+                    : 'min-[820px]:grid-cols-2 min-[1060px]:grid-cols-3'
+              }`}
+            >
+              {packages.map((pk, i) => (
                 <article
-                  key={pk.name}
+                  key={`${i}-${pk.name}`}
                   className="flex flex-col gap-5 rounded-[18px] bg-white p-[clamp(22px,3vw,32px)] shadow-[0_1px_2px_rgb(20_11_51/0.045),0_14px_34px_-20px_rgb(20_11_51/0.13)]"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-hair pb-4">
@@ -169,6 +208,7 @@ export default async function PracticePage({
                     </span>
                   </div>
 
+                  {pk.audience.length > 0 && (
                   <div>
                     <p className="m-0 mb-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">
                       Кому підходить
@@ -182,7 +222,9 @@ export default async function PracticePage({
                       ))}
                     </ul>
                   </div>
+                  )}
 
+                  {pk.includes.length > 0 && (
                   <div className="mt-auto">
                     <p className="m-0 mb-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">
                       Що входить
@@ -196,10 +238,18 @@ export default async function PracticePage({
                       ))}
                     </ul>
                   </div>
+                  )}
 
                   {pk.note && <p className="m-0 text-[13px] leading-snug text-slate-2">{pk.note}</p>}
 
-                  <ButtonLink href="#contact" arrow className="self-start">
+                  {/* Ведёт в форму на главной сразу заявкой на услугу, с этой
+                      услугой и этим пакетом — человек уже выбрал, переспрашивать
+                      его в форме незачем. */}
+                  <ButtonLink
+                    href={`${prefix}/?practice=${encodeURIComponent(p.slug)}&package=${encodeURIComponent(pk.name)}#contact`}
+                    arrow
+                    className="self-start"
+                  >
                     Обрати цей варіант
                   </ButtonLink>
                 </article>
@@ -261,13 +311,11 @@ export default async function PracticePage({
           <div className="shell inner">
             <SectionHead
               eyebrow="Вартість"
-              title="Порахувати вилку по вашій ситуації"
+              title="Порахувати діапазон вартості для вашої ситуації"
               lede="Ціна вище — нижня межа. Калькулятор уточнює її під конкретні обставини."
             />
             <div className="max-w-[640px]">
-              <Quiz sets={quizzes.data.filter((q) => q.key === category).length
-                ? quizzes.data.filter((q) => q.key === category)
-                : quizzes.data} />
+              <Quiz sets={quizSets} />
             </div>
           </div>
         </section>
@@ -334,7 +382,7 @@ export default async function PracticePage({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-5">
-              <ButtonLink href={`${prefix}/#contact`} arrow>
+              <ButtonLink href={`${prefix}/?practice=${encodeURIComponent(p.slug)}#contact`} arrow>
                 Отримати консультацію
               </ButtonLink>
               <ArrowLink href={`${prefix}/practices/${p.category?.slug ?? category}`}>

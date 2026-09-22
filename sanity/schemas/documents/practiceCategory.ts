@@ -1,5 +1,6 @@
 import { defineField, defineType } from 'sanity'
 import { localeMax } from '../objects/locale'
+import { iconField } from '../objects/icon'
 
 /**
  * practiceCategory — четыре блока с главной, ставшие настоящими разделами.
@@ -21,10 +22,29 @@ export const practiceCategory = defineType({
       validation: (r) => r.required(),
       description: 'Живёт в URL: /practices/<slug>/<practice>/',
     }),
+    iconField({
+      required: true,
+      description: 'Лежить на фото в куті картки на головній.',
+    }),
     defineField({
-      name: 'icon', title: 'Іконка', type: 'string',
-      options: { list: ['court', 'liquidation', 'realestate', 'military'].map((v) => ({ value: v, title: v })) },
-      validation: (r) => r.required(),
+      name: 'photo',
+      title: 'Фото на картці',
+      type: 'image',
+      options: { hotspot: true },
+      description:
+        'Фон картки на головній і першого екрана сторінки напряму. Горизонтальне фото від 2000 px ' +
+        'завширшки. Після завантаження поставте точку фокуса (кружечок) на головне в кадрі — ' +
+        'картка вузька й широка, і без точки кадр ріжеться по центру. Текст лежить поверх ' +
+        'затемнення, тож фото не мусить бути темним. Без фото картка матиме темну плашку з іконкою.',
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Alt — що на фото',
+          type: 'string',
+          description: 'Коротко, для незрячих і пошуку по картинках. Напр. «Будівля суду з колонами».',
+          validation: (r) => r.max(120),
+        }),
+      ],
     }),
     defineField({
       name: 'excerpt', title: 'Опис на картці', type: 'localeText',

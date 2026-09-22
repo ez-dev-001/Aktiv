@@ -1,6 +1,6 @@
 import type { Category, Practice } from '@/lib/content'
 import { formatPrice } from '@/lib/content'
-import { CATEGORY_PHOTO } from '@/lib/photos'
+import { categoryPhoto } from '@/lib/sanity/image'
 import { Icon } from '@/components/site/Icon'
 import { Photo } from '@/components/site/Photo'
 
@@ -73,9 +73,17 @@ export function PracticeCards({ categories }: { categories: Category[] }) {
   return (
     <div className="grid gap-[clamp(12px,1.6vw,18px)] min-[660px]:grid-cols-2">
       {categories.map((c) => {
-        const photo = CATEGORY_PHOTO[c.slug]
+        const photo = categoryPhoto(c)
         const top = pickTop(c.practices)
         const rest = c.practices.length - top.length
+        const cardBadge = (
+          <div className="flex size-full items-end justify-between gap-3 p-[clamp(18px,2.2vw,26px)]">
+            <Icon name={c.icon} className="size-[34px] shrink-0 text-white" />
+            <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.11em] text-white/70">
+              {c.practices.length} напрямів
+            </span>
+          </div>
+        )
 
         return (
           <div
@@ -85,7 +93,7 @@ export function PracticeCards({ categories }: { categories: Category[] }) {
             {/* Кадр наверху карточки, знак практики лежит на нём.
                 Масштаб 1.04 на наведении — единственное движение здесь:
                 карточка навигационная, ей нельзя мигать и выезжать. */}
-            {photo && (
+            {photo ? (
               <Photo
                 name={photo}
                 ratio={2.1}
@@ -93,13 +101,15 @@ export function PracticeCards({ categories }: { categories: Category[] }) {
                 sizes="(min-width: 660px) 46vw, 92vw"
                 imgClassName="transition-transform duration-[900ms] ease-[cubic-bezier(.22,1,.36,1)] group-hover/card:scale-[1.04]"
               >
-                <div className="flex size-full items-end justify-between gap-3 p-[clamp(18px,2.2vw,26px)]">
-                  <Icon name={c.icon} className="size-[34px] shrink-0 text-white" />
-                  <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.11em] text-white/70">
-                    {c.practices.length} напрямів
-                  </span>
-                </div>
+                {cardBadge}
               </Photo>
+            ) : (
+              /* Направление без фото: та же высота и тот же знак на
+                 тёмной плашке. Иначе новая категория стояла бы рядом
+                 с остальными без верхней половины и без иконки. */
+              <div className="relative bg-ink bg-[radial-gradient(120%_90%_at_85%_0%,rgb(255_255_255/0.08),transparent_60%)]" style={{ aspectRatio: '2.1' }}>
+                <div className="absolute inset-0">{cardBadge}</div>
+              </div>
             )}
 
             <div className="flex flex-1 flex-col p-[clamp(20px,2.6vw,30px)]">

@@ -19,11 +19,14 @@ import {
   type PriceSpec,
 } from '@/lib/content'
 import { sanityFetch } from './client'
+import type { SanityImage } from './image'
+import { staticCookieTexts, type CookieTexts } from '@/lib/consent'
 import { staticQuizSets, toQuizSet, type QuizSet, type RawQuiz } from '@/lib/quizzes'
 import {
   ABOUT_QUERY,
   BLOG_QUERY,
   CATEGORIES_QUERY,
+  COOKIE_QUERY,
   CONTACTS_QUERY,
   FIGURES_QUERY,
   HOME_QUERY,
@@ -35,6 +38,7 @@ import {
   POST_SLUGS_QUERY,
   PRACTICE_QUERY,
   PRICE_LIST_QUERY,
+  SITEMAP_QUERY,
   TRUST_QUERY,
 } from './queries'
 
@@ -144,6 +148,8 @@ export interface Post {
   category?: string
   publishedAt?: string
   author?: string
+  /** Обложка из Sanity. У статики её нет — там только анонсы. */
+  cover?: SanityImage | null
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -436,6 +442,8 @@ export interface PracticeDetail {
       Показываются только когда из Sanity не пришёл body. */
   bodyText?: string[]
   packages?: PracticePackage[]
+  /** slug калькулятора, выбранного у самой практики. */
+  quiz?: string
   price?: PriceSpec
   includes?: string[]
   stages?: PracticeStage[]
@@ -805,4 +813,91 @@ export async function getTeamPage(
   )
 
   return { data: expand(data), source: touched ? 'sanity' : 'static' }
+}
+
+/* ═══════════════ БАННЕР COOKIE ═══════════════ */
+
+/**
+ * Тексты баннера согласия. Фолбэк поле за полем: без документа
+ * настроек баннер всё равно обязан появиться — это не украшение, а
+ * юридическое требование, и пустой Sanity его не отменяет.
+ */
+export async function getCookieTexts(lang = 'ua'): Promise<CookieTexts> {
+  const row = await sanityFetch<Partial<CookieTexts>>(COOKIE_QUERY, { lang }, ['siteSettings'])
+  const r = row ? safe(row, lang) : {}
+  const S = (v: unknown, fb: string) => (typeof v === 'string' && v.trim() ? v.trim() : fb)
+  return {
+    title: S(r.title, staticCookieTexts.title),
+    text: S(r.text, staticCookieTexts.text),
+    privacyUrl: S(r.privacyUrl, staticCookieTexts.privacyUrl),
+  }
+}
+
+/* ═══════════════ КАРТА САЙТА ═══════════════ */
+
+export interface SitemapData {
+  categories: { slug: string; updatedAt?: string }[]
+  practices: { slug: string; category: string; updatedAt?: string }[]
+  posts: { slug: string; updatedAt?: string }[]
+  home?: string
+  about?: string
+  team?: string
+}
+
+interface RawSitemap {
+  categories?: { slug?: string; _updatedAt?: string }[]
+  practices?: { slug?: string; category?: string; _updatedAt?: string }[]
+  posts?: { slug?: string; _updatedAt?: string }[]
+  home?: string
+  about?: string
+  team?: string
+}
+
+/**
+ * Адреса для карты сайта.
+ *
+ * Практики и категории — из Sanity, если они там заведены; иначе из
+ * статики, как и везде на сайте. Карта обязана перечислять ровно те
+ * страницы, на которые ведёт меню, иначе Google найдёт одно, а
+ * посетитель — другое.
+ *
+ * ── Почему у статики нет даты ──
+ * Для страниц из кода дата правки неизвестна, и её не подставляют.
+ * Соблазн поставить «сегодня» велик, но Google прямо пишет, что
+ * игнорирует lastmod у сайтов, где он всегда свежий: сначала перестаёт
+ * верить датам этого сайта, потом перестаёт на них смотреть. Честное
+ * отсутствие даты лучше, чем дата, которой не верят.
+ */
+export async function getSitemapData(): Promise<SitemapData> {
+  const r = await sanityFetch<RawSitemap>(SITEMAP_QUERY, {}, [
+    'practice',
+    'practiceCategory',
+    'post',
+    'homePage',
+    'aboutPage',
+    'teamPage',
+  ])
+
+  const ok = (v: unknown): v is string => typeof v === 'string' && v.length > 0
+
+  const sanityCats = (r?.categories ?? []).filter((c) => ok(c.slug))
+  const sanityPractices = (r?.practices ?? []).filter((p) => ok(p.slug) && ok(p.category))
+
+  /* Статика — если в Sanity практик нет вовсе. Смешивать нельзя:
+     половина из Sanity, половина из кода дала бы в карте адреса, часть
+     которых меню не показывает. */
+  const fromSanity = sanityPractices.length > 0
+
+  return {
+    categories: fromSanity
+      ? sanityCats.map((c) => ({ slug: c.slug!, updatedAt: c._updatedAt }))
+      : staticCategories.map((c) => ({ slug: c.slug })),
+    practices: fromSanity
+      ? sanityPractices.map((p) => ({ slug: p.slug!, category: p.category!, updatedAt: p._updatedAt }))
+      : staticCategories.flatMap((c) => c.practices.map((p) => ({ slug: p.slug, category: c.slug }))),
+    posts: (r?.posts ?? []).filter((p) => ok(p.slug)).map((p) => ({ slug: p.slug!, updatedAt: p._updatedAt })),
+    home: r?.home,
+    about: r?.about,
+    team: r?.team,
+  }
 }

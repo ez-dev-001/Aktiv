@@ -10,6 +10,9 @@
  * и не должно уезжать в продакшен как есть.
  */
 
+import type { IconName } from './icons'
+import type { SanityImage } from './sanity/image'
+
 export type PriceMode = 'fixed' | 'percent' | 'onRequest'
 
 export interface PriceSpec {
@@ -59,14 +62,15 @@ export interface Category {
   icon: IconName
   excerpt: string
   priceHint?: string
+  /** slug калькулятора категории из Sanity (поле «Калькулятор категорії»). */
+  quiz?: string
+  /** «Фото на картці» из Sanity; без него — заглушка из lib/photos.ts. */
+  photo?: SanityImage | null
   practices: Practice[]
 }
 
-export type IconName =
-  | 'court' | 'liquidation' | 'bankruptcy' | 'assets' | 'debt' | 'registration'
-  | 'deed' | 'realestate' | 'land' | 'construction' | 'tax' | 'labour'
-  | 'family' | 'military' | 'ip' | 'energy' | 'retainer'
-  | 'arrow' | 'caret' | 'phone' | 'message' | 'close'
+/* Иконки: пути, подписи и список для студии — в lib/icons.ts. */
+export type { IconName } from './icons'
 
 /* ═══════════════ КАТЕГОРИИ И 36 ПРАКТИК ═══════════════
    Порядок: ликвидация первой — основная практика фирмы
@@ -276,7 +280,7 @@ export const credo = [
   },
   {
     title: 'Називаємо вартість до договору.',
-    text: 'Письмова вилка з прайсу або з калькулятора — **до** підписання. Ніяких «зателефонуйте, обговоримо» і ніяких сум, що зʼявляються в процесі.',
+    text: 'Письмовий діапазон вартості з прайсу або з калькулятора — **до** підписання. Ніяких «зателефонуйте, обговоримо» і ніяких сум, що зʼявляються в процесі.',
   },
   {
     title: 'Доводимо до виконання, а не до рішення.',
@@ -291,7 +295,7 @@ export const credo = [
 /* ═══════════════ ШЛЯХ СПРАВИ ═══════════════ */
 export const casePath = [
   { title: 'Консультація', text: 'Слухаємо, дивимось документи, оцінюємо перспективу. Без оплати.' },
-  { title: 'Стратегія і вилка', text: 'Письмовий план дій і діапазон вартості. Ще до договору.' },
+  { title: 'Стратегія і діапазон вартості', text: 'Письмовий план дій і діапазон вартості. Ще до договору.' },
   { title: 'Процес', text: 'Ведення справи. Звіт після кожного засідання, без нагадувань.' },
   { title: 'Виконання', text: 'Приватний виконавець доводить рішення до реального стягнення.' },
 ]

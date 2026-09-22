@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { CONSENT_BOOTSTRAP } from '@/lib/consent'
+import { SITE_URL } from '@/lib/site'
 
 /**
  * Корневой лейаут. Локаль подставляет app/[lang]/layout.tsx,
@@ -14,7 +16,7 @@ import './globals.css'
  * round-trip и роняет LCP.
  */
 export const metadata: Metadata = {
-  metadataBase: new URL('https://aktiv-alb.com'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Юридична компанія «АКТИВ» — ліквідація, банкрутство, судова практика в Києві',
     template: '%s — ЮК «АКТИВ»',
@@ -36,6 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="uk">
       <head>
+        {/* Consent Mode v2 — ПЕРВЫМ в <head>, до любых скриптов. Ставит
+            аналитику и рекламу в denied по умолчанию и сразу применяет
+            выбор, если посетитель уже его делал. Обычный <script>, а не
+            next/script: next/script откладывает выполнение, а сигнал
+            согласия обязан прийти раньше GTM. Подробно — lib/consent.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: CONSENT_BOOTSTRAP }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

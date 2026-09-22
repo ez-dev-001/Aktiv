@@ -1,6 +1,7 @@
 import { CaseLine, ScrollProgress } from '@/components/site/CaseLine'
 import { FloatingActions } from '@/components/site/FloatingActions'
 import { Header } from '@/components/site/Header'
+import { toMenu } from '@/lib/menu'
 import {
   CasePath,
   Credo,
@@ -65,7 +66,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     <>
       <ScrollProgress />
       {/* overDark: первый экран тёмный, шапка стартует прозрачной */}
-      <Header lang={lang} overDark contacts={contacts.data} />
+      <Header lang={lang} overDark contacts={contacts.data} categories={toMenu(cats.data)} />
 
       <main id="top" className="relative">
         {/* линия дела: геометрия строится из offsetTop секций ниже */}

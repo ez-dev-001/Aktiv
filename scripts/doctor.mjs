@@ -138,7 +138,15 @@ if (access === 'missing') process.exit(1)
 /* ── 2. что лежит в датасете ── */
 line()
 console.log(C.b('  Документи'))
-const TYPES = ['practiceCategory', 'practice', 'post', 'teamMember', 'quiz', 'siteSettings']
+/* Страницы-синглтоны в списке обязательно: по ним видно, засеяна ли
+   страница вообще. Ноль у homePage — значит сайт показывает текст из
+   кода, и сид этого документа ничего не перезапишет. Единица — значит
+   документ уже есть и, возможно, отредактирован в студии, и сидить его
+   заново — стирать эти правки. */
+const TYPES = [
+  'practiceCategory', 'practice', 'post', 'teamMember', 'quiz',
+  'siteSettings', 'homePage', 'aboutPage', 'teamPage',
+]
 let totalPublished = 0
 /* Счёт может не выполниться вовсе. Считать это нулём нельзя: «типів
    немає» и «не зміг дізнатися» — разные ответы, а диагностика, которая

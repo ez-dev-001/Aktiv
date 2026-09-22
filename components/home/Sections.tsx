@@ -1,5 +1,5 @@
 import { categories as staticCategories, contacts as staticContacts, figures as staticFigures, formatPrice, journal, team as staticTeam, type Category, type PriceSpec } from '@/lib/content'
-import { staticAbout, staticHome, teamPhoto, type Contacts, type Figure, type HomeContent, type TeamMember } from '@/lib/sanity/content'
+import { staticAbout, staticHome, teamPhoto, type Contacts, type Figure, type HomeContent, type Post, type TeamMember } from '@/lib/sanity/content'
 import { Icon } from '@/components/site/Icon'
 import { ArrowLink, ButtonLink, Eyebrow } from '@/components/ui/Button'
 import { Counter } from '@/components/ui/Counter'
@@ -7,7 +7,9 @@ import { Reveal } from '@/components/ui/Reveal'
 import { Logo } from '@/components/site/Logo'
 import { Photo, PhotoBand } from '@/components/site/Photo'
 import { Bold } from '@/components/ui/Bold'
+import { CookieSettingsLink } from '@/components/site/CookieConsent'
 import { PracticeCards } from './PracticeCards'
+import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
 
 /* ═══════════════════════ ГЕРОЙ ═══════════════════════
    Первый экран — фотография во всю ширину и тёмная заливка поверх неё.
@@ -387,10 +389,11 @@ export function Journal({
   clickable = false,
 }: {
   lang: string
-  posts?: { slug: string; title: string; excerpt: string; category?: string }[]
+  posts?: Post[]
   clickable?: boolean
 }) {
   const prefix = lang === 'ua' ? '' : `/${lang}`
+  const withMedia = needsMedia(posts)
   return (
     <section id="journal" className="py-[clamp(64px,9vw,128px)]">
       <div className="shell inner">
@@ -402,22 +405,20 @@ export function Journal({
         </div>
       </div>
       <div className="shell inner">
-        <div className="grid gap-px border-y border-hair bg-hair min-[820px]:grid-cols-3">
+        {/* Та же карточка, что в ленте блога: обложка появится и здесь,
+            и там одновременно. Ссылка без полного текста ведёт в ленту —
+            в статике есть только анонсы. */}
+        <ul className={POST_GRID}>
           {posts.map((a) => (
-            <a
-              key={a.slug}
-              href={clickable ? `${prefix}/blog/${a.slug}` : `${prefix}/blog`}
-              className="flex flex-col gap-3.5 bg-white p-[clamp(22px,2.6vw,30px)] transition-colors duration-[240ms] hover:bg-paper-2"
-            >
-              <span className="font-mono text-[10.5px] uppercase tracking-[0.11em] text-slate-2">{a.category}</span>
-              <h4 className="text-[18px] leading-snug">{a.title}</h4>
-              <p className="m-0 text-sm leading-relaxed text-slate">{a.excerpt}</p>
-              <span className="mt-auto inline-flex items-center gap-2 font-sans text-[14.5px] font-medium text-accent-ink">
-                Читати <Icon name="arrow" className="size-[15px]" />
-              </span>
-            </a>
+            <li key={a.slug}>
+              <PostCard
+                post={a}
+                href={clickable ? `${prefix}/blog/${a.slug}` : `${prefix}/blog`}
+                withMedia={withMedia}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   )
@@ -479,6 +480,9 @@ export function Footer({ contacts = staticContacts }: { contacts?: Contacts }) {
           <span>© {new Date().getFullYear()} ЮК «АКТИВ»</span>
           <span>{contacts.address}</span>
           <span>{contacts.phone}</span>
+          {/* Отозвать согласие должно быть так же легко, как его дать:
+              баннер открывается снова отсюда, сразу на настройках. */}
+          <CookieSettingsLink className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white" />
           <ArrowLink href="#top" className="min-h-11 !text-on-dark-2">
             Вгору
           </ArrowLink>

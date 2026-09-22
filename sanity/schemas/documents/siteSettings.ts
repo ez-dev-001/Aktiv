@@ -28,6 +28,7 @@ export const siteSettings = defineType({
     { name: 'figures', title: 'Цифри', default: true },
     { name: 'trust', title: 'Нам довіряють' },
     { name: 'contacts', title: 'Контакти' },
+    { name: 'cookies', title: 'Cookie' },
   ],
   fields: [
     /* ── цифры ── */
@@ -193,6 +194,39 @@ export const siteSettings = defineType({
           },
         }),
       ],
+    }),
+
+    /* ── баннер cookie ──
+       Кнопки и подписи категорий («Статистика», «Реклама») здесь НЕ
+       редактируются намеренно: их смысл зашит в то, какие сигналы
+       Consent Mode они включают. Переименовать «Реклама» во что-то
+       мягкое значило бы ввести посетителя в заблуждение насчёт того, на
+       что он соглашается, — и такое согласие недействительно. */
+    defineField({
+      name: 'cookieTitle',
+      title: 'Заголовок банера',
+      type: 'localeString',
+      group: 'cookies',
+      validation: (r) => r.custom(localeMax(60)),
+    }),
+    defineField({
+      name: 'cookieText',
+      title: 'Текст банера',
+      type: 'localeText',
+      group: 'cookies',
+      description:
+        'Коротко: що збираємо й навіщо. **Жирним** виділяються частини всередині. ' +
+        'Довший за 320 знаків текст на телефоні займе пів екрана.',
+      validation: (r) => r.custom(localeMax(320)),
+    }),
+    defineField({
+      name: 'privacyUrl',
+      title: 'Посилання на політику конфіденційності',
+      type: 'string',
+      group: 'cookies',
+      description:
+        'Шлях на сайті («/privacy») або повна адреса. Порожньо — посилання в банері не буде. ' +
+        'Сторінки політики на сайті поки немає: її текст має підготувати юрист фірми.',
     }),
 
     /* ── контакты ── */

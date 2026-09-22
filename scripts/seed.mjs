@@ -31,6 +31,7 @@ import { resolve } from 'node:path'
 import { categories, contacts, figures, team } from '../lib/content.ts'
 import { quizCopy, quizzes } from '../lib/quizzes.ts'
 import { staticAbout, staticHome, staticTeamPage, trustFacts } from '../lib/content.ts'
+import { staticCookieTexts } from '../lib/consent.ts'
 
 /* .env.local читаем сами: скрипт запускается вне Next. */
 for (const file of ['.env.local', '.env']) {
@@ -303,6 +304,10 @@ const settingsDoc = {
     label: L(f.label),
     note: L(f.note),
   })),
+  /* Баннер cookie: заголовок и текст. Ссылку на политику не сеем —
+     страницы политики пока нет, а ссылка в никуда хуже, чем никакой. */
+  cookieTitle: L(staticCookieTexts.title),
+  cookieText: T(staticCookieTexts.text),
   phone: contacts.phone,
   email: contacts.email,
   address: L(contacts.address),
@@ -477,7 +482,7 @@ if (DRY) {
   if (q) {
     console.log(`\n  Калькулятор «${q.title}»: ${q.steps.length} питань, ` +
       `${q.steps.reduce((n, st) => n + st.options.length, 0)} варіантів, ` +
-      `вилка ${q.spreadLow}–${q.spreadHigh}, округлення ${q.roundTo} ₴`)
+      `діапазон ${q.spreadLow}–${q.spreadHigh}, округлення ${q.roundTo} ₴`)
   }
   console.log('')
   process.exit(0)

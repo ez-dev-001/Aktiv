@@ -115,9 +115,9 @@ export interface QuizCopy {
 
 export const quizCopy: Record<string, QuizCopy> = {
   'likvidatsiya-bankrutstvo': {
-    heading: 'Чотири питання — і вилка по вашій ситуації',
+    heading: 'Чотири питання — і діапазон вартості для вашої ситуації',
     disclaimer:
-      'Вилка — попередня оцінка, а не оферта. Точну суму називаємо після ознайомлення з документами, до підписання договору. Судовий збір і послуги оцінювача сплачуються окремо.',
+      'Діапазон — попередня оцінка, а не оферта. Точну суму називаємо після ознайомлення з документами, до підписання договору. Судовий збір і послуги оцінювача сплачуються окремо.',
     steps: {
       goal: {
         q: 'Що потрібно зробити з підприємством?',
@@ -147,7 +147,7 @@ export const quizCopy: Record<string, QuizCopy> = {
   'sudova-praktyka': {
     heading: 'Чотири питання — і оцінка вартості спору',
     disclaimer:
-      'Вилка покриває гонорар за представництво. Судовий збір, експертизи та витрати на виконання — окремо. Точну суму фіксуємо в договорі до початку роботи.',
+      'Діапазон покриває гонорар за представництво. Судовий збір, експертизи та витрати на виконання — окремо. Точну суму фіксуємо в договорі до початку роботи.',
     steps: {
       dispute: {
         q: 'Яка категорія спору?',
@@ -185,7 +185,10 @@ export const quizzes = { liquidation: liquidationQuiz, court: courtQuiz }
  * откуда данные, и переключение источника не стоит ни строчки в UI.
  */
 export interface QuizSet {
+  /** slug калькулятора в Sanity (в статике — ключ объекта quizzes). */
   key: string
+  /** slug категории практик, к которой привязан калькулятор. */
+  category?: string
   config: QuizConfig
   copy: QuizCopy
   tab: { title: string; note: string }
@@ -198,11 +201,13 @@ export interface QuizSet {
  */
 export function tabNote(config: QuizConfig): string {
   const hasPercent = config.steps.some((s) => s.options.some((o) => o.switchToPercent))
-  return hasPercent ? 'вилка або гонорар успіху' : 'вилка в гривнях'
+  return hasPercent ? 'діапазон або гонорар успіху' : 'діапазон у гривнях'
 }
 
 export const staticQuizSets: QuizSet[] = Object.entries(quizzes).map(([key, config]) => ({
   key,
+  /* id статического конфига и есть slug категории — так их сеет seed.mjs. */
+  category: config.id,
   config,
   copy: quizCopy[config.id]!,
   tab: { title: config.practice, note: tabNote(config) },
@@ -217,6 +222,8 @@ export const staticQuizSets: QuizSet[] = Object.entries(quizzes).map(([key, conf
 
 export interface RawQuiz {
   id?: string
+  /** slug категории, к которой привязан калькулятор */
+  category?: string
   practice?: string
   heading?: string
   disclaimer?: string
@@ -287,6 +294,7 @@ export function toQuizSet(raw: RawQuiz): QuizSet | null {
 
   return {
     key: raw.id,
+    ...(raw.category ? { category: raw.category } : {}),
     config,
     copy: {
       heading: raw.heading ?? config.practice,
@@ -295,4 +303,31 @@ export function toQuizSet(raw: RawQuiz): QuizSet | null {
     },
     tab: { title: config.practice, note: tabNote(config) },
   }
+}
+
+/**
+ * Какие калькуляторы показать на странице практики или категории.
+ *
+ * Порядок — ровно как обещают подсказки в студии:
+ *   1. калькулятор, выбранный у самой практики («Калькулятор»);
+ *   2. калькулятор категории («Калькулятор категорії»);
+ *   3. все калькуляторы, у которых в поле «Категорія практики» стоит
+ *      эта категория.
+ * Ничего не нашлось — пустой список, и блок «Вартість» не выводится.
+ *
+ * Раньше калькулятор искали сравнением slug калькулятора со slug
+ * категории. Совпадало это только у двух засеянных документов; всё,
+ * что заводили руками, не находилось, а выбор в поле «Калькулятор»
+ * не читался вовсе. Плюс блок показывался только у двух категорий,
+ * зашитых в код.
+ */
+export function pickQuizzes(
+  sets: QuizSet[],
+  { practiceQuiz, categoryQuiz, category }: { practiceQuiz?: string; categoryQuiz?: string; category: string },
+): QuizSet[] {
+  for (const id of [practiceQuiz, categoryQuiz]) {
+    const hit = id ? sets.find((q) => q.key === id) : undefined
+    if (hit) return [hit]
+  }
+  return sets.filter((q) => q.category === category)
 }

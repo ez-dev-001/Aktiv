@@ -17,7 +17,8 @@
     "check:schema": "node scripts/check-schema.mjs",
     "check:groq": "node scripts/check-groq.mjs",
     "check:quiz": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-quiz.mjs",
-    "sanity:doctor": "node scripts/doctor.mjs"
+    "sanity:doctor": "node scripts/doctor.mjs",
+    "term:diapazon": "node scripts/replace-term.mjs"
   },
   "dependencies": {
     "@portabletext/react": "^8.0.1",
