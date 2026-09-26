@@ -10,8 +10,8 @@ import { OfficeMap } from './OfficeMap'
  *
  * Одна тёмная плитка, внутри — две части: слева адрес, справа карта в
  * «окне» со скруглением и отступом от края. Карта не лежит под
- * текстом и ничем не перекрыта: адрес читается на ровном тёмном фоне,
- * а карта остаётся картой (см. OfficeMap — почему без фильтров).
+ * текстом и ничем не перекрыта: адрес читается на ровном тёмном фоне.
+ * Как карта стала тёмной без вспышек при прокрутке — см. OfficeMap.
  *
  *   ┌───────────────────────────────────────────────┐
  *   │  ОФІС · КИЇВ         ┌──────────────────────┐ │
@@ -78,7 +78,7 @@ export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
         </div>
       </figcaption>
 
-      <div className="relative order-1 h-[260px] overflow-hidden rounded-[16px] bg-[#eceaf1] min-[480px]:h-[320px] min-[800px]:order-2 min-[800px]:h-[clamp(340px,32vw,400px)]">
+      <div className="relative order-1 h-[260px] overflow-hidden rounded-[16px] bg-ink-2 min-[480px]:h-[320px] min-[800px]:order-2 min-[800px]:h-[clamp(340px,32vw,400px)]">
         <OfficeMap query={query} title={`Офіс «АКТИВ» на карті: ${contacts.address}`} />
       </div>
     </figure>
