@@ -170,7 +170,10 @@ export function LeadSection({
   return (
     <section id="contact" className="on-dark bg-ink py-[clamp(64px,9vw,128px)] text-on-dark">
       <div className="shell inner">
-        <div className="grid items-start gap-[clamp(32px,4.5vw,64px)] min-[920px]:grid-cols-[0.85fr_1.15fr]">
+        {/* grid-cols-1 = minmax(0,1fr), а не auto: иначе длинное название
+            направления в поле (обрезанное многоточием) растягивает колонку
+            до своей полной ширины, и на телефоне вся секция уезжает вбок. */}
+        <div className="grid grid-cols-1 items-start gap-[clamp(32px,4.5vw,64px)] min-[920px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <div>
             <Eyebrow>Консультація</Eyebrow>
             <Reveal className="text-[clamp(26px,4.6vw,44px)] leading-[1.1] !text-white">Розкажіть про справу</Reveal>
@@ -213,8 +216,8 @@ export function LeadSection({
             </dl>
           </div>
 
-          <form id="lead-form" onSubmit={onSubmit} onInput={onFirstInput} noValidate className="grid gap-3.5" aria-busy={pending}>
-            <div className="grid gap-3.5 min-[560px]:grid-cols-2">
+          <form id="lead-form" onSubmit={onSubmit} onInput={onFirstInput} noValidate className="grid min-w-0 grid-cols-1 gap-3.5" aria-busy={pending}>
+            <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-name" className={LABEL}>
                   Ім&apos;я
@@ -230,7 +233,7 @@ export function LeadSection({
                 <FieldError id="phone" text={errors.phone} />
               </div>
             </div>
-            <div className="grid gap-3.5 min-[560px]:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-email" className={LABEL}>
                   Пошта

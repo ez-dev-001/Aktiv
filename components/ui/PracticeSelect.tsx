@@ -196,7 +196,7 @@ export function PracticeSelect({
   let lastGroup = ''
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative min-w-0">
       {/* Значение для FormData: разметка формы не знает, что select заменён */}
       <input type="hidden" name={name} value={value} />
 
