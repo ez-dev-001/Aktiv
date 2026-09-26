@@ -57,8 +57,6 @@ const WORD: Record<Status, string> = { ok: 'ok', warn: 'увага', fail: 'по
 interface Counts {
   practiceCategory: number
   practice: number
-  quiz: number
-  withPrice: number
   withoutCategory: number
 }
 
@@ -220,7 +218,7 @@ export default async function SanityCheckPage() {
           name: 'Контент',
           status: 'warn',
           detail: 'датасет порожній',
-          fix: 'Запустіть `npm run seed` — скрипт створить категорії, практики й калькулятори з lib/content.ts. Для запису потрібен SANITY_API_WRITE_TOKEN з правами Editor.',
+          fix: 'Запустіть `npm run seed` — скрипт створить категорії, практики й команду з lib/content.ts. Для запису потрібен SANITY_API_WRITE_TOKEN з правами Editor.',
         })
       } else {
         checks.push({

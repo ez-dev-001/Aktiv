@@ -1,10 +1,11 @@
-import { categories as staticCategories, contacts as staticContacts, figures as staticFigures, formatPrice, journal, team as staticTeam, type Category, type PriceSpec } from '@/lib/content'
+import { categories as staticCategories, contacts as staticContacts, figures as staticFigures, journal, team as staticTeam, type Category } from '@/lib/content'
 import { staticAbout, staticHome, teamPhoto, type Contacts, type Figure, type HomeContent, type Post, type TeamMember } from '@/lib/sanity/content'
 import { Icon } from '@/components/site/Icon'
 import { ArrowLink, ButtonLink, Eyebrow } from '@/components/ui/Button'
 import { Counter } from '@/components/ui/Counter'
 import { Reveal } from '@/components/ui/Reveal'
 import { Logo } from '@/components/site/Logo'
+import { PracticeNote } from '@/components/site/PracticeNote'
 import { Photo, PhotoBand } from '@/components/site/Photo'
 import { Bold } from '@/components/ui/Bold'
 import { CookieSettingsLink } from '@/components/site/CookieConsent'
@@ -50,7 +51,7 @@ export function Hero({ home = staticHome }: { home?: HomeContent }) {
           <ButtonLink href="#contact" arrow>
             {home.heroCtaPrimary}
           </ButtonLink>
-          <ButtonLink href="#prices" variant="ghostDark">
+          <ButtonLink href="#practices" variant="ghostDark">
             {home.heroCtaSecondary}
           </ButtonLink>
         </div>
@@ -257,6 +258,7 @@ const FALLBACK_TEAM: TeamMember[] = staticTeam.map((m) => ({
   name: m.name,
   role: m.role,
   highlight: m.key,
+  ...(m.practice ? { practice: m.practice } : {}),
 }))
 
 /**
@@ -344,34 +346,13 @@ export function Team({ members = FALLBACK_TEAM }: { members?: TeamMember[] }) {
                   {m.role}
                 </p>
               </div>
+              <PracticeNote text={m.practice} dark={m.highlight} />
             </article>
           ))}
         </div>
         {/* TODO(client): фото 10 адвокатов в retina. Пока монограммы — выглядит дороже фотостока. */}
       </div>
     </section>
-  )
-}
-
-/* ═══════════════════════ ПРАЙС ═══════════════════════ */
-export function PriceTable({ rows }: { rows: { service: string; price: PriceSpec }[] }) {
-  return (
-    <div className="border-t border-hair">
-      {rows.map((r) => {
-        const p = formatPrice(r.price)
-        return (
-          <div key={r.service} className="grid grid-cols-1 items-baseline gap-x-5 gap-y-1.5 border-b border-hair-soft py-4 min-[420px]:grid-cols-[1fr_auto]">
-            <span className="text-[15.5px] font-normal leading-snug text-ink">{r.service}</span>
-            <span className="font-mono text-[13.5px] tabular-nums text-accent-ink min-[420px]:whitespace-nowrap">{p}</span>
-            {r.price.note && (
-              <span className="col-span-full font-mono text-[10px] uppercase tracking-[0.1em] text-slate-2">
-                {r.price.note}
-              </span>
-            )}
-          </div>
-        )
-      })}
-    </div>
   )
 }
 
@@ -450,11 +431,6 @@ export function Footer({ contacts = staticContacts }: { contacts?: Contacts }) {
                   </a>
                 </li>
               ))}
-              <li>
-                <a href="#prices" className="inline-flex min-h-11 items-center hover:text-accent-soft">
-                  Вартість послуг
-                </a>
-              </li>
             </ul>
           </div>
           <div>
@@ -464,6 +440,7 @@ export function Footer({ contacts = staticContacts }: { contacts?: Contacts }) {
                 { h: '/about', l: 'Про компанію' },
                 { h: '/#credo', l: 'Кредо' },
                 { h: '/team', l: 'Команда' },
+                { h: '/career', l: 'Карʼєра' },
                 { h: '/blog', l: 'Блог' },
                 { h: '/#contact', l: 'Контакти' },
               ].map((x) => (

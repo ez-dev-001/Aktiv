@@ -96,8 +96,13 @@ export function saveConsent(c: Consent): StoredConsent {
      триггер «дозагрузить теги сразу после согласия», не дожидаясь
      следующей страницы. */
   w.dataLayer?.push({ event: 'consent_update', consent_analytics: c.analytics, consent_marketing: c.marketing })
+  /* Для компонентов сайта, которые ждут согласия (карта в карточке офиса). */
+  window.dispatchEvent(new CustomEvent(CONSENT_CHANGED_EVENT))
   return stored
 }
+
+/** Выбор в баннере сохранён — можно перепроверить readConsent(). */
+export const CONSENT_CHANGED_EVENT = 'aktiv:consent-changed'
 
 /** Событие, по которому баннер открывается снова — из ссылки в футере. */
 export const OPEN_CONSENT_EVENT = 'aktiv:open-consent'

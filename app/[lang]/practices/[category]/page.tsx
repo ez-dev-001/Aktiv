@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
-import { categories as staticCategories, formatPrice } from '@/lib/content'
-import { getCategories, getQuizzes } from '@/lib/sanity/content'
+import { categories as staticCategories } from '@/lib/content'
+import { getCategories } from '@/lib/sanity/content'
 import { Icon } from '@/components/site/Icon'
 import { PageHead, PageShell, SectionHead } from '@/components/site/PageShell'
 import { ButtonLink } from '@/components/ui/Button'
-import { Quiz } from '@/components/quiz/Quiz'
-import { pickQuizzes } from '@/lib/quizzes'
 import { categoryPhoto } from '@/lib/sanity/image'
 import { TrustedBy } from '@/components/home/TrustedBy'
 
@@ -44,25 +42,17 @@ export default async function CategoryPage({
   params: Promise<{ lang: string; category: string }>
 }) {
   const { lang, category } = await params
-  const [{ data }, quizzes] = await Promise.all([getCategories(lang), getQuizzes(lang)])
+  const { data } = await getCategories(lang)
   const cat = data.find((c) => c.slug === category)
   if (!cat) notFound()
-
-  /* Калькулятор — тот, что выбран у категории, или любой, привязанный
-     к ней. Нет ни одного — блока «Вартість» нет: пустой квиз хуже,
-     чем никакого. */
-  const quizSets = pickQuizzes(quizzes.data, { categoryQuiz: cat.quiz, category })
-  const hasQuiz = quizSets.length > 0
 
   const stations = [
     { id: 'head', label: cat.title.split(/\s|,/)[0] ?? 'Практика' },
     { id: 'directions', label: 'Напрями' },
-    ...(hasQuiz ? [{ id: 'price', label: 'Вартість' }] : []),
     { id: 'trust', label: 'Довіра' },
     { id: 'contact', label: 'Консультація' },
   ]
 
-  const priced = cat.practices.filter((p) => p.price)
   const photo = categoryPhoto(cat)
 
   return (
@@ -74,25 +64,13 @@ export default async function CategoryPage({
         lede={cat.excerpt}
         aside={
           <div className={`grid gap-4 border-t-2 pt-[22px] ${photo ? 'border-white/70' : 'border-ink'}`}>
-            {cat.priceHint && (
-              <div className="grid gap-[3px]">
-                <span className={`font-mono text-[9.5px] uppercase tracking-[0.14em] ${photo ? 'text-white/55' : 'text-slate-2'}`}>
-                  Вартість від
-                </span>
-                <span className={`font-serif text-[clamp(22px,3vw,30px)] font-semibold leading-tight ${photo ? 'text-accent-soft' : 'text-accent-ink'}`}>
-                  {cat.priceHint.split('·')[0]?.trim()}
-                </span>
-              </div>
-            )}
             <div className="flex flex-wrap gap-2.5">
               <ButtonLink href="#contact" arrow>
                 Консультація
               </ButtonLink>
-              {hasQuiz && (
-                <ButtonLink href="#price" variant={photo ? 'ghostDark' : 'ghost'}>
-                  Розрахувати
-                </ButtonLink>
-              )}
+              <ButtonLink href="#directions" variant={photo ? 'ghostDark' : 'ghost'}>
+                Усі напрями
+              </ButtonLink>
             </div>
           </div>
         }
@@ -104,11 +82,10 @@ export default async function CategoryPage({
           <SectionHead
             eyebrow="Напрями"
             title={`Що входить у «${cat.title.toLowerCase()}»`}
-            lede="Кожен напрям — окрема послуга з власною ціною та відповідальним адвокатом."
+            lede="Кожен напрям — окрема послуга з відповідальним адвокатом."
           />
           <ul className="grid list-none gap-px border border-hair bg-hair p-0 min-[700px]:grid-cols-2">
             {cat.practices.map((p) => {
-              const price = formatPrice(p.price)
               return (
                 <li key={p.slug} className="bg-white">
                   <a
@@ -127,39 +104,14 @@ export default async function CategoryPage({
                     {p.excerpt && (
                       <span className="max-w-[46ch] text-[13.5px] leading-snug text-slate">{p.excerpt}</span>
                     )}
-                    {price && (
-                      <span className="mt-auto font-mono text-[12px] text-accent-ink">{price}</span>
-                    )}
                   </a>
                 </li>
               )
             })}
           </ul>
 
-          {priced.length === 0 && (
-            <p className="mt-5 text-[13.5px] text-slate-2">
-              Вартість у цій категорії визначається за результатами консультації: обсяг роботи надто
-              різний, щоб називати цифру наосліп.
-            </p>
-          )}
         </div>
       </section>
-
-      {/* ── ВАРТІСТЬ І КАЛЬКУЛЯТОР ── */}
-      {hasQuiz && (
-        <section id="price" className="py-[clamp(52px,7vw,104px)]">
-          <div className="shell inner">
-            <SectionHead
-              eyebrow="Вартість"
-              title="Чотири питання — і діапазон вартості для вашої ситуації"
-              lede="Прайс показує нижню межу. Калькулятор уточнює її під конкретні обставини: борги, активи, строки."
-            />
-            <div className="max-w-[640px]">
-              <Quiz sets={quizSets} />
-            </div>
-          </div>
-        </section>
-      )}
 
       <TrustedBy lang={lang} />
 

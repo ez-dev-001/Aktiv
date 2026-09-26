@@ -11,7 +11,6 @@ export interface MenuCategory {
   slug: string
   title: string
   icon: IconName | string
-  priceHint?: string
   practices: { slug: string; title: string }[]
 }
 
@@ -20,6 +19,5 @@ export const toMenu = (cats: Category[]): MenuCategory[] =>
     slug: c.slug,
     title: c.title,
     icon: c.icon,
-    ...(c.priceHint ? { priceHint: c.priceHint } : {}),
     practices: (c.practices ?? []).map((p) => ({ slug: p.slug, title: p.title })),
   }))

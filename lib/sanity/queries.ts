@@ -3,11 +3,10 @@ import { groq } from 'next-sanity'
 /**
  * GROQ-запросы.
  *
- * ВАЖНО про price: внутри priceSpec поля note и percentBase — это
- * localeString, то есть объекты { _type, ua, en, ru }. Проецировать
- * `price` целиком нельзя: наружу уедет объект, а компонент ждёт строку,
- * и React упадёт с «Objects are not valid as a React child».
- * Поэтому price разбирается по полям, а локализованные — через coalesce.
+ * ВАЖНО: локализованные поля (localeString) — это объекты
+ * { _type, ua, en }. Проецировать их целиком нельзя: наружу уедет
+ * объект, а компонент ждёт строку, и React упадёт с «Objects are not
+ * valid as a React child». Поэтому — через coalesce.
  *
  * coalesce(field[$lang], field.ua) — правило локализации всего сайта:
  * если перевода нет, показываем украинский, а не пустоту. Именно поэтому
@@ -21,7 +20,6 @@ export const CATEGORIES_QUERY = groq`
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
   icon,
   order,
-  "quiz": quiz->slug.current,
   "photo": photo{
     asset, crop, hotspot, alt,
     "lqip": asset->metadata.lqip,
@@ -32,24 +30,7 @@ export const CATEGORIES_QUERY = groq`
     "title": coalesce(title[$lang], title.ua),
     "excerpt": coalesce(excerpt[$lang], excerpt.ua),
     featured,
-    price {
-      mode, amount, amountMax, percent, unit, showInPriceList,
-      "percentBase": coalesce(percentBase[$lang], percentBase.ua),
-      "note":        coalesce(note[$lang], note.ua)
-    },
     "legacyPath": legacyPaths[0]
-  }
-}`
-
-export const PRICE_LIST_QUERY = groq`
-*[_type == "practice" && defined(price) && price.showInPriceList != false] | order(
-  select(price.mode == "fixed" => price.amount, 0) desc
-) {
-  "service": coalesce(title[$lang], title.ua),
-  price {
-    mode, amount, amountMax, percent, unit, showInPriceList,
-    "percentBase": coalesce(percentBase[$lang], percentBase.ua),
-    "note":        coalesce(note[$lang], note.ua)
   }
 }`
 
@@ -57,8 +38,6 @@ export const PRICE_LIST_QUERY = groq`
 export const COUNTS_QUERY = groq`{
   "practiceCategory": count(*[_type == "practiceCategory"]),
   "practice":         count(*[_type == "practice"]),
-  "quiz":             count(*[_type == "quiz"]),
-  "withPrice":        count(*[_type == "practice" && defined(price)]),
   "withoutCategory":  count(*[_type == "practice" && !defined(category)])
 }`
 
@@ -86,8 +65,8 @@ export const PING_QUERY = groq`count(*[!(_id in path("drafts.**"))])`
  * Черновики видны только с токеном: без него drafts всегда 0.
  */
 export const DRAFTS_QUERY = groq`{
-  "published": count(*[!(_id in path("drafts.**")) && _type in ["practiceCategory","practice","post","teamMember","quiz","siteSettings","homePage","aboutPage","teamPage"]]),
-  "drafts":    count(*[_id in path("drafts.**") && _type in ["practiceCategory","practice","post","teamMember","quiz","siteSettings","homePage","aboutPage","teamPage"]]),
+  "published": count(*[!(_id in path("drafts.**")) && _type in ["practiceCategory","practice","post","teamMember","siteSettings","homePage","aboutPage","teamPage"]]),
+  "drafts":    count(*[_id in path("drafts.**") && _type in ["practiceCategory","practice","post","teamMember","siteSettings","homePage","aboutPage","teamPage"]]),
   "byType": {
     "practiceCategory": count(*[_type == "practiceCategory" && !(_id in path("drafts.**"))]),
     "practice":         count(*[_type == "practice" && !(_id in path("drafts.**"))]),
@@ -130,6 +109,12 @@ export const POSTS_QUERY = groq`
  * photo.asset->url отдаёт оригинал; параметры кадрирования вешаются
  * в JS, потому что размер зависит от места — карточка на главной
  * и крупный блок на /team просят разные ширины.
+ *
+ * areas — категории практик человека из двух мест: его поле
+ * «Практики» и практики, где он стоит «відповідальним адвокатом».
+ * Дубли и пустые убирает сайт (lib/sanity/content.ts, practiceLine).
+ * Названия категорий — на украинском: подпись короткая, а в EN-версии
+ * категории всё равно пока не переведены.
  */
 export const TEAM_QUERY = groq`
 *[_type == "teamMember"] | order(order asc) {
@@ -141,39 +126,12 @@ export const TEAM_QUERY = groq`
   phone,
   email,
   "bio": coalesce(bio[$lang], bio.ua),
-  "photoUrl": photo.asset->url
-}`
-
-/**
- * Калькуляторы.
- *
- * Возвращаем плоскую форму, максимально близкую к QuizConfig из
- * lib/quote.ts: веса, тексты и slug'и шагов. Сборка в QuizConfig
- * и QuizCopy делается в lib/sanity/content.ts, чтобы GROQ остался
- * читаемым, а движок расчёта не знал про Sanity вообще.
- *
- * id шагов и вариантов — slug'и: они уходят в dataLayer как
- * quiz_step_id и quiz_answer_id, и менять их после запуска нельзя.
- */
-export const QUIZZES_QUERY = groq`
-*[_type == "quiz" && defined(slug.current)] | order(_createdAt asc) {
-  "id": slug.current,
-  "category": category->slug.current,
-  "practice": coalesce(category->title[$lang], category->title.ua, title),
-  "heading": coalesce(heading[$lang], heading.ua),
-  "disclaimer": coalesce(resultNote[$lang], resultNote.ua),
-  spreadLow, spreadHigh, roundTo, floor,
-  "steps": steps[]{
-    "id": id.current,
-    "q": coalesce(question[$lang], question.ua),
-    "hint": coalesce(hint[$lang], hint.ua),
-    "options": options[]{
-      "id": id.current,
-      "label": coalesce(label[$lang], label.ua),
-      base, factor, add, successFeePercent,
-      "reason": coalesce(reason[$lang], reason.ua)
-    }
-  }
+  "photoUrl": photo.asset->url,
+  "practiceNote": coalesce(practiceNote[$lang], practiceNote.ua),
+  "areas": array::unique(
+    (practices[]->category->title.ua) +
+    (*[_type == "practice" && references(^._id)].category->title.ua)
+  )
 }`
 
 /** Контакты: один документ настроек на весь сайт. */
@@ -182,7 +140,12 @@ export const CONTACTS_QUERY = groq`
   phone,
   email,
   "address": coalesce(address[$lang], address.ua),
+  "street":  coalesce(street[$lang], street.ua),
+  "unit":    coalesce(unit[$lang], unit.ua),
+  "city":    coalesce(city[$lang], city.ua),
   "hours":   coalesce(hours[$lang], hours.ua),
+  mapQuery,
+  "officeHint": coalesce(officeHint[$lang], officeHint.ua),
   "messengers": messengers[]{ channel, href }
 }`
 
@@ -248,16 +211,9 @@ export const PRACTICE_QUERY = groq`
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
   icon,
   "body": coalesce(body[$lang], body.ua),
-  price {
-    mode, amount, amountMax, percent, unit, showInPriceList,
-    "percentBase": coalesce(percentBase[$lang], percentBase.ua),
-    "note":        coalesce(note[$lang], note.ua)
-  },
   "includes": includes[]{ "text": coalesce(@[$lang], @.ua) }.text,
-  "quiz": quiz->slug.current,
   "packages": packages[]{
     "name": coalesce(name[$lang], name.ua),
-    price,
     "audience": audience[]{ "text": coalesce(@[$lang], @.ua) }.text,
     "includes": includes[]{ "text": coalesce(@[$lang], @.ua) }.text,
     "note": coalesce(note[$lang], note.ua)
@@ -503,5 +459,51 @@ export const SITEMAP_QUERY = groq`{
   },
   "home":  *[_type == "homePage"][0]._updatedAt,
   "about": *[_type == "aboutPage"][0]._updatedAt,
-  "team":  *[_type == "teamPage"][0]._updatedAt
+  "team":  *[_type == "teamPage"][0]._updatedAt,
+  "career": *[_type in ["careerPage", "vacancy"]] | order(_updatedAt desc)[0]._updatedAt
+}`
+
+/** «Карʼєра»: текст страницы. Цитата — только если есть и текст, и автор. */
+export const CAREER_QUERY = groq`
+*[_type == "careerPage"][0] {
+  "headEyebrow":     coalesce(headEyebrow[$lang], headEyebrow.ua),
+  "headTitle":       coalesce(headTitle[$lang], headTitle.ua),
+  "headTitleAccent": coalesce(headTitleAccent[$lang], headTitleAccent.ua),
+  "headLede":        coalesce(headLede[$lang], headLede.ua),
+  "benefitsTitle":   coalesce(benefitsTitle[$lang], benefitsTitle.ua),
+  "benefits": benefits[]{
+    icon,
+    "title": coalesce(title[$lang], title.ua),
+    "text":  coalesce(text[$lang], text.ua)
+  },
+  "steps": steps[]{
+    "title":    coalesce(title[$lang], title.ua),
+    "text":     coalesce(text[$lang], text.ua),
+    "duration": coalesce(duration[$lang], duration.ua)
+  },
+  "quoteText": coalesce(quoteText[$lang], quoteText.ua),
+  "quoteAuthor": quoteAuthor->{
+    "name": coalesce(name[$lang], name.ua),
+    "role": coalesce(role[$lang], role.ua),
+    "photoUrl": photo.asset->url
+  },
+  "faq": faq[]{
+    "q": coalesce(q[$lang], q.ua),
+    "a": coalesce(a[$lang], a.ua)
+  },
+  "cvTitle": coalesce(cvTitle[$lang], cvTitle.ua),
+  "cvText":  coalesce(cvText[$lang], cvText.ua)
+}`
+
+/** Открытые вакансии. Снятая галочка «Відкрита» — вакансии на сайте нет. */
+export const VACANCIES_QUERY = groq`
+*[_type == "vacancy" && active != false] | order(order asc, _createdAt asc) {
+  "slug": _id,
+  "title": coalesce(title[$lang], title.ua),
+  department, format, employment, example,
+  "experience": coalesce(experience[$lang], experience.ua),
+  "summary":    coalesce(summary[$lang], summary.ua),
+  "weSeek":  weSeek[]{ "t": coalesce(@[$lang], @.ua) }.t,
+  "duties":  duties[]{ "t": coalesce(@[$lang], @.ua) }.t,
+  "weOffer": weOffer[]{ "t": coalesce(@[$lang], @.ua) }.t
 }`

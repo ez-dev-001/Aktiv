@@ -1,13 +1,15 @@
 import { SITE_URL } from '@/lib/site'
-import { FORMAT_LABEL, type Lead } from './types'
+import type { StoredFile } from './store'
+import type { Lead } from './types'
 import { formatPhone } from './validate'
 
 /**
- * Уведомление о новой заявке в Telegram.
+ * Уведомление о новом обращении в Telegram.
  *
- * Текст собирается всегда — его же CRM показывает в карточке заявки
- * как «так прийде в Telegram». Отправка — только когда заданы
+ * Текст собирается всегда — его же CRM показывает в карточке как
+ * «так прийде в Telegram». Отправка — только когда заданы
  * TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID; без них ничего не уходит.
+ * Резюме с файлом уходит документом, текст — подписью к нему.
  *
  * Разметка — HTML-режим Telegram: в нём экранируются всего три символа,
  * а в MarkdownV2 — восемнадцать, и любое «ТОВ «Ромашка» (Київ)» из
@@ -17,17 +19,18 @@ import { formatPhone } from './validate'
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export function telegramText(lead: Lead): string {
+  const head =
+    lead.type === 'candidate'
+      ? `📄 <b>Резюме</b>${lead.position ? ` · ${esc(lead.position)}` : ''}`
+      : `🟢 <b>Нова заявка</b>${lead.practiceTitle ? ` · ${esc(lead.practiceTitle)}` : ''}`
   const lines = [
-    lead.kind === 'order'
-      ? `🟢 <b>Заявка на послугу</b> · ${esc(lead.practiceTitle)}`
-      : `💬 <b>Безкоштовна консультація</b>${lead.format ? ` · ${FORMAT_LABEL[lead.format].toLowerCase()}` : ''}`,
-    ...(lead.kind === 'consultation' && lead.practiceTitle !== 'Ще не знаю' ? [`Тема: ${esc(lead.practiceTitle)}`] : []),
-    ...(lead.packageName ? [`Пакет: ${esc(lead.packageName)}`] : []),
+    head,
     '',
     `<b>${esc(lead.name)}</b>`,
     `📞 ${formatPhone(lead.phone)}`,
     ...(lead.email ? [`✉️ ${esc(lead.email)}`] : []),
-    ...(lead.quote ? ['', `💰 ${esc(lead.quote.label)}${lead.quote.complete ? '' : ' (не всі відповіді)'}`] : []),
+    ...(lead.packageName ? [`Варіант: ${esc(lead.packageName)}`] : []),
+    ...(lead.cvLink ? [`🔗 ${esc(lead.cvLink)}`] : []),
     ...(lead.message ? ['', `«${esc(lead.message.slice(0, 600))}${lead.message.length > 600 ? '…' : ''}»`] : []),
     '',
     `Джерело: ${esc(sourceLabel(lead))}`,
@@ -36,7 +39,7 @@ export function telegramText(lead: Lead): string {
   return lines.join('\n')
 }
 
-/** «Google Ads · court_search» / «google.com» / «прямий захід» */
+/** «google · cpc · court_search» / «google.com» / «прямий захід» */
 export function sourceLabel(lead: Lead): string {
   const u = lead.source.utm
   if (u?.source) return [u.source, u.medium, u.campaign].filter(Boolean).join(' · ')
@@ -44,20 +47,34 @@ export function sourceLabel(lead: Lead): string {
   return 'прямий захід'
 }
 
-export async function notifyNewLead(lead: Lead): Promise<'sent' | 'skipped' | 'failed'> {
+export const telegramConfigured = () => Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID)
+
+export async function notifyNewLead(lead: Lead, file?: StoredFile): Promise<'sent' | 'skipped' | 'failed'> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   const chat = process.env.TELEGRAM_CHAT_ID
   if (!token || !chat) return 'skipped'
+  const api = `https://api.telegram.org/bot${token}`
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: telegramText(lead), parse_mode: 'HTML', disable_web_page_preview: true }),
-      signal: AbortSignal.timeout(4000),
-    })
+    let res: Response
+    if (file) {
+      const body = new FormData()
+      body.set('chat_id', chat)
+      /* Подпись к документу — до 1024 символов. */
+      body.set('caption', telegramText(lead).slice(0, 1000))
+      body.set('parse_mode', 'HTML')
+      body.set('document', new Blob([file.data as BlobPart], { type: file.type || 'application/octet-stream' }), file.name)
+      res = await fetch(`${api}/sendDocument`, { method: 'POST', body, signal: AbortSignal.timeout(8000) })
+    } else {
+      res = await fetch(`${api}/sendMessage`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat, text: telegramText(lead), parse_mode: 'HTML', disable_web_page_preview: true }),
+        signal: AbortSignal.timeout(4000),
+      })
+    }
     return res.ok ? 'sent' : 'failed'
   } catch {
-    /* Telegram недоступен — заявка всё равно сохранена, это важнее. */
+    /* Telegram недоступен — обращение всё равно сохранено, это важнее. */
     return 'failed'
   }
 }

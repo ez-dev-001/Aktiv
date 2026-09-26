@@ -40,9 +40,9 @@ import { LOCALES, LOCALE_LABEL, localeHome } from '@/lib/i18n'
 /* Якорные ссылки работают только на главной, поэтому разделы,
    у которых есть своя страница, ведут на страницу. */
 const NAV = [
-  { href: '/#prices', label: 'Вартість' },
   { href: '/about', label: 'Про компанію' },
   { href: '/team', label: 'Команда' },
+  { href: '/career', label: 'Карʼєра' },
   { href: '/blog', label: 'Блог' },
   { href: '/#contact', label: 'Контакти' },
 ]
@@ -208,7 +208,11 @@ export function Header({
         className={`sticky top-[env(safe-area-inset-top,0px)] z-[80] ${
           animate ? 'transition-[background-color,box-shadow,backdrop-filter] duration-[420ms] ease-[cubic-bezier(.4,0,.2,1)]' : ''
         } ${
-          light ? 'bg-transparent' : 'bg-paper/[0.88] backdrop-blur-[14px] backdrop-saturate-150'
+          light
+            ? /* Прозрачная шапка над фото: лёгкое затемнение сверху, чтобы
+                 малиновый логотип и белое меню читались на любом кадре. */
+              'bg-transparent bg-[linear-gradient(180deg,rgb(20_11_51/0.42)_0%,rgb(20_11_51/0)_100%)]'
+            : 'bg-paper/[0.88] backdrop-blur-[14px] backdrop-saturate-150'
         } ${
           !light && stuck
             ? 'shadow-[0_1px_0_var(--color-hair-soft),0_1px_18px_-8px_rgb(20_11_51/0.12)]'
@@ -226,7 +230,7 @@ export function Header({
             aria-label="АКТИВ, на головну"
             className="mr-auto flex min-h-11 shrink-0 items-center"
           >
-            <Logo light={light} />
+            <Logo />
           </a>
 
           <nav
@@ -371,7 +375,7 @@ export function Header({
                     onClick={() => setMega(false)}
                     className="mt-3 block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
                   >
-                    {c.priceHint ?? `Усі ${c.practices.length} напрямів`}
+                    Усі {c.practices.length} напрямів →
                   </a>
                 </div>
               ))}
@@ -438,7 +442,7 @@ export function Header({
                         onClick={() => setMega(false)}
                         className="mt-3 inline-block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
                       >
-                        {c.priceHint ?? `Усі ${c.practices.length} напрямів`} →
+                        Усі {c.practices.length} напрямів →
                       </a>
                     </div>
                   )

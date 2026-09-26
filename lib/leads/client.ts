@@ -11,9 +11,7 @@ import type { LeadReceipt, LeadSource } from './types'
  */
 
 const ATTR = 'aktiv:attr'
-const QUIZ = 'aktiv:quiz'
 const RECEIPT = 'aktiv:receipt'
-export const QUIZ_HANDOFF_EVENT = 'aktiv:quiz-handoff'
 
 function read<T>(key: string): T | null {
   try {
@@ -29,11 +27,6 @@ function write(key: string, value: unknown) {
   } catch {
     /* хранилище недоступно — просто без этого */
   }
-}
-function drop(key: string) {
-  try {
-    sessionStorage.removeItem(key)
-  } catch {}
 }
 
 /* ═══════════ ИСТОЧНИК ═══════════
@@ -67,31 +60,8 @@ export function captureAttribution() {
 
 export const readAttribution = () => read<Attribution>(ATTR) ?? {}
 
-/* ═══════════ КАЛЬКУЛЯТОР → ФОРМА ═══════════
-   Калькулятор стоит на страницах практик, форма — на главной. Ответы
-   переезжают через sessionStorage; сумму форма НЕ передаёт — только
-   ответы, а сервер пересчитывает сам (см. lib/quote.ts). */
-
-export interface QuizHandoff {
-  quizId: string
-  practice: string
-  /** slug категории — чтобы форма сама подставила направление */
-  category?: string
-  answers: Record<string, string>
-  eventId: string | null
-  /** только для показа в форме; в заявку не идёт */
-  label: string
-}
-
-export function saveQuizHandoff(h: QuizHandoff) {
-  write(QUIZ, h)
-  window.dispatchEvent(new CustomEvent(QUIZ_HANDOFF_EVENT))
-}
-export const readQuizHandoff = () => read<QuizHandoff>(QUIZ)
-export const clearQuizHandoff = () => drop(QUIZ)
-
 /* ═══════════ СТРАНИЦА «ДЯКУЄМО» ═══════════
-   Короткая квитанция: имя, направление, сумма. Без телефона и почты —
+   Короткая квитанция: имя и направление. Без телефона и почты —
    их незачем показывать повторно и незачем хранить дольше отправки. */
 
 export const saveReceipt = (r: LeadReceipt) => write(RECEIPT, r)

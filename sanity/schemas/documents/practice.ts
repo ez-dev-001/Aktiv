@@ -7,7 +7,6 @@ import { iconField } from '../objects/icon'
  *
  * Отличия от старого сайта, где практика была обычным постом:
  *   • есть категория — три блока с главной стали настоящими разделами;
- *   • есть цена (priceSpec), и она правится в студии;
  *   • есть «що входить», етапи и FAQ — структура услуги, а не простыня текста;
  *   • есть ответственный адвокат — на старом сайте под каждой практикой
  *     стоял Шайко, включая военные и семейные дела.
@@ -18,7 +17,7 @@ export const practice = defineType({
   type: 'document',
   groups: [
     { name: 'content', title: 'Контент', default: true },
-    { name: 'price', title: 'Вартість' },
+    { name: 'variants', title: 'Варіанти послуги' },
     { name: 'seo', title: 'SEO' },
   ],
   fields: [
@@ -93,19 +92,20 @@ export const practice = defineType({
         r.min(1).warning('Під практикою має стояти конкретний адвокат, а не керуючий партнер за замовчуванням'),
     }),
 
-    /* ── ВАРТІСТЬ ── */
+    /* ── ВАРІАНТИ ПОСЛУГИ ──
+       Цен на сайте нет: стоимость называют после консультации. Поля
+       цены убраны из схемы. Если в старых документах они остались,
+       их стирает `npm run cleanup:prices` (см. scripts/cleanup-prices.mjs). */
     defineField({
-      name: 'packages', title: 'Тарифні пакети', type: 'array', group: 'price',
+      name: 'packages', title: 'Варіанти послуги', type: 'array', group: 'variants',
       description:
         'Якщо послуга має кілька варіантів — напр. «Резидент» і «З нерезидентом» ' +
-        'в альтернативній ліквідації. Коли пакети є, на сторінці зʼявляється окремий блок, ' +
-        'а поле «Вартість» лишається нижньою межею для картки й прайсу.',
+        'в альтернативній ліквідації: кому підходить і що входить. Цін на сайті немає.',
       of: [
         defineArrayMember({
           type: 'object', name: 'package',
           fields: [
-            defineField({ name: 'name', title: 'Назва пакета', type: 'localeString', validation: (r) => r.required() }),
-            defineField({ name: 'price', title: 'Ціна, ₴', type: 'number', validation: (r) => r.required() }),
+            defineField({ name: 'name', title: 'Назва варіанта', type: 'localeString', validation: (r) => r.required() }),
             defineField({
               name: 'audience', title: 'Кому підходить', type: 'array',
               of: [defineArrayMember({ type: 'localeString', name: 'item' })],
@@ -116,22 +116,9 @@ export const practice = defineType({
             }),
             defineField({ name: 'note', title: 'Примітка', type: 'localeString' }),
           ],
-          preview: {
-            select: { title: 'name.ua', subtitle: 'price' },
-            prepare: ({ title, subtitle }) => ({ title, subtitle: subtitle ? `${subtitle} ₴` : '' }),
-          },
+          preview: { select: { title: 'name.ua', subtitle: 'note.ua' } },
         }),
       ],
-    }),
-    defineField({
-      name: 'price', title: 'Вартість', type: 'priceSpec', group: 'price',
-      description: 'Показується на сторінці практики й на /prices/. Нічого не хардкодиться.',
-    }),
-    defineField({
-      name: 'quiz', title: 'Калькулятор', type: 'reference', to: [{ type: 'quiz' }], group: 'price',
-      description:
-        'Необовʼязково. Якщо не заповнено — береться калькулятор категорії. ' +
-        'Заповнюйте, лише коли практиці потрібен свій набір питань.',
     }),
 
     /* ── SEO ── */
@@ -165,14 +152,7 @@ export const practice = defineType({
   ],
 
   preview: {
-    select: { title: 'title.ua', cat: 'category.title.ua', mode: 'price.mode', amount: 'price.amount', pct: 'price.percent' },
-    prepare({ title, cat, mode, amount, pct }) {
-      const price =
-        mode === 'onRequest' ? 'за запитом'
-        : mode === 'percent' ? `${pct ?? '—'} %`
-        : typeof amount === 'number' ? `від ${new Intl.NumberFormat('uk-UA').format(amount)} ₴`
-        : 'ціну не вказано'
-      return { title, subtitle: `${cat ?? 'без категорії'} · ${price}` }
-    },
+    select: { title: 'title.ua', subtitle: 'category.title.ua' },
+    prepare: ({ title, subtitle }) => ({ title, subtitle: subtitle ?? 'без категорії' }),
   },
 })

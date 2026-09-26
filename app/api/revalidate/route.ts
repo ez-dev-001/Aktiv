@@ -27,7 +27,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  *      URL      https://ВАШ-ДОМЕН/api/revalidate
  *      Dataset  production
  *      Trigger  Create, Update, Delete
- *      Filter   _type in ["practice","practiceCategory","post","teamMember","siteSettings","quiz","homePage","aboutPage","teamPage"]
+ *      Filter   _type in ["practice","practiceCategory","post","teamMember","siteSettings","vacancy","careerPage","homePage","aboutPage","teamPage"]
  *      HTTP method POST
  *      HTTP Headers  x-revalidate-secret: <тот же секрет>
  * 3. Проверить: открыть URL в браузере — маршрут отвечает на GET
@@ -35,7 +35,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  */
 
 /** Типы, правка которых что-то меняет на сайте. */
-const KNOWN = ['practice', 'practiceCategory', 'post', 'teamMember', 'siteSettings', 'quiz', 'homePage', 'aboutPage', 'teamPage'] as const
+const KNOWN = ['practice', 'practiceCategory', 'post', 'teamMember', 'siteSettings', 'vacancy', 'careerPage', 'homePage', 'aboutPage', 'teamPage'] as const
 
 /**
  * Маршруты, собранные заранее.

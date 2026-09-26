@@ -81,7 +81,6 @@ const TYPES = [
   'aboutPage',
   'teamPage',
   'siteSettings',
-  'quiz',
   'practice',
   'practiceCategory',
   'post',

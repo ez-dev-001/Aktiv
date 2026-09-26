@@ -13,10 +13,10 @@
     "prestudio": "node scripts/check-schema.mjs",
     "studio:build": "sanity build",
     "seed": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs",
-    "check": "npm run typecheck && npm run check:schema && npm run check:groq && npm run check:quiz",
+    "check": "npm run typecheck && npm run check:schema && npm run check:groq",
     "check:schema": "node scripts/check-schema.mjs",
     "check:groq": "node scripts/check-groq.mjs",
-    "check:quiz": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-quiz.mjs",
+    "cleanup:prices": "node scripts/cleanup-prices.mjs",
     "sanity:doctor": "node scripts/doctor.mjs",
     "term:diapazon": "node scripts/replace-term.mjs"
   },

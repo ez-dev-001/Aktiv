@@ -394,3 +394,11 @@
 
 .thanks-rise { animation: thanks-rise 720ms var(--ease-out-quint) both; }
 @keyframes thanks-rise { from { opacity: 0; transform: translateY(14px); } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ВАКАНСИИ — раскрытие карточки
+   <details> открывается мгновенно; содержимое мягко проявляется,
+   чтобы три колонки не «выстреливали» на экран.
+   ═══════════════════════════════════════════════════════════════════ */
+.vacancy[open] .vacancy-body { animation: vacancy-in 420ms var(--ease-out-quint) both; }
+@keyframes vacancy-in { from { opacity: 0; transform: translateY(-6px); } }

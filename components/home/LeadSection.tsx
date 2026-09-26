@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import {
   categories as staticCategories,
   contacts as staticContacts,
-  formatPrice,
   type Category,
 } from '@/lib/content'
 import type { Contacts } from '@/lib/sanity/content'
@@ -12,18 +11,11 @@ import { track, trackMessenger, trackPhone, newEventId } from '@/lib/analytics'
 import { Button, Eyebrow } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
 import { Icon } from '@/components/site/Icon'
+import { OfficeMapCard } from '@/components/site/OfficeMapCard'
 import { PracticeSelect, buildOptions } from '@/components/ui/PracticeSelect'
 import { submitLead } from '@/app/actions/lead'
-import {
-  QUIZ_HANDOFF_EVENT,
-  captureAttribution,
-  clearQuizHandoff,
-  readAttribution,
-  readQuizHandoff,
-  saveReceipt,
-  type QuizHandoff,
-} from '@/lib/leads/client'
-import { FORMATS, FORMAT_LABEL, type ConsultFormat, type FieldErrors, type LeadKind } from '@/lib/leads/types'
+import { captureAttribution, readAttribution, saveReceipt } from '@/lib/leads/client'
+import type { FieldErrors } from '@/lib/leads/types'
 import { validateLead } from '@/lib/leads/validate'
 
 /**
@@ -37,24 +29,25 @@ import { validateLead } from '@/lib/leads/validate'
  * ограничение частоты по IP в server action.
  *
  * ── Путь заявки ──
- * submitLead (app/actions/lead.ts) проверяет поля, пересчитывает сумму
- * калькулятора и пишет заявку в хранилище (lib/leads/store.ts — пока
- * демо в памяти, дальше Firestore). При успехе — переход на страницу
+ * submitLead (app/actions/lead.ts) проверяет поля и пишет заявку в CRM
+ * (lib/leads/store.ts — пока демо в памяти) и в Telegram. При успехе —
+ * переход на страницу
  * «Дякуємо»: у неё свой адрес, и именно его GTM и реклама считают
  * конверсией. Счёт по «кнопка нажата» врёт: нажатие с ошибкой в
  * телефоне конверсией не является.
  *
  * ── Что форма знает сама ──
- *  • расчёт калькулятора — если человек пришёл из него (sessionStorage);
- *  • направление — из ?practice= в адресе: так ведут кнопки
- *    «Отримати консультацію» со страниц практик;
+ *  • направление и вариант услуги — из ?practice= и ?package= в адресе:
+ *    так ведут кнопки «Отримати консультацію» и «Обрати цей варіант»
+ *    со страниц практик;
  *  • источник визита — UTM и страница входа (lib/leads/client.ts).
  */
 
 const FIELD =
   'w-full rounded-[10px] border-0 bg-white/[0.055] px-4 py-3.5 font-sans text-[15.5px] font-light text-white ' +
   'shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] transition-shadow duration-200 ' +
-  'placeholder:text-on-dark-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent)] focus:outline-none'
+  'placeholder:text-on-dark-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent)] focus:outline-none ' +
+  'aria-[invalid=true]:shadow-[inset_0_0_0_1.5px_var(--color-accent-soft)]'
 
 const LABEL = 'font-mono text-[9.5px] uppercase tracking-[0.13em] text-on-dark-2'
 
@@ -72,12 +65,6 @@ export function LeadSection({
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, start] = useTransition()
   const [done, setDone] = useState(false)
-  const [handoff, setHandoff] = useState<QuizHandoff | null>(null)
-  /* Консультация по умолчанию: это самый частый и самый мягкий шаг.
-     Заявку на услугу форма выбирает сама, если человек пришёл из
-     калькулятора или кнопкой «Обрати цей варіант» с пакетом. */
-  const [kind, setKind] = useState<LeadKind>('consultation')
-  const [format, setFormat] = useState<ConsultFormat | ''>('')
   const [pkg, setPkg] = useState<string | null>(null)
   const fieldA11y = fieldA11yFor(errors)
 
@@ -99,33 +86,17 @@ export function LeadSection({
   const options = useMemo(() => buildOptions(categories), [categories])
 
   const chosen = index.get(practice)
-  const chosenPrice = formatPrice(chosen?.practice?.price)
 
-  /* Направление из адреса и расчёт из калькулятора. Читаются после
-     монтирования: на сервере ни адресной строки, ни sessionStorage нет. */
+  /* Направление и вариант услуги из адреса: так ведут кнопки
+     «Отримати консультацію» и «Обрати цей варіант» со страниц практик.
+     Читаются после монтирования: на сервере адресной строки нет. */
   useEffect(() => {
     captureAttribution()
     const qs = new URLSearchParams(window.location.search)
     const fromUrl = qs.get('practice')
     const pkgFromUrl = qs.get('package')?.slice(0, 80) || null
-    if (qs.get('kind') === 'order' || pkgFromUrl) setKind('order')
     if (pkgFromUrl) setPkg(pkgFromUrl)
-    const known = (key: string | null | undefined) => (key && index.has(key) ? key : null)
-
-    const applyHandoff = () => {
-      const h = readQuizHandoff()
-      setHandoff(h)
-      if (h) setKind('order')
-      if (h?.category) {
-        const k = known(`cat:${h.category}`)
-        if (k) setPractice((cur) => (cur === 'unknown' ? k : cur))
-      }
-    }
-    const k = known(fromUrl)
-    if (k) setPractice(k)
-    applyHandoff()
-    window.addEventListener(QUIZ_HANDOFF_EVENT, applyHandoff)
-    return () => window.removeEventListener(QUIZ_HANDOFF_EVENT, applyHandoff)
+    if (fromUrl && index.has(fromUrl)) setPractice(fromUrl)
   }, [index])
 
   function onFirstInput() {
@@ -161,18 +132,11 @@ export function LeadSection({
       return
     }
 
-    const eventId = handoff?.eventId ?? newEventId('f')
+    const eventId = newEventId('f')
     fd.set('event_id', eventId)
-    fd.set('form_location', handoff ? 'quiz_result' : 'contact_section')
-    fd.set('kind', kind)
-    if (kind === 'consultation' && format) fd.set('format', format)
-    if (kind === 'order' && pkg) fd.set('package', pkg)
+    if (pkg) fd.set('package', pkg)
     fd.set('page', window.location.pathname)
     fd.set('attribution', JSON.stringify(readAttribution()))
-    if (handoff) {
-      fd.set('quiz_id', handoff.quizId)
-      fd.set('quiz_answers', JSON.stringify(handoff.answers))
-    }
 
     setFormError(null)
     start(async () => {
@@ -193,20 +157,10 @@ export function LeadSection({
          сервера: заявка, которую он отклонил, конверсией не считается. */
       const picked = index.get(String(fd.get('practice') ?? ''))
       const practiceName = picked?.title ?? 'Ще не знаю'
-      /* lead_type разводит два вида обращений в GA4 и рекламе: запись
-         на бесплатную консультацию и заявка на услугу стоят по-разному,
-         и оптимизировать кампании на их сумму нельзя. */
-      track('form_submit', {
-        form_location: handoff ? 'quiz_result' : 'contact_section',
-        lead_type: kind,
-        practice: practiceName,
-        event_id: eventId,
-        currency: 'UAH',
-      })
-      if (kind === 'consultation') track('consultation_request', { practice: practiceName, event_id: eventId })
+      track('form_submit', { form_location: 'contact_section', practice: practiceName, event_id: eventId })
+      track('consultation_request', { practice: practiceName, event_id: eventId })
 
       saveReceipt(res.receipt)
-      clearQuizHandoff()
       setDone(true)
       const prefix = window.location.pathname.startsWith('/en') ? '/en' : ''
       window.location.assign(`${prefix}/dyakuyemo`)
@@ -225,7 +179,7 @@ export function LeadSection({
               правило кредо.
             </p>
 
-            <dl className="mt-[38px] grid gap-[22px]">
+            <dl className="mt-[38px] grid gap-x-6 gap-y-[22px] min-[480px]:grid-cols-2">
               <div className="grid gap-1">
                 <dt className={LABEL}>Телефон</dt>
                 <dd className="m-0 font-serif text-[19px] font-semibold leading-snug text-white">
@@ -241,11 +195,7 @@ export function LeadSection({
                   <a href={`mailto:${contacts.email}`}>{contacts.email}</a>
                 </dd>
               </div>
-              <div className="grid gap-1">
-                <dt className={LABEL}>Офіс</dt>
-                <dd className="m-0 font-serif text-[19px] font-semibold text-white">{contacts.address}</dd>
-              </div>
-              <div className="grid gap-1">
+              <div className="grid gap-1 min-[480px]:col-span-2">
                 <dt className={LABEL}>Месенджери</dt>
                 <dd className="m-0 mt-1.5 flex flex-wrap gap-2">
                   {contacts.messengers.map((m) => (
@@ -264,46 +214,6 @@ export function LeadSection({
           </div>
 
           <form id="lead-form" onSubmit={onSubmit} onInput={onFirstInput} noValidate className="grid gap-3.5" aria-busy={pending}>
-            {/* ── Консультация или заявка ──
-                Два разных разговора, и в CRM — две разные воронки.
-                Человек выбирает сам; по умолчанию стоит консультация,
-                калькулятор и выбор пакета переключают на заявку. */}
-            <div role="radiogroup" aria-label="Що вам потрібно" className="grid gap-2 min-[560px]:grid-cols-2">
-              {(
-                [
-                  { k: 'consultation', t: 'Безкоштовна консультація', d: 'Розберемося в ситуації й скажемо, чи бачимо шлях' },
-                  { k: 'order', t: 'Замовити послугу', d: 'Знаєте, що потрібно, — назвемо вартість письмово' },
-                ] as const
-              ).map((o) => {
-                const on = kind === o.k
-                return (
-                  <button
-                    key={o.k}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    onClick={() => setKind(o.k)}
-                    className={`grid gap-1 rounded-[12px] border-0 px-4 py-3.5 text-left transition-[background-color,box-shadow] duration-200 ${
-                      on
-                        ? 'bg-white/[0.09] shadow-[inset_0_0_0_1.5px_var(--color-accent)]'
-                        : 'bg-transparent shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5 text-[15px] font-medium text-white">
-                      <span
-                        aria-hidden="true"
-                        className={`grid size-[16px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.5px_currentColor] ${on ? 'text-accent' : 'text-on-dark-2'}`}
-                      >
-                        {on && <span className="size-[7px] rounded-full bg-accent" />}
-                      </span>
-                      {o.t}
-                    </span>
-                    <span className="pl-[26px] text-[12.5px] leading-snug text-on-dark">{o.d}</span>
-                  </button>
-                )
-              })}
-            </div>
-
             <div className="grid gap-3.5 min-[560px]:grid-cols-2">
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-name" className={LABEL}>
@@ -325,7 +235,7 @@ export function LeadSection({
                 <label htmlFor="lead-email" className={LABEL}>
                   Пошта
                 </label>
-                <input id="lead-email" name="email" type="email" autoComplete="email" placeholder="щоб надіслати діапазон вартості письмово" className={FIELD} {...fieldA11y('email')} onChange={() => clearError('email')} />
+                <input id="lead-email" name="email" type="email" autoComplete="email" placeholder="необовʼязково" className={FIELD} {...fieldA11y('email')} onChange={() => clearError('email')} />
                 <FieldError id="email" text={errors.email} />
               </div>
               {/* ── выбор направления ──
@@ -333,17 +243,17 @@ export function LeadSection({
                   который пришёл за «банкрутством фізичних осіб», не мог
                   назвать свою услугу — лид приходил с размытой темой.
                   Теперь доступны все направления, сгруппированные по
-                  блокам, с поиском и с вилкой стоимости в самой строке.
+                  блокам, с поиском.
 
                   Нативный select это не умел: системная панель не
-                  стилизуется, цену в строку положить нельзя, поиска нет.
+                  стилизуется, поиска нет.
                   Почему собран свой listbox — подробно в PracticeSelect.
 
                   В каждой группе первой стоит строка «напрям уточнимо» —
                   для тех, кто знает блок, но не знает точной услуги. */}
               <div className="grid gap-[7px]">
                 <span id="lead-practice-label" className={LABEL}>
-                  {kind === 'consultation' ? 'Тема, якщо знаєте' : 'Послуга'}
+                  Напрям, якщо знаєте
                 </span>
                 <PracticeSelect
                   options={options}
@@ -353,25 +263,17 @@ export function LeadSection({
                 />
               </div>
             </div>
-            {/* Цена выбранного направления прямо под полем: человек
-                видит порядок суммы до отправки, а не после звонка.
-                Это третье правило кредо, применённое к форме. */}
-            {chosen && (
+            {/* Под полем — выбранное направление целиком и ссылка на
+                страницу услуги: в поле длинное название обрезается. */}
+            {chosen?.practice && (
               <p className="m-0 -mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[13px] leading-snug text-on-dark">
                 <span className="text-white">{chosen.title}</span>
-                {chosenPrice ? (
-                  <span className="font-mono text-accent-soft">{chosenPrice}</span>
-                ) : (
-                  <span className="text-on-dark-2">вартість — за результатами консультації</span>
-                )}
-                {chosen.practice && (
-                  <a
-                    href={`/practices/${chosen.category.slug}/${chosen.practice.slug}`}
-                    className="text-accent-soft underline decoration-accent-soft/40 underline-offset-2 hover:decoration-accent-soft"
-                  >
-                    про послугу
-                  </a>
-                )}
+                <a
+                  href={`/practices/${chosen.category.slug}/${chosen.practice.slug}`}
+                  className="text-accent-soft underline decoration-accent-soft/40 underline-offset-2 hover:decoration-accent-soft"
+                >
+                  про послугу
+                </a>
               </p>
             )}
 
@@ -383,11 +285,7 @@ export function LeadSection({
                 id="lead-message"
                 name="message"
                 rows={4}
-                placeholder={
-                  kind === 'consultation'
-                    ? 'Коротко: що сталося і яке питання хочете розібрати'
-                    : 'Що потрібно зробити, на якій стадії справа, які строки'
-                }
+                placeholder="Коротко: що сталося і яке питання хочете розібрати"
                 className={`${FIELD} min-h-[92px] resize-y`}
                 {...fieldA11y('message')}
                 onChange={() => clearError('message')}
@@ -401,68 +299,16 @@ export function LeadSection({
               <input id="lead-hp" name="company_url" type="text" tabIndex={-1} autoComplete="off" />
             </div>
 
-            {/* ── расчёт из калькулятора ──
-                Показываем, что сумма доехала, — иначе человек не знает,
-                видим ли мы его ответы, и пересказывает их в «Суть справи». */}
-            {/* Формат — только для консультации и необязательный: не
-                выбрали — уточним по телефону. */}
-            {kind === 'consultation' && (
-              <div className="grid gap-[7px]">
-                <span id="lead-format-label" className={LABEL}>
-                  Як зручніше
-                </span>
-                <div role="radiogroup" aria-labelledby="lead-format-label" className="flex flex-wrap gap-2">
-                  {FORMATS.map((f) => {
-                    const on = format === f
-                    return (
-                      <button
-                        key={f}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        onClick={() => setFormat(on ? '' : f)}
-                        className={`min-h-10 rounded-full border-0 px-4 text-[13.5px] transition-[background-color,box-shadow,color] ${
-                          on
-                            ? 'bg-accent text-white'
-                            : 'bg-transparent text-on-dark shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] hover:text-white'
-                        }`}
-                      >
-                        {FORMAT_LABEL[f]}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {kind === 'order' && pkg && (
+            {/* Вариант услуги, выбранный кнопкой «Обрати цей варіант». */}
+            {pkg && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[10px] bg-white/[0.055] px-4 py-3 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
-                <span className={LABEL}>Пакет</span>
+                <span className={LABEL}>Варіант</span>
                 <span className="text-[13.5px] text-white">{pkg}</span>
                 <button
                   type="button"
                   onClick={() => setPkg(null)}
                   className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-[12px] text-on-dark-2 transition-colors hover:text-white"
-                  aria-label="Прибрати пакет із заявки"
-                >
-                  <Icon name="close" className="size-3" /> прибрати
-                </button>
-              </div>
-            )}
-
-            {handoff && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[10px] bg-white/[0.055] px-4 py-3 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
-                <span className={LABEL}>Розрахунок</span>
-                <span className="font-mono text-[13px] text-accent-soft">{handoff.label}</span>
-                <span className="text-[13px] text-on-dark">{handoff.practice}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearQuizHandoff()
-                    setHandoff(null)
-                  }}
-                  className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-[12px] text-on-dark-2 transition-colors hover:text-white"
-                  aria-label="Не додавати розрахунок до заявки"
+                  aria-label="Прибрати варіант із заявки"
                 >
                   <Icon name="close" className="size-3" /> прибрати
                 </button>
@@ -485,7 +331,7 @@ export function LeadSection({
                   Надсилаємо…
                 </span>
               ) : (
-                kind === 'consultation' ? 'Записатися на консультацію' : 'Надіслати заявку'
+                'Записатися на консультацію'
               )}
             </Button>
 
@@ -493,6 +339,12 @@ export function LeadSection({
               Надсилаючи форму, ви погоджуєтесь на обробку даних для звʼязку у вашій справі.
             </p>
           </form>
+        </div>
+
+        {/* Офис на карте — во всю ширину под формой. Адрес живёт здесь,
+            на самой карте, а не отдельной строкой в списке контактов. */}
+        <div className="mt-[clamp(40px,6vw,72px)]">
+          <OfficeMapCard contacts={contacts} />
         </div>
       </div>
     </section>

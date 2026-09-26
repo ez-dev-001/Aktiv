@@ -1,15 +1,15 @@
 import { localeString, localeText, localeBlock } from './objects/locale'
-import { priceSpec } from './objects/priceSpec'
 import { tenet, tenetBlock } from './objects/tenet'
 import { practice } from './documents/practice'
 import { practiceCategory } from './documents/practiceCategory'
-import { quiz } from './documents/quiz'
 import { teamMember } from './documents/teamMember'
 import { post } from './documents/post'
 import { siteSettings } from './documents/siteSettings'
 import { homePage } from './documents/homePage'
 import { aboutPage } from './documents/aboutPage'
 import { teamPage } from './documents/teamPage'
+import { careerPage } from './documents/careerPage'
+import { vacancy } from './documents/vacancy'
 
 /**
  * Регистрация схем. Каждый тип, на который где-либо есть ссылка,
@@ -22,16 +22,12 @@ import { teamPage } from './documents/teamPage'
  * siteSettings держит три цифры счётчиков одним источником на три
  * локали — на старом сайте они разошлись (UA: 400 процессов, EN: 15 500),
  * потому что лежали в переводах как текст.
- *
- * Ещё не написан: page (произвольные страницы) — понадобится, когда
- * появятся «Кар'єра» и юридические тексты.
  */
 export const schemaTypes = [
   /* объекты */
   localeString,
   localeText,
   localeBlock,
-  priceSpec,
   /* Пункт «заголовок + абзац» и блок «надзаголовок + твердження +
      абзац». Общие для цінностей, принципів, місії и візії — один тип
      вместо четырёх почти одинаковых. */
@@ -41,7 +37,6 @@ export const schemaTypes = [
   practiceCategory,
   practice,
   teamMember,
-  quiz,
   post,
   siteSettings,
   /* homePage — текст самой главной. Отдельно от siteSettings: там
@@ -56,4 +51,8 @@ export const schemaTypes = [
      приватного исполнителя, призыв. Сами люди — в teamMember: их
      заводят и убирают независимо от того, как написан заголовок. */
   teamPage,
+  /* «Карʼєра»: текст страницы — синглтон, вакансии — отдельные
+     документы, их открывают и закрывают по одной. */
+  careerPage,
+  vacancy,
 ]

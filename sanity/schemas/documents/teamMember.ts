@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from 'sanity'
+import { localeMax } from '../objects/locale'
 
 /**
  * teamMember — 10 специалистов фирмы.
@@ -70,7 +71,19 @@ export const teamMember = defineType({
       title: 'Практики',
       type: 'array',
       of: [defineArrayMember({ type: 'reference', to: [{ type: 'practice' }] })],
-      description: 'За якими напрямами веде справи. Звідси будується блок «хто веде» на сторінці практики.',
+      description:
+        'За якими напрямами веде справи. Звідси будується блок «хто веде» на сторінці практики, ' +
+        'а під карткою в «Команді» зʼявляється підпис із назвами категорій.',
+    }),
+    defineField({
+      name: 'practiceNote',
+      title: 'Практика — підпис під карткою',
+      type: 'localeString',
+      description:
+        'Необовʼязково. Короткий рядок під карткою в «Команді»: «Ліквідація та банкрутство», ' +
+        '«Військове право · ВЛК». Порожньо — підпис складеться сам із категорій вибраних практик ' +
+        '(поле вище) і тих практик, де людина стоїть «відповідальним адвокатом».',
+      validation: (r) => r.custom(localeMax(70)),
     }),
     defineField({ name: 'bio', title: 'Про спеціаліста', type: 'localeText' }),
     defineField({

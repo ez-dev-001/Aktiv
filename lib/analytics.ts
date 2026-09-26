@@ -15,8 +15,8 @@ export type EventName =
   | 'phone_click' | 'messenger_click'
   | 'consultation_request' | 'callback_request'
   | 'practice_view'
-  | 'quiz_start' | 'quiz_step' | 'quiz_complete'
   | 'article_read' | 'scroll_depth'
+  | 'cv_submit'
 
 interface DataLayerEvent {
   event: EventName

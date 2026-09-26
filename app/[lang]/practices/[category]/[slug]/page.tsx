@@ -1,15 +1,13 @@
 import type { Metadata } from 'next'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
-import { categories as staticCategories, formatPrice } from '@/lib/content'
-import { getCategories, getPractice, getQuizzes } from '@/lib/sanity/content'
+import { categories as staticCategories } from '@/lib/content'
+import { getPractice } from '@/lib/sanity/content'
 import { Icon } from '@/components/site/Icon'
 import { PageShell, SectionHead } from '@/components/site/PageShell'
 import { Prose } from '@/components/site/Prose'
 import { ArrowLink, ButtonLink, Eyebrow } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
-import { Quiz } from '@/components/quiz/Quiz'
-import { pickQuizzes } from '@/lib/quizzes'
 
 /**
  * Страница одного направления.
@@ -47,22 +45,11 @@ export default async function PracticePage({
   params: Promise<{ lang: string; category: string; slug: string }>
 }) {
   const { lang, category, slug } = await params
-  const [p, quizzes, cats] = await Promise.all([getPractice(slug, lang), getQuizzes(lang), getCategories(lang)])
+  const p = await getPractice(slug, lang)
   if (!p) notFound()
 
-  const price = formatPrice(p.price)
   const prefix = lang === 'ua' ? '' : `/${lang}`
-  /* Калькулятор: выбранный у практики → выбранный у категории → любой
-     калькулятор этой категории. Раньше блок стоял только у двух
-     категорий, зашитых в код, а выбор в поле «Калькулятор» не читался. */
-  const quizSets = pickQuizzes(quizzes.data, {
-    practiceQuiz: p.quiz,
-    categoryQuiz: cats.data.find((c) => c.slug === category)?.quiz,
-    category,
-  })
-  const hasQuiz = quizSets.length > 0
-
-  /* Пакет могли добавить, заполнив только название и цену — списки
+  /* Вариант могли добавить, заполнив только название — списки
      «Кому підходить» и «Що входить» тогда приходят null. Раньше на
      этом падал рендер всей страницы. */
   const packages = (p.packages ?? [])
@@ -83,7 +70,7 @@ export default async function PracticePage({
           lede: 'Вибір залежить не від бюджету, а від історії підприємства: чим складніша, тим далі має відійти власник.',
         }
       : n === 1
-        ? { title: 'Вартість і що входить', lede: undefined }
+        ? { title: 'Що входить у послугу', lede: undefined }
         : {
             title: n === 2 ? 'Два варіанти послуги' : `${n} ${n < 5 ? 'варіанти' : 'варіантів'} послуги`,
             lede: 'Оберіть варіант, що відповідає вашій ситуації, — або опишіть її, і ми підкажемо.',
@@ -91,10 +78,9 @@ export default async function PracticePage({
 
   const stations = [
     { id: 'head', label: 'Послуга' },
-    ...(packages.length ? [{ id: 'packages', label: 'Тарифи' }] : []),
+    ...(packages.length ? [{ id: 'packages', label: 'Варіанти' }] : []),
     ...(p.includes?.length ? [{ id: 'includes', label: 'Що входить' }] : []),
     ...(p.stages?.length ? [{ id: 'stages', label: 'Етапи' }] : []),
-    ...(hasQuiz ? [{ id: 'price', label: 'Вартість' }] : []),
     ...(p.faq?.length ? [{ id: 'faq', label: 'Питання' }] : []),
     { id: 'contact', label: 'Консультація' },
   ]
@@ -124,13 +110,11 @@ export default async function PracticePage({
 
             <div className="grid gap-4 border-t-2 border-ink pt-[22px]">
               <div className="grid gap-[3px]">
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">Вартість</span>
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">Перша консультація</span>
                 <span className="font-serif text-[clamp(20px,2.8vw,27px)] font-semibold leading-tight text-accent-ink">
-                  {price ?? 'за результатами консультації'}
+                  Без оплати
                 </span>
-                {p.price?.note && (
-                  <span className="mt-0.5 text-[12.5px] text-slate-2">{p.price.note}</span>
-                )}
+                <span className="mt-0.5 text-[12.5px] text-slate-2">Оцінюємо перспективу й кажемо, чи бачимо шлях.</span>
               </div>
 
               {p.lawyers && p.lawyers.length > 0 && (
@@ -178,15 +162,13 @@ export default async function PracticePage({
         </section>
       ) : null}
 
-      {/* ── ТАРИФИ ──
-          Услуга с двумя пакетами: на старом сайте они лежали двумя
-          колонками с ценой и двумя списками — «кому підходить» и
-          «що входить». Здесь то же самое, но цена вынесена в шапку
-          карточки, а не тонет в середине столбца. */}
+      {/* ── ВАРІАНТИ ПОСЛУГИ ──
+          Услуга с двумя вариантами: «кому підходить» и «що входить».
+          Цен на сайте нет — стоимость называют после консультации. */}
       {packages.length > 0 && (
         <section id="packages" className="bg-paper-2 py-[clamp(48px,7vw,96px)]">
           <div className="shell inner">
-            <SectionHead eyebrow="Тарифи" title={packagesHead.title} lede={packagesHead.lede} />
+            <SectionHead eyebrow="Варіанти" title={packagesHead.title} lede={packagesHead.lede} />
             <div
               className={`grid gap-[clamp(12px,1.6vw,18px)] ${
                 n === 1
@@ -201,11 +183,8 @@ export default async function PracticePage({
                   key={`${i}-${pk.name}`}
                   className="flex flex-col gap-5 rounded-[18px] bg-white p-[clamp(22px,3vw,32px)] shadow-[0_1px_2px_rgb(20_11_51/0.045),0_14px_34px_-20px_rgb(20_11_51/0.13)]"
                 >
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-hair pb-4">
+                  <div className="border-b border-hair pb-4">
                     <h3 className="text-[clamp(19px,2.6vw,24px)] leading-tight">{pk.name}</h3>
-                    <span className="font-serif text-[clamp(20px,2.8vw,26px)] font-semibold tabular-nums text-accent-ink">
-                      {formatPrice({ mode: 'fixed', amount: pk.price })}
-                    </span>
                   </div>
 
                   {pk.audience.length > 0 && (
@@ -300,22 +279,6 @@ export default async function PracticePage({
                   {s.text && <p className="m-0 max-w-[32ch] text-[14.5px] leading-snug text-slate">{s.text}</p>}
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── КАЛЬКУЛЯТОР ── */}
-      {hasQuiz && (
-        <section id="price" className="bg-paper-2 py-[clamp(48px,7vw,96px)]">
-          <div className="shell inner">
-            <SectionHead
-              eyebrow="Вартість"
-              title="Порахувати діапазон вартості для вашої ситуації"
-              lede="Ціна вище — нижня межа. Калькулятор уточнює її під конкретні обставини."
-            />
-            <div className="max-w-[640px]">
-              <Quiz sets={quizSets} />
             </div>
           </div>
         </section>

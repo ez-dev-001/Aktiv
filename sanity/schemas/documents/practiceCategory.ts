@@ -6,9 +6,8 @@ import { iconField } from '../objects/icon'
  * practiceCategory — четыре блока с главной, ставшие настоящими разделами.
  *
  * На старом сайте это были просто заголовки над списками ссылок: у блока не было
- * ни своей страницы, ни URL, ни описания. Здесь у категории есть всё, включая
- * свой калькулятор — поэтому «Ліквідація та банкрутство» считает вилку в гривнях,
- * а «Судова практика» умеет переключаться на гонорар успіху.
+ * ни своей страницы, ни URL, ни описания. Здесь у категории есть страница,
+ * описание, иконка и фото для карточки.
  */
 export const practiceCategory = defineType({
   name: 'practiceCategory',
@@ -52,10 +51,6 @@ export const practiceCategory = defineType({
       validation: (r) => r.required().custom(localeMax(400)),
     }),
     defineField({ name: 'intro', title: 'Вступ на сторінці категорії', type: 'localeBlock' }),
-    defineField({
-      name: 'quiz', title: 'Калькулятор категорії', type: 'reference', to: [{ type: 'quiz' }],
-      description: 'Береться для всіх практик категорії, якщо практика не має свого.',
-    }),
     defineField({
       name: 'order', title: 'Порядок на головній', type: 'number', initialValue: 100,
       description:

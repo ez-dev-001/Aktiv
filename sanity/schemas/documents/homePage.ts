@@ -91,7 +91,7 @@ export const homePage = defineType({
       title: 'Друга кнопка',
       type: 'localeString',
       group: 'hero',
-      description: 'Веде до блоку вартості й калькулятора.',
+      description: 'Веде до блоку практик нижче на сторінці.',
       validation: (r) => r.custom(localeMax(34)),
     }),
 

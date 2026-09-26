@@ -2,26 +2,20 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Category } from '@/lib/content'
-import { formatPrice } from '@/lib/content'
 import { Icon } from '@/components/site/Icon'
 
 /**
  * Выбор практики в форме заявки.
  *
  * ── Зачем свой список вместо <select> ──
- * Нативный select здесь проиграл по трём пунктам сразу.
+ * Нативный select здесь проиграл по двум пунктам сразу.
  *
  * Первое — вид. Форма стоит на тёмной секции, а выпадающий список
  * рисует операционная система: на Windows это белая панель с синей
  * подсветкой строки, которая не имеет отношения ни к одному цвету
  * сайта. Стилизовать её нельзя — это часть системы, а не страницы.
  *
- * Второе — цена. В select можно положить только строку, поэтому
- * вилка стоимости могла появиться лишь ПОСЛЕ выбора, отдельной
- * подписью под полем. Человек выбирал вслепую и только потом видел
- * сумму. Здесь цена стоит в самой строке, справа: видно до выбора.
- *
- * Третье — длина. Направлений больше трёх десятков. Пролистать их
+ * Второе — длина. Направлений больше трёх десятков. Пролистать их
  * в системном пикере можно только глазами; поиска там нет.
  *
  * ── Что здесь вместо него ──
@@ -41,8 +35,6 @@ export type PracticeOption = {
   value: string
   /** подпись в строке */
   label: string
-  /** вилка стоимости, если известна */
-  price: string | null
   /** заголовок блока, к которому строка относится */
   group: string
   /** «напрям уточнимо» и «ще не знаю» — служебные строки, набраны иначе */
@@ -52,13 +44,12 @@ export type PracticeOption = {
 /** Разворачивает дерево направлений в плоский список строк панели. */
 export function buildOptions(categories: Category[]): PracticeOption[] {
   const out: PracticeOption[] = [
-    { value: 'unknown', label: 'Ще не знаю', price: null, group: '', soft: true },
+    { value: 'unknown', label: 'Ще не знаю', group: '', soft: true },
   ]
   for (const c of categories) {
     out.push({
       value: `cat:${c.slug}`,
       label: '— напрям уточнимо —',
-      price: null,
       group: c.title,
       soft: true,
     })
@@ -66,7 +57,6 @@ export function buildOptions(categories: Category[]): PracticeOption[] {
       out.push({
         value: p.slug,
         label: p.title,
-        price: formatPrice(p.price),
         group: c.title,
         soft: false,
       })
@@ -228,9 +218,6 @@ export function PracticeSelect({
         <span className={`min-w-0 flex-1 truncate ${current?.soft ? 'text-on-dark' : ''}`}>
           {current?.label}
         </span>
-        {current?.price && (
-          <span className="shrink-0 font-mono text-[12px] text-accent-soft">{current.price}</span>
-        )}
         <Icon
           name="caret"
           aria-hidden="true"
@@ -307,11 +294,6 @@ export function PracticeSelect({
                       className={`mt-[7px] size-[4px] shrink-0 rotate-45 transition-colors duration-150 ${picked ? 'bg-accent' : 'bg-transparent'}`}
                     />
                     <span className="min-w-0 flex-1">{o.label}</span>
-                    {o.price && (
-                      <span className="shrink-0 font-mono text-[11.5px] text-accent-soft/80">
-                        {o.price}
-                      </span>
-                    )}
                   </button>
                 </li>
               )

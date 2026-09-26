@@ -39,3 +39,13 @@ export function isIndexable(): boolean {
   if (context !== 'production') return false
   return (url ?? '').replace(/\/$/, '') === SITE_URL
 }
+
+/**
+ * Боевой сайт на своём домене — и только он. В отличие от isIndexable,
+ * локальный запуск сюда НЕ входит: здесь вопрос не «пускать ли
+ * поисковик», а «можно ли показывать примеры вместо настоящих данных».
+ * Локально и на тестовом адресе — можно, на боевом — нет.
+ */
+export function isLiveSite(): boolean {
+  return process.env.CONTEXT === 'production' && (process.env.URL ?? '').replace(/\/$/, '') === SITE_URL
+}

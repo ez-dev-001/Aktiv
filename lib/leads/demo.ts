@@ -1,165 +1,123 @@
-import { staticQuizSets } from '@/lib/quizzes'
-import { buildLeadQuote } from './quote'
-import type { ConsultFormat, Lead, LeadKind, LeadStatus } from './types'
+import type { Lead, LeadStatus, LeadType } from './types'
 
 /**
- * Демо-заявки для CRM, пока не подключено хранилище.
+ * Демо-обращения для CRM, пока не подключено хранилище.
  *
  * Имена, телефоны и истории выдуманы. Телефоны из диапазона
  * +380 50 000 00 xx — такого номера не существует, и позвонить
- * случайно нельзя. Даты считаются от «сейчас», поэтому воронка всегда
- * выглядит живой: сегодняшние, вчерашние, недельной давности.
+ * случайно нельзя. Даты считаются от «сейчас», поэтому список всегда
+ * выглядит живым: сегодняшние, вчерашние, недельной давности.
  */
 
 const H = 3_600_000
 const iso = (hoursAgo: number) => new Date(Date.now() - hoursAgo * H).toISOString()
 
 interface Seed {
-  id: string
-  kind: LeadKind
+  type: LeadType
   h: number
   status: LeadStatus
-  format?: ConsultFormat
-  packageName?: string
-  convertedTo?: string
-  convertedFrom?: string
   name: string
   email?: string
   message?: string
-  practiceKey?: string
-  practiceTitle: string
+  practiceTitle?: string
   categoryTitle?: string
-  quiz?: [string, Record<string, string>]
+  packageName?: string
+  position?: string
+  cvLink?: string
+  cvFileName?: string
   src: Lead['source']
   owner?: string
-  notes?: [number, string, string][]
+  notes?: [number, string][]
   steps?: [number, string][]
 }
 
 const SEEDS: Seed[] = [
   {
-    h: 0.4, status: 'new', id: 'demo-01', kind: 'order', packageName: 'Резидент', name: 'Олена Коваль', email: 'olena.demo@example.com',
+    type: 'client', h: 0.4, status: 'new', name: 'Олена Коваль', email: 'olena.demo@example.com',
     message: 'ТОВ на спрощеній системі, діяльність не ведемо з 2023 року. Хочемо закрити якнайшвидше.',
-    practiceKey: 'alternative-liquidation', practiceTitle: 'Альтернативна ліквідація — зміна директора і власників', categoryTitle: 'Ліквідація та банкрутство',
-    quiz: ['likvidatsiya-bankrutstvo', { goal: 'alt', debts: 'none', assets: 'none', deadline: 'asap' }],
+    practiceTitle: 'Альтернативна ліквідація — зміна директора і власників', categoryTitle: 'Ліквідація та банкрутство', packageName: 'Резидент',
     src: { formLocation: 'contact_section', page: '/', landing: '/practices/likvidatsiya-bankrutstvo/alternative-liquidation', referrer: 'www.google.com' },
   },
   {
-    h: 1.2, status: 'new', id: 'demo-02', kind: 'consultation', format: 'phone', name: 'Андрій', practiceTitle: 'Ще не знаю',
+    type: 'client', h: 1.2, status: 'new', name: 'Андрій',
     message: 'Прийшла повістка з ТЦК, є відстрочка по догляду. Чи законно?',
+    practiceTitle: 'Ще не знаю',
     src: { formLocation: 'contact_section', page: '/', landing: '/practices/vijskove-pravo', utm: { source: 'facebook', medium: 'cpc', campaign: 'military_sept' } },
   },
   {
-    h: 3, status: 'contacted', id: 'demo-03', kind: 'order', name: 'Ігор Мельник', email: 'igor.demo@example.com',
-    practiceKey: 'hozyajstvennye-spory', practiceTitle: 'Господарські спори', categoryTitle: 'Судова практика',
-    quiz: ['sudova-praktyka', { dispute: 'commercial', amount: 'to1m', stage: 'first', instances: 'two' }],
+    type: 'client', h: 3, status: 'in_progress', name: 'Ігор Мельник', email: 'igor.demo@example.com',
+    practiceTitle: 'Господарські спори', categoryTitle: 'Судова практика',
     message: 'Контрагент не оплатив поставку на 740 тис. Претензію надсилали, відповіді немає.',
-    src: { formLocation: 'contact_section', page: '/', landing: '/practices/sudova-praktyka', utm: { source: 'google', medium: 'cpc', campaign: 'court_search', term: 'стягнення боргу з контрагента' } },
+    src: { formLocation: 'contact_section', page: '/', landing: '/practices/sudova-praktyka', utm: { source: 'google', medium: 'cpc', campaign: 'court_search' } },
     owner: 'Марія Шевчук',
-    steps: [[2.2, 'Статус: Нова → Звʼязались']],
-    notes: [[2.1, 'Марія Шевчук', 'Передзвонила. Є договір поставки і накладні, акт звірки не підписаний. Чекаємо скани до завтра.']],
+    steps: [[2.2, 'Статус: Нова → В роботі']],
+    notes: [[2.1, 'Передзвонила. Є договір поставки і накладні. Консультація завтра о 11:00.']],
   },
   {
-    h: 6, status: 'scheduled', id: 'demo-04', kind: 'consultation', format: 'office', name: 'ФОП Тарасенко', email: 'fop.demo@example.com',
-    practiceKey: 'tax-law', practiceTitle: 'Податкові спори', categoryTitle: 'Судова практика',
-    message: 'Податкове повідомлення-рішення на 1,2 млн після перевірки. Строк оскарження спливає через 8 днів.',
-    src: { formLocation: 'contact_section', page: '/', landing: '/blog/podatkovi-perevirky-2026', referrer: 'www.google.com' },
+    type: 'client', h: 20, status: 'in_progress', name: 'Наталія Бондар',
+    practiceTitle: 'Банкрутство фізичних осіб', categoryTitle: 'Ліквідація та банкрутство',
+    src: { formLocation: 'contact_section', page: '/', landing: '/practices/likvidatsiya-bankrutstvo/bankrutstvo-fizychnyh-osib' },
     owner: 'Андрій Демченко',
-    steps: [[5, 'Статус: Нова → Звʼязались'], [4.5, 'Статус: Звʼязались → Призначена']],
-    notes: [[4.5, 'Андрій Демченко', 'Консультація в офісі завтра о 11:00. Попросив взяти акт перевірки і ППР.']],
+    steps: [[18, 'Статус: Нова → В роботі']],
+    notes: [[18, 'Не взяла слухавку, написав у Viber. Передзвонити після 18:00.']],
   },
   {
-    h: 20, status: 'contacted', id: 'demo-05', kind: 'order', name: 'Наталія Бондар',
-    practiceKey: 'bankrutstvo-fizychnyh-osib', practiceTitle: 'Банкрутство фізичних осіб', categoryTitle: 'Ліквідація та банкрутство',
-    quiz: ['likvidatsiya-bankrutstvo', { goal: 'bnkr-person', debts: 'to500', assets: 'movable', deadline: 'flex' }],
-    src: { formLocation: 'contact_section', page: '/', landing: '/practices/likvidatsiya-bankrutstvo/bankrutstvo-fizychnyh-osib', utm: { source: 'google', medium: 'cpc', campaign: 'bankruptcy_person' } },
-    owner: 'Марія Шевчук',
-    steps: [[18, 'Статус: Нова → Звʼязались']],
-    notes: [[18, 'Марія Шевчук', 'Не взяла слухавку, надіслала повідомлення у Viber. Передзвонити після 18:00.']],
-  },
-  {
-    h: 27, status: 'new', id: 'demo-06', kind: 'consultation', format: 'online', name: 'Сергій', email: 'serhii.demo@example.com',
-    practiceKey: 'cat:biznes-nerukhomist-zemlya', practiceTitle: 'Бізнес, нерухомість і земля — напрям уточнимо', categoryTitle: 'Бізнес, нерухомість і земля',
+    type: 'client', h: 27, status: 'new', name: 'Сергій', email: 'serhii.demo@example.com',
+    practiceTitle: 'Бізнес, нерухомість і земля — напрям уточнимо', categoryTitle: 'Бізнес, нерухомість і земля',
     message: 'Купуємо ділянку під склад, хочемо перевірити документи продавця.',
     src: { formLocation: 'contact_section', page: '/', landing: '/' },
   },
   {
-    h: 50, status: 'consultation', id: 'demo-07', kind: 'order', name: 'Вікторія Лисенко',
-    practiceKey: 'semejnye-spory', practiceTitle: 'Сімейні спори', categoryTitle: 'Судова практика',
-    quiz: ['sudova-praktyka', { dispute: 'family', amount: 'small', stage: 'not-filed', instances: 'one' }],
-    src: { formLocation: 'contact_section', page: '/', landing: '/practices/sudova-praktyka/semejnye-spory', utm: { source: 'instagram', medium: 'social' } },
-    owner: 'Андрій Демченко',
-    steps: [[47, 'Статус: Нова → Звʼязались'], [30, 'Статус: Звʼязались → Консультація']],
-  },
-  {
-    h: 75, status: 'contract', id: 'demo-08', kind: 'order', convertedFrom: 'demo-13', name: 'ТОВ «Демо-Агро»', email: 'office.demo@example.com',
-    practiceKey: 'liquidation-of-enterprises', practiceTitle: 'Ліквідація підприємства в Україні', categoryTitle: 'Ліквідація та банкрутство',
-    quiz: ['likvidatsiya-bankrutstvo', { goal: 'classic', debts: 'to3m', assets: 'realty', deadline: 'q3' }],
+    type: 'client', h: 75, status: 'done', name: 'ТОВ «Демо-Агро»', email: 'office.demo@example.com',
+    practiceTitle: 'Ліквідація підприємства в Україні', categoryTitle: 'Ліквідація та банкрутство',
     message: 'Потрібна ліквідація з продажем складу. Кредитор — один банк.',
     src: { formLocation: 'contact_section', page: '/', landing: '/practices/likvidatsiya-bankrutstvo', referrer: 'www.google.com' },
     owner: 'Андрій Демченко',
-    steps: [[26, 'Статус: Консультація → Договір']],
-    notes: [[26, 'Андрій Демченко', 'Договір підписано, аванс отримано. Передано в роботу.']],
+    steps: [[74, 'Статус: Нова → В роботі'], [26, 'Статус: В роботі → Завершена']],
+    notes: [[26, 'Договір підписано, справу передано в роботу.']],
   },
   {
-    h: 98, status: 'lost', id: 'demo-09', kind: 'consultation', format: 'online', name: 'Максим', practiceKey: 'corporate-law', practiceTitle: 'Корпоративне право', categoryTitle: 'Бізнес, нерухомість і земля',
+    type: 'client', h: 98, status: 'rejected', name: 'Максим',
+    practiceTitle: 'Корпоративне право', categoryTitle: 'Бізнес, нерухомість і земля',
     src: { formLocation: 'contact_section', page: '/', landing: '/', utm: { source: 'facebook', medium: 'cpc', campaign: 'brand' } },
     owner: 'Марія Шевчук',
-    steps: [[96, 'Статус: Нова → Звʼязались'], [70, 'Статус: Звʼязались → Відмова']],
-    notes: [[70, 'Марія Шевчук', 'Шукав безкоштовний шаблон статуту, консультація не потрібна.']],
+    steps: [[96, 'Статус: Нова → В роботі'], [70, 'Статус: В роботі → Відмова']],
+    notes: [[70, 'Шукав безкоштовний шаблон статуту, консультація не потрібна.']],
   },
   {
-    h: 124, status: 'held', id: 'demo-10', kind: 'consultation', format: 'office', name: 'Павло Гнатюк',
-    practiceKey: 'vidstrochka', practiceTitle: 'Відстрочка від мобілізації та захист від незаконних дій ТЦК', categoryTitle: 'Військове право',
-    src: { formLocation: 'contact_section', page: '/', landing: '/practices/vijskove-pravo', utm: { source: 'google', medium: 'cpc', campaign: 'military_search' } },
+    type: 'candidate', h: 5, status: 'new', name: 'Дарина Приклад', email: 'daryna.demo@example.com',
+    position: 'Юрист (Middle)', cvFileName: 'Daryna_CV.pdf',
+    message: '3 роки в господарських спорах, веду справи в апеляції самостійно.',
+    src: { formLocation: 'career', page: '/career', landing: '/career', referrer: 'www.work.ua' },
+  },
+  {
+    type: 'candidate', h: 30, status: 'in_progress', name: 'Олег Тестовий',
+    position: 'Адвокат', cvLink: 'https://www.linkedin.com/in/example',
+    src: { formLocation: 'career', page: '/career', landing: '/career', referrer: 'www.linkedin.com' },
     owner: 'Андрій Демченко',
-    steps: [[123, 'Статус: Нова → Звʼязались'], [100, 'Статус: Звʼязались → Призначена'], [80, 'Статус: Призначена → Проведена']],
-    notes: [[80, 'Андрій Демченко', 'Провели консультацію. Підстави для відстрочки є, клієнт думає до пʼятниці.']],
+    steps: [[28, 'Статус: Нова → В роботі']],
+    notes: [[28, 'Співбесіда в пʼятницю о 15:00.']],
   },
   {
-    h: 150, status: 'lost', id: 'demo-11', kind: 'consultation', format: 'phone', name: 'Ірина', practiceTitle: 'Ще не знаю',
-    message: 'Скільки коштує розлучення?',
-    src: { formLocation: 'contact_section', page: '/', landing: '/' },
-    steps: [[140, 'Статус: Нова → Відмова']],
-    notes: [[140, 'Марія Шевчук', 'Не відповідає 3 дні, номер поза зоною.']],
-  },
-  {
-    h: 190, status: 'contract', id: 'demo-12', kind: 'order', name: 'ТОВ «Приклад Буд»',
-    practiceKey: 'hozyajstvennye-spory', practiceTitle: 'Господарські спори', categoryTitle: 'Судова практика',
-    quiz: ['sudova-praktyka', { dispute: 'commercial', amount: 'to10m', stage: 'appeal', instances: 'two' }],
-    src: { formLocation: 'contact_section', page: '/', landing: '/practices/sudova-praktyka/hozyajstvennye-spory', referrer: 'www.google.com' },
-    owner: 'Андрій Демченко',
-    steps: [[189, 'Статус: Нова → Звʼязались'], [160, 'Статус: Звʼязались → Консультація'], [120, 'Статус: Консультація → Договір']],
+    type: 'candidate', h: 140, status: 'rejected', name: 'Ірина', email: 'iryna.demo@example.com',
+    position: 'Помічник юриста', cvFileName: 'Iryna_resume.docx',
+    src: { formLocation: 'career', page: '/career', landing: '/' },
+    steps: [[120, 'Статус: Нова → Відмова']],
+    notes: [[120, 'Шукає лише віддалену роботу — не підходить.']],
   },
 ]
-
-SEEDS.push({
-  id: 'demo-13', kind: 'consultation', format: 'office', convertedTo: 'demo-08',
-  h: 96, status: 'converted', name: 'ТОВ «Демо-Агро»', email: 'office.demo@example.com',
-  practiceKey: 'cat:likvidatsiya-bankrutstvo', practiceTitle: 'Ліквідація та банкрутство — напрям уточнимо', categoryTitle: 'Ліквідація та банкрутство',
-  message: 'Хочемо закрити підприємство, є склад і кредит у банку. Що робити спочатку?',
-  src: { formLocation: 'contact_section', page: '/', landing: '/practices/likvidatsiya-bankrutstvo', referrer: 'www.google.com' },
-  owner: 'Андрій Демченко',
-  steps: [[95, 'Статус: Нова → Звʼязались'], [90, 'Статус: Звʼязались → Призначена'], [76, 'Статус: Призначена → Проведена'], [75, 'Перевели в заявку на послугу']],
-  notes: [[76, 'Андрій Демченко', 'Консультація в офісі. Класична ліквідація з продажем складу, банк — один кредитор. Клієнт готовий до договору.']],
-})
 
 export function demoLeads(): Lead[] {
   return SEEDS.map((s, i) => {
     const createdAt = iso(s.h)
+    const author = s.owner ?? 'Марія Шевчук'
     const history = [
-      s.convertedFrom
-        ? { at: createdAt, author: s.owner ?? 'Менеджер', text: 'Створено з безкоштовної консультації' }
-        : { at: createdAt, author: 'Сайт', text: s.kind === 'order' ? 'Заявка з форми на сайті' : 'Запис на консультацію з сайту' },
-      ...(s.steps ?? []).map(([h, text]) => ({ at: iso(h), author: s.owner ?? 'Марія Шевчук', text })),
+      { at: createdAt, author: 'Сайт', text: s.type === 'candidate' ? 'Резюме зі сторінки «Карʼєра»' : 'Заявка з форми на сайті' },
+      ...(s.steps ?? []).map(([h, text]) => ({ at: iso(h), author, text })),
     ]
     return {
-      id: s.id,
-      kind: s.kind,
-      ...(s.format ? { format: s.format } : {}),
-      ...(s.packageName ? { packageName: s.packageName } : {}),
-      ...(s.convertedTo ? { convertedTo: s.convertedTo } : {}),
-      ...(s.convertedFrom ? { convertedFrom: s.convertedFrom } : {}),
+      id: `demo-${String(i + 1).padStart(2, '0')}`,
+      type: s.type,
       createdAt,
       updatedAt: history[history.length - 1]!.at,
       status: s.status,
@@ -167,14 +125,17 @@ export function demoLeads(): Lead[] {
       phone: `+3805000000${String(i + 10).padStart(2, '0')}`,
       ...(s.email ? { email: s.email } : {}),
       ...(s.message ? { message: s.message } : {}),
-      ...(s.practiceKey ? { practiceKey: s.practiceKey } : {}),
-      practiceTitle: s.practiceTitle,
+      ...(s.practiceTitle ? { practiceTitle: s.practiceTitle } : {}),
       ...(s.categoryTitle ? { categoryTitle: s.categoryTitle } : {}),
-      ...(s.quiz ? { quote: buildLeadQuote(staticQuizSets, s.quiz[0], s.quiz[1]) } : {}),
+      ...(s.packageName ? { packageName: s.packageName } : {}),
+      ...(s.position ? { position: s.position } : {}),
+      ...(s.cvLink ? { cvLink: s.cvLink } : {}),
+      /* У демо-резюме нет самого файла — только имя: скачать нечего. */
+      ...(s.cvFileName ? { cvFile: { name: s.cvFileName, type: '', size: 0 } } : {}),
       source: s.src,
       eventId: `f-demo${i}`,
       ...(s.owner ? { owner: s.owner } : {}),
-      notes: (s.notes ?? []).map(([h, author, text]) => ({ at: iso(h), author, text })),
+      notes: (s.notes ?? []).map(([h, text]) => ({ at: iso(h), author, text })),
       history,
       demo: true,
     }

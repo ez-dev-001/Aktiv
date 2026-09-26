@@ -2,11 +2,16 @@ import {
   categories as staticCategories,
   figures as staticFigures,
   journal as staticJournal,
-  priceList as staticPriceList,
   contacts as staticContacts,
   staticAbout,
   staticHome,
   staticTeamPage,
+  staticCareer,
+  exampleVacancies,
+  type CareerContent,
+  type Vacancy,
+  type OfficeAddress,
+  splitAddress,
   team as staticTeam,
   trustFacts as staticTrustFacts,
   type AboutBlock,
@@ -16,31 +21,30 @@ import {
   type TeamPageContent,
   type Tenet,
   type PracticePackage,
-  type PriceSpec,
 } from '@/lib/content'
 import { sanityFetch } from './client'
 import type { SanityImage } from './image'
 import { staticCookieTexts, type CookieTexts } from '@/lib/consent'
-import { staticQuizSets, toQuizSet, type QuizSet, type RawQuiz } from '@/lib/quizzes'
 import {
   ABOUT_QUERY,
   BLOG_QUERY,
+  CAREER_QUERY,
   CATEGORIES_QUERY,
   COOKIE_QUERY,
   CONTACTS_QUERY,
   FIGURES_QUERY,
   HOME_QUERY,
-  QUIZZES_QUERY,
   TEAM_PAGE_QUERY,
   TEAM_QUERY,
   POSTS_QUERY,
   POST_QUERY,
   POST_SLUGS_QUERY,
   PRACTICE_QUERY,
-  PRICE_LIST_QUERY,
   SITEMAP_QUERY,
   TRUST_QUERY,
+  VACANCIES_QUERY,
 } from './queries'
+import { isLiveSite } from '@/lib/site'
 
 /**
  * Единственная точка, через которую страницы получают контент.
@@ -90,31 +94,6 @@ function flattenLocale(value: unknown, lang: string): unknown {
 
 const safe = <T,>(rows: T, lang: string): T => flattenLocale(rows, lang) as T
 
-/**
- * Подпись с ценой на карточке категории («від 10 000 ₴ · альтернативна ліквідація»).
- *
- * Выводится из самой дешёвой практики категории, а не хранится отдельным
- * полем. Причина простая: отдельное поле — это второе место, где живёт цена,
- * и оно протухнет в первый же раз, когда менеджер поднимет прайс у практики
- * и забудет поправить категорию.
- */
-function derivePriceHint(practices: Category['practices']): string | undefined {
-  const priced = practices
-    .filter((p) => p.price?.mode === 'fixed' && typeof p.price.amount === 'number')
-    .sort((a, b) => (a.price!.amount ?? 0) - (b.price!.amount ?? 0))
-
-  const cheapest = priced[0]
-  if (!cheapest?.price?.amount) return undefined
-
-  const unit = cheapest.price.unit
-  const suffix = unit === 'month' ? '/міс' : unit === 'instance' ? ' / інстанція' : ''
-  const sum = new Intl.NumberFormat('uk-UA').format(cheapest.price.amount)
-  /* Название практики режем: в подпись влезает короткое, а не «Альтернативна
-     ліквідація — зміна директора і власників». */
-  const name = cheapest.title.split(/\s+[—–]\s+/)[0]?.toLowerCase() ?? ''
-  return `від ${sum} ₴${suffix} · ${name}`
-}
-
 export async function getCategories(lang = 'ua'): Promise<Sourced<Category[]>> {
   const rows = await sanityFetch<Category[]>(CATEGORIES_QUERY, { lang }, ['practiceCategory', 'practice'])
   /* Пустой массив — это тоже «нет данных»: датасет создан, но не заполнен.
@@ -122,23 +101,11 @@ export async function getCategories(lang = 'ua'): Promise<Sourced<Category[]>> {
   if (rows && rows.length > 0) {
     const clean = safe(rows, lang)
     return {
-      data: clean.map((c) => ({ ...c, priceHint: c.priceHint ?? derivePriceHint(c.practices ?? []) })),
+      data: clean.map((c) => ({ ...c, practices: c.practices ?? [] })),
       source: 'sanity',
     }
   }
   return { data: staticCategories, source: 'static' }
-}
-
-export async function getPriceList(
-  lang = 'ua',
-): Promise<Sourced<{ service: string; price: PriceSpec }[]>> {
-  const rows = await sanityFetch<{ service: string; price: PriceSpec }[]>(
-    PRICE_LIST_QUERY,
-    { lang },
-    ['practice'],
-  )
-  if (rows && rows.length > 0) return { data: safe(rows, lang), source: 'sanity' }
-  return { data: staticPriceList, source: 'static' }
 }
 
 export interface Post {
@@ -315,6 +282,23 @@ export interface TeamMember {
   bio?: string
   phone?: string
   email?: string
+  /** подпись под карточкой: какую практику ведёт */
+  practice?: string
+}
+
+/** Что Sanity отдаёт по человеку, до сборки подписи practice. */
+type RawTeamMember = TeamMember & { practiceNote?: string; areas?: (string | null)[] }
+
+/**
+ * Подпись «какую практику ведёт».
+ * Своя фраза из студии важнее; иначе — категории его практик через точку.
+ * Больше двух категорий не пишем: «веде все» читается как «не веде ничего».
+ */
+function practiceLine(m: RawTeamMember): string | undefined {
+  if (m.practiceNote?.trim()) return m.practiceNote.trim()
+  const areas = [...new Set((m.areas ?? []).filter((a): a is string => Boolean(a)))]
+  if (!areas.length) return undefined
+  return areas.length <= 2 ? areas.join(' · ') : `${areas.slice(0, 2).join(' · ')} та ін.`
 }
 
 /**
@@ -330,13 +314,21 @@ export function teamPhoto(url: string | undefined, size = 480): string | undefin
 }
 
 export async function getTeam(lang = 'ua'): Promise<Sourced<TeamMember[]>> {
-  const rows = await sanityFetch<TeamMember[]>(TEAM_QUERY, { lang }, ['teamMember'])
+  const rows = await sanityFetch<RawTeamMember[]>(TEAM_QUERY, { lang }, ['teamMember', 'practice', 'practiceCategory'])
   if (rows && rows.length > 0) {
-    return { data: safe(rows, lang).filter((m) => m?.name), source: 'sanity' }
+    return {
+      data: safe(rows, lang)
+        .filter((m) => m?.name)
+        .map(({ practiceNote: _n, areas: _a, ...m }) => {
+          const practice = practiceLine({ ...m, practiceNote: _n, areas: _a })
+          return practice ? { ...m, practice } : m
+        }),
+      source: 'sanity',
+    }
   }
   /* Статика: та же форма, только без фото и без прямых контактов. */
   return {
-    data: staticTeam.map((m) => ({ name: m.name, role: m.role, highlight: m.key })),
+    data: staticTeam.map((m) => ({ name: m.name, role: m.role, highlight: m.key, ...(m.practice ? { practice: m.practice } : {}) })),
     source: 'static',
   }
 }
@@ -359,29 +351,21 @@ export async function getFigures(lang = 'ua'): Promise<Sourced<Figure[]>> {
   return { data: staticFigures, source: 'static' }
 }
 
-/* ═══════════════ КАЛЬКУЛЯТОРЫ ═══════════════
-   Веса и тексты в Sanity лежат вместе, а движку расчёта нужен
-   QuizConfig без текстов — их он не понимает. Здесь плоский ответ
-   GROQ разбирается на две половины: конфиг для computeQuote и copy
-   для UI. Форма результата совпадает со статикой один в один. */
-
-export async function getQuizzes(lang = 'ua'): Promise<Sourced<QuizSet[]>> {
-  const rows = await sanityFetch<RawQuiz[]>(QUIZZES_QUERY, { lang }, ['quiz'])
-  if (rows && rows.length > 0) {
-    const sets = safe(rows, lang).map(toQuizSet).filter((x): x is QuizSet => x !== null)
-    if (sets.length > 0) return { data: sets, source: 'sanity' }
-  }
-  return { data: staticQuizSets, source: 'static' }
-}
-
 /* ═══════════════ КОНТАКТЫ ═══════════════ */
 
 export interface Contacts {
   phone: string
   phoneHref: string
   email: string
+  /** адрес одной строкой — футер, форма */
   address: string
+  /** тот же адрес частями — карточка офиса */
+  office: OfficeAddress
   hours: string
+  /** что искать в Google Maps; пусто — адрес */
+  mapQuery?: string
+  /** «3 поверх, вхід з двору» */
+  officeHint?: string
   messengers: { label: string; href: string }[]
 }
 
@@ -399,8 +383,32 @@ interface RawContacts {
   phone?: string
   email?: string
   address?: string
+  street?: string
+  unit?: string
+  city?: string
   hours?: string
+  mapQuery?: string
+  officeHint?: string
   messengers?: { channel?: string; href?: string }[]
+}
+
+/**
+ * Адрес: три поля из студии важнее старой строки. Из частей же
+ * собирается строка для футера — поэтому две записи адреса не
+ * разойдутся. Нет ни того ни другого — статика.
+ */
+function officeFrom(c: RawContacts): { address: string; office: OfficeAddress } {
+  const street = c.street?.trim()
+  if (street) {
+    const office: OfficeAddress = {
+      street,
+      ...(c.unit?.trim() ? { unit: c.unit.trim() } : {}),
+      ...(c.city?.trim() ? { city: c.city.trim() } : {}),
+    }
+    return { office, address: [office.city, office.street, office.unit].filter(Boolean).join(', ') }
+  }
+  if (c.address?.trim()) return { address: c.address.trim(), office: splitAddress(c.address.trim()) }
+  return { address: staticContacts.address, office: staticContacts.office }
 }
 
 export async function getContacts(lang = 'ua'): Promise<Sourced<Contacts>> {
@@ -413,8 +421,10 @@ export async function getContacts(lang = 'ua'): Promise<Sourced<Contacts>> {
         phone: clean.phone,
         phoneHref: telHref(clean.phone),
         email: clean.email ?? staticContacts.email,
-        address: clean.address ?? staticContacts.address,
+        ...officeFrom(clean),
         hours: clean.hours ?? staticContacts.hours,
+        ...(clean.mapQuery?.trim() ? { mapQuery: clean.mapQuery.trim() } : {}),
+        ...(clean.officeHint?.trim() ? { officeHint: clean.officeHint.trim() } : {}),
         messengers:
           clean.messengers
             ?.filter((m) => m?.href)
@@ -442,9 +452,6 @@ export interface PracticeDetail {
       Показываются только когда из Sanity не пришёл body. */
   bodyText?: string[]
   packages?: PracticePackage[]
-  /** slug калькулятора, выбранного у самой практики. */
-  quiz?: string
-  price?: PriceSpec
   includes?: string[]
   stages?: PracticeStage[]
   faq?: PracticeFaq[]
@@ -455,8 +462,8 @@ export interface PracticeDetail {
 
 /**
  * Одна практика. Из Sanity приходит полная структура услуги
- * (что входит, этапы, FAQ, кто ведёт), из статики — только название
- * и цена: на старом сайте больше ничего и не было.
+ * (что входит, этапы, FAQ, кто ведёт), из статики — то, что было
+ * на старом сайте.
  *
  * Страница показывает блок только если для него есть данные, поэтому
  * до наполнения Sanity она выглядит скромно, но не сломанно.
@@ -466,7 +473,7 @@ export async function getPractice(slug: string, lang = 'ua'): Promise<PracticeDe
   if (row?.slug) return safe(row, lang)
 
   /* Статика: то, что перенесено со старого сайта дословно.
-     Раньше отсюда уезжали только название и цена, и страница услуги
+     Раньше отсюда уезжало только название, и страница услуги
      выходила пустой — ровно то, что видно, пока Sanity не заполнен. */
   for (const cat of staticCategories) {
     const p = cat.practices.find((x) => x.slug === slug)
@@ -475,7 +482,6 @@ export async function getPractice(slug: string, lang = 'ua'): Promise<PracticeDe
         slug: p.slug,
         title: p.title,
         excerpt: p.excerpt,
-        price: p.price,
         bodyText: p.bodyText,
         packages: p.packages,
         includes: p.includes,
@@ -842,6 +848,7 @@ export interface SitemapData {
   home?: string
   about?: string
   team?: string
+  career?: string
 }
 
 interface RawSitemap {
@@ -851,6 +858,7 @@ interface RawSitemap {
   home?: string
   about?: string
   team?: string
+  career?: string
 }
 
 /**
@@ -876,6 +884,8 @@ export async function getSitemapData(): Promise<SitemapData> {
     'homePage',
     'aboutPage',
     'teamPage',
+    'careerPage',
+    'vacancy',
   ])
 
   const ok = (v: unknown): v is string => typeof v === 'string' && v.length > 0
@@ -899,5 +909,81 @@ export async function getSitemapData(): Promise<SitemapData> {
     home: r?.home,
     about: r?.about,
     team: r?.team,
+    career: r?.career,
   }
+}
+
+/* ═══════════════ КАРʼЄРА ═══════════════ */
+
+type RawCareer = Partial<Omit<CareerContent, 'quote'>> & {
+  quoteText?: string
+  quoteAuthor?: { name?: string; role?: string; photoUrl?: string } | null
+}
+
+/**
+ * Текст страницы «Карʼєра» — по полям: заполненное в студии важнее
+ * кода, пустое берётся из staticCareer. Цитата — только из студии и
+ * только целиком (текст плюс автор): слов от имени партнера код не
+ * придумывает.
+ */
+export async function getCareer(lang = 'ua'): Promise<Sourced<CareerContent>> {
+  const r = await sanityFetch<RawCareer>(CAREER_QUERY, { lang }, ['careerPage', 'teamMember'])
+  const f = staticCareer
+  if (!r) return { data: f, source: 'static' }
+  const c = safe(r, lang)
+  const S = (v: unknown, fb: string) => (typeof v === 'string' && v.trim() ? v.trim() : fb)
+  const A = <T,>(v: T[] | null | undefined, fb: T[]) => (Array.isArray(v) && v.length ? v : fb)
+  return {
+    data: {
+      headEyebrow: S(c.headEyebrow, f.headEyebrow),
+      headTitle: S(c.headTitle, f.headTitle),
+      headTitleAccent: S(c.headTitleAccent, f.headTitleAccent),
+      headLede: S(c.headLede, f.headLede),
+      benefitsTitle: S(c.benefitsTitle, f.benefitsTitle),
+      benefits: A(c.benefits?.filter((b) => b?.title), f.benefits),
+      steps: A(c.steps?.filter((s) => s?.title), f.steps),
+      faq: A(c.faq?.filter((q) => q?.q && q?.a), f.faq),
+      cvTitle: S(c.cvTitle, f.cvTitle),
+      cvText: S(c.cvText, f.cvText),
+      ...(c.quoteText?.trim() && c.quoteAuthor?.name
+        ? {
+            quote: {
+              text: c.quoteText.trim(),
+              name: c.quoteAuthor.name,
+              role: c.quoteAuthor.role ?? '',
+              ...(c.quoteAuthor.photoUrl ? { photoUrl: c.quoteAuthor.photoUrl } : {}),
+            },
+          }
+        : {}),
+    },
+    source: 'sanity',
+  }
+}
+
+/**
+ * Открытые вакансии.
+ *
+ * Пусто в Sanity — на боевом сайте пусто и на странице («зараз
+ * відкритих вакансій немає»). Выдуманные вакансии на живом сайте —
+ * это обман кандидатов. Примеры из кода видны только локально и на
+ * тестовом адресе, и помечены как примеры.
+ */
+export async function getVacancies(lang = 'ua'): Promise<Sourced<Vacancy[]>> {
+  const rows = await sanityFetch<Vacancy[]>(VACANCIES_QUERY, { lang }, ['vacancy'])
+  const live = isLiveSite()
+  if (rows && rows.length > 0) {
+    const clean = safe(rows, lang)
+      .filter((v) => v?.title)
+      /* Заглушки из сида на боевом домене не показываем никогда. */
+      .filter((v) => !(live && v.example))
+      .map((v) => ({
+        ...v,
+        department: v.department ?? 'legal',
+        weSeek: (v.weSeek ?? []).filter(Boolean),
+        duties: (v.duties ?? []).filter(Boolean),
+        weOffer: (v.weOffer ?? []).filter(Boolean),
+      }))
+    return { data: clean, source: 'sanity' }
+  }
+  return { data: live ? [] : exampleVacancies, source: 'static' }
 }

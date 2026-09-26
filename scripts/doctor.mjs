@@ -144,7 +144,7 @@ console.log(C.b('  Документи'))
    документ уже есть и, возможно, отредактирован в студии, и сидить его
    заново — стирать эти правки. */
 const TYPES = [
-  'practiceCategory', 'practice', 'post', 'teamMember', 'quiz',
+  'practiceCategory', 'practice', 'post', 'teamMember', 'vacancy', 'careerPage',
   'siteSettings', 'homePage', 'aboutPage', 'teamPage',
 ]
 let totalPublished = 0

@@ -4,6 +4,7 @@ import { PageHead, PageShell, SectionHead } from '@/components/site/PageShell'
 import { ButtonLink } from '@/components/ui/Button'
 import { Bold } from '@/components/ui/Bold'
 import { Icon } from '@/components/site/Icon'
+import { PracticeNote } from '@/components/site/PracticeNote'
 
 export const metadata: Metadata = {
   title: 'Команда',
@@ -100,6 +101,12 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
                 <p className="mt-4 max-w-[52ch] text-[15.5px] leading-relaxed text-on-dark">
                   <Bold text={t.executorText} onDark />
                 </p>
+                {executor.practice && (
+                  <p className="mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
+                    <span aria-hidden="true" className="size-[5px] rotate-45 bg-accent" />
+                    {executor.practice}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -136,6 +143,7 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
                   <h3 className="font-serif text-[16.5px] font-semibold leading-tight text-ink">{m.name}</h3>
                   <p className="m-0 mt-1 text-[12.5px] leading-snug text-slate">{m.role}</p>
                 </div>
+                <PracticeNote text={m.practice} />
               </article>
             ))}
           </div>

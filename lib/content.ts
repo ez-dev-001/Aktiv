@@ -13,23 +13,12 @@
 import type { IconName } from './icons'
 import type { SanityImage } from './sanity/image'
 
-export type PriceMode = 'fixed' | 'percent' | 'onRequest'
-
-export interface PriceSpec {
-  mode: PriceMode
-  amount?: number
-  amountMax?: number
-  percent?: number
-  percentBase?: string
-  unit?: 'once' | 'month' | 'hour' | 'instance'
-  note?: string
-  showInPriceList?: boolean
-}
-
-/** Тарифный пакет внутри одной услуги. */
+/**
+ * Вариант услуги («Резидент», «З нерезидентом»): кому подходит и что
+ * входит. Цен на сайте нет — стоимость называют после консультации.
+ */
 export interface PracticePackage {
   name: string
-  price: number
   /** кому подходит */
   audience: string[]
   /** что входит */
@@ -41,13 +30,12 @@ export interface Practice {
   slug: string
   title: string
   excerpt?: string
-  price?: PriceSpec
   /** «Показувати на головній» — поднимает направление в топ карточки */
   featured?: boolean
   /** Вводные абзацы. Обычный текст, а не PortableText: это статика.
       Когда практика появится в Sanity, оттуда придёт body и вытеснит его. */
   bodyText?: string[]
-  /** Услуга с несколькими тарифами — вместо одной цены. */
+  /** Варианты услуги (бывшие «тарифные пакеты»). */
   packages?: PracticePackage[]
   /** Что входит, когда пакет один. */
   includes?: string[]
@@ -61,9 +49,6 @@ export interface Category {
   title: string
   icon: IconName
   excerpt: string
-  priceHint?: string
-  /** slug калькулятора категории из Sanity (поле «Калькулятор категорії»). */
-  quiz?: string
   /** «Фото на картці» из Sanity; без него — заглушка из lib/photos.ts. */
   photo?: SanityImage | null
   practices: Practice[]
@@ -74,7 +59,7 @@ export type { IconName } from './icons'
 
 /* ═══════════════ КАТЕГОРИИ И 36 ПРАКТИК ═══════════════
    Порядок: ликвидация первой — основная практика фирмы
-   (300 закрытых предприятий) и единственная с открытой ценой на входе. */
+   (300 закрытых предприятий). */
 export const categories: Category[] = [
   {
     slug: 'likvidatsiya-bankrutstvo',
@@ -82,18 +67,11 @@ export const categories: Category[] = [
     icon: 'liquidation',
     excerpt:
       'Закрити підприємство законно й передбачувано — або пройти банкрутство, зберігши активи. Основна практика фірми: 300 ліквідованих підприємств.',
-    priceHint: 'від 12 000 ₴ · альтернативна ліквідація',
     practices: [
       {
         slug: 'alternative-liquidation',
         title: 'Альтернативна ліквідація — зміна директора і власників',
         legacyPath: '/practice/alternative-liquidation/',
-        /* TODO(client): расхождение в цене на самом старом сайте.
-           Страница практики называет 12 000 ₴ и 18 000 ₴ (два пакета),
-           страница /stoymost-uslug-2/ — 10 000 ₴. Взял 12 000: страница
-           практики свежее, на ней и появилась пакетная структура.
-           Подтвердить, какая цифра верная. */
-        price: { mode: 'fixed', amount: 12000 },
         excerpt:
           'Найшвидший спосіб завершити діяльність юридичної особи: викуп корпоративних прав, ' +
           'зміна директора і власників. 1–3 робочі дні замість місяців класичної ліквідації.',
@@ -109,7 +87,6 @@ export const categories: Category[] = [
         packages: [
           {
             name: 'Резидент',
-            price: 12000,
             audience: [
               'компаніям, що не ведуть діяльності або більше не мають потреби у функціонуванні',
               'підприємствам без суттєвих ризиків',
@@ -126,7 +103,6 @@ export const categories: Category[] = [
             /* TODO(client): на сайте у второго пакета название не подписано.
                «З нерезидентом» — описание по его же составу работ. */
             name: 'З нерезидентом',
-            price: 18000,
             audience: [
               'компаніям, які мають борги, прострочені зобовʼязання або складну історію діяльності',
               'підприємствам, що мають складнощі з обліком та документацією',
@@ -197,10 +173,10 @@ export const categories: Category[] = [
         ],
       },
       { slug: 'liquidation-of-enterprises', title: 'Ліквідація підприємства в Україні', legacyPath: '/practice/liquidation-of-enterprises/' },
-      { slug: 'bankrutstvo', title: 'Банкрутство юридичних осіб', legacyPath: '/practice/bankrutstvo/', price: { mode: 'fixed', amount: 25000 } },
+      { slug: 'bankrutstvo', title: 'Банкрутство юридичних осіб', legacyPath: '/practice/bankrutstvo/' },
       { slug: 'bankrutstvo-fizychnyh-osib', title: 'Банкрутство фізичних осіб', legacyPath: '/practice/bankrutstvo-fizychnyh-osib/' },
       { slug: 'deferred-loans', title: 'Відстрочення кредитів', legacyPath: '/practice/deferred-loans/' },
-      { slug: 'asset-protection', title: 'Захист активів від кредиторів і банків', legacyPath: '/practice/asset-protection/', price: { mode: 'fixed', amount: 25000 } },
+      { slug: 'asset-protection', title: 'Захист активів від кредиторів і банків', legacyPath: '/practice/asset-protection/' },
     ],
   },
   {
@@ -209,9 +185,8 @@ export const categories: Category[] = [
     icon: 'court',
     excerpt:
       'Представництво в господарських, цивільних, адміністративних і податкових спорах — з розрахунком на виконання, а не на красиве рішення.',
-    priceHint: 'від 2 500 ₴ · представлення інтересів у суді',
     practices: [
-      { slug: 'hozyajstvennye-spory', title: 'Господарські спори', legacyPath: '/practice/hozyajstvennye-spory/', price: { mode: 'fixed', amount: 2500, unit: 'instance' } },
+      { slug: 'hozyajstvennye-spory', title: 'Господарські спори', legacyPath: '/practice/hozyajstvennye-spory/' },
       { slug: 'grazhdanskie-spory', title: 'Цивільні спори', legacyPath: '/practice/grazhdanskie-spory/' },
       { slug: 'administrativnye-spory', title: 'Адміністративні спори', legacyPath: '/practice/administrativnye-spory/' },
       { slug: 'tax-law', title: 'Податкові спори', legacyPath: '/practice/tax-law/' },
@@ -230,14 +205,12 @@ export const categories: Category[] = [
     icon: 'realestate',
     excerpt:
       'Реєстрація і реорганізація, право власності, земля, будівництво, інтелектуальна власність, енергетика та публічні закупівлі.',
-    priceHint: 'від 1 300 ₴ · реєстрація підприємства',
     practices: [
-      { slug: 'registration-of-enterprises', title: 'Реєстрація підприємств', legacyPath: '/practice/registration-of-enterprises/', price: { mode: 'fixed', amount: 1300 } },
+      { slug: 'registration-of-enterprises', title: 'Реєстрація підприємств', legacyPath: '/practice/registration-of-enterprises/' },
       { slug: 'corporate-law', title: 'Реорганізація підприємств в Україні', legacyPath: '/practice/corporate-law/' },
-      // TODO(client): «від 2 500 ₴» — я считаю, что за месяц. На прайс-странице периода нет.
-      { slug: 'abonentske-obsluhovuvannya', title: 'Абонентське юридичне обслуговування', legacyPath: '/practice/abonentskoe-obsluzhivanie-yuridicheskikh-i-fizicheskikh-licz/', price: { mode: 'fixed', amount: 2500, unit: 'month' } },
-      { slug: 'debt-collection', title: 'Стягнення заборгованості', legacyPath: '/practice/debt-collection/', price: { mode: 'percent', percent: 15, percentBase: 'від суми боргу' } },
-      { slug: 'property-rights-services', title: 'Реєстрація права власності на нерухоме майно', legacyPath: '/practice/property-rights-services/', price: { mode: 'onRequest' } },
+      { slug: 'abonentske-obsluhovuvannya', title: 'Абонентське юридичне обслуговування', legacyPath: '/practice/abonentskoe-obsluzhivanie-yuridicheskikh-i-fizicheskikh-licz/' },
+      { slug: 'debt-collection', title: 'Стягнення заборгованості', legacyPath: '/practice/debt-collection/' },
+      { slug: 'property-rights-services', title: 'Реєстрація права власності на нерухоме майно', legacyPath: '/practice/property-rights-services/' },
       { slug: 'the-property', title: 'Нерухомість, земля та будівництво', legacyPath: '/practice/the-property/' },
       { slug: 'nedvizhimost', title: 'Супровід операцій з нерухомістю', legacyPath: '/practice/nedvizhimost/' },
       { slug: 'land-law', title: 'Земельне право', legacyPath: '/practice/land-law/' },
@@ -253,7 +226,6 @@ export const categories: Category[] = [
     icon: 'military',
     excerpt:
       'ТЦК, ВЛК, відстрочка від мобілізації, перерахунок пенсій, виплати військовослужбовцям і родинам. Веде окремий військовий юрист.',
-    priceHint: 'консультація без оплати',
     practices: [
       { slug: 'yurydychna-dopomoha-vijskovosluzhbovtsyam', title: 'Юридична допомога військовослужбовцям', legacyPath: '/practice/yuridicheskaya-pomoshh-voennosluzhashhim/' },
       { slug: 'suprovid-advokata-v-organah-tczk', title: 'Супровід адвоката в органах ТЦК', legacyPath: '/practice/suprovid-advokata-v-organah-tczk/' },
@@ -280,7 +252,7 @@ export const credo = [
   },
   {
     title: 'Називаємо вартість до договору.',
-    text: 'Письмовий діапазон вартості з прайсу або з калькулятора — **до** підписання. Ніяких «зателефонуйте, обговоримо» і ніяких сум, що зʼявляються в процесі.',
+    text: 'Вартість називаємо письмово, після знайомства з документами і **до** підписання. Ніяких сум, що зʼявляються в процесі.',
   },
   {
     title: 'Доводимо до виконання, а не до рішення.',
@@ -295,7 +267,7 @@ export const credo = [
 /* ═══════════════ ШЛЯХ СПРАВИ ═══════════════ */
 export const casePath = [
   { title: 'Консультація', text: 'Слухаємо, дивимось документи, оцінюємо перспективу. Без оплати.' },
-  { title: 'Стратегія і діапазон вартості', text: 'Письмовий план дій і діапазон вартості. Ще до договору.' },
+  { title: 'Стратегія', text: 'Письмовий план дій і вартість. Ще до договору.' },
   { title: 'Процес', text: 'Ведення справи. Звіт після кожного засідання, без нагадувань.' },
   { title: 'Виконання', text: 'Приватний виконавець доводить рішення до реального стягнення.' },
 ]
@@ -310,33 +282,19 @@ export const figures = [
   { value: 300, suffix: '+', label: 'ліквідованих підприємств' },
 ]
 
-/* ═══════════════ ПРАЙС ═══════════════
-   Перенесён с /stoymost-uslug-2/ — страницы, на которую
-   на старом сайте не было ни одной входящей ссылки. */
-export const priceList: { service: string; price: PriceSpec }[] = [
-  /* TODO(client): на странице практики — 12 000 ₴, на старой странице
-     прайса — 10 000 ₴. Свёл к 12 000, подтвердить. */
-  { service: 'Альтернативна ліквідація — зміна директора і власників', price: { mode: 'fixed', amount: 12000 } },
-  { service: 'Супровід процедури банкрутства юридичних і фізичних осіб', price: { mode: 'fixed', amount: 25000 } },
-  { service: 'Захист активів боржників від кредиторів і банків', price: { mode: 'fixed', amount: 25000 } },
-  { service: 'Супровід реалізації заставного майна боржників', price: { mode: 'fixed', amount: 25000 } },
-  { service: 'Представлення інтересів в суді', price: { mode: 'fixed', amount: 2500, unit: 'instance' } },
-  { service: 'Абонентське обслуговування юридичних і фізичних осіб', price: { mode: 'fixed', amount: 2500, unit: 'month' } },
-  { service: 'Реєстрація підприємств', price: { mode: 'fixed', amount: 1300 } },
-  { service: 'Стягнення заборгованості', price: { mode: 'percent', percent: 15, percentBase: 'від суми боргу', note: 'гонорар успіху' } },
-  { service: 'Реєстрація права власності', price: { mode: 'onRequest', note: 'договірна' } },
-]
-
 /* ═══════════════ КОМАНДА ═══════════════
    TODO(client): фамилии транслитерированы со старого сайта.
    «Альона Біланівська» под вопросом, нужна сверка. */
-export const team = [
+/* practice — подпись под карточкой. В статике только то, что следует
+   из должности; остальным её ставят в Sanity («Практика — підпис під
+   карткою» или список практик у фахівця). */
+export const team: { name: string; role: string; key?: boolean; practice?: string }[] = [
   { name: 'Сергій Шайко', role: 'Керуючий партнер, адвокат' },
-  { name: 'Микола Бердар', role: 'Приватний виконавець', key: true },
+  { name: 'Микола Бердар', role: 'Приватний виконавець', key: true, practice: 'Виконання судових рішень' },
   { name: 'Анастасія Шаповалова', role: 'Партнер, адвокат' },
   { name: 'Олеся Серебряник', role: 'Партнер, адвокат' },
   { name: 'Ігор Буранов', role: 'Партнер, адвокат' },
-  { name: 'Володимир Остапенко', role: 'Військовий юрист, адвокат' },
+  { name: 'Володимир Остапенко', role: 'Військовий юрист, адвокат', practice: 'Військове право' },
   { name: 'Альона Біланівська', role: 'Адвокат' },
   { name: 'Валерія Осипенко', role: 'Адвокат' },
   { name: 'Ярослав Лисак', role: 'Адвокат' },
@@ -351,32 +309,45 @@ export const journal = [
 ]
 
 /* ═══════════════ КОНТАКТЫ ═══════════════ */
+
+export interface OfficeAddress {
+  street: string
+  unit?: string
+  city?: string
+}
+
+/**
+ * «Київ, вул. Ділова, 6, офіс 25» → { city, street, unit }.
+ *
+ * Запасной разбор для случая, когда в Sanity заполнен только старый
+ * однострочный адрес. Город — первая часть, если в ней нет цифр и
+ * сокращений улицы; офис — последняя, если начинается с «офіс/оф./
+ * кв./приміщення/поверх». Всё, что между, — улица с домом. Не
+ * получилось разобрать — вся строка идёт в street, и карточка просто
+ * покажет её одной строкой.
+ */
+export function splitAddress(address: string): OfficeAddress {
+  const parts = address.split(/\s*,\s*/).filter(Boolean)
+  const isStreet = (s: string) => /\d|вул\.|вулиця|просп|пров\.|пл\.|бульв|бул\.|узвіз|шосе|набережна/i.test(s)
+  const city = parts.length > 1 && !isStreet(parts[0]!) ? parts.shift() : undefined
+  const unit = parts.length > 1 && /^(офіс|оф\.|кв\.|приміщення|прим\.|поверх|каб)/i.test(parts[parts.length - 1]!) ? parts.pop() : undefined
+  return { street: parts.join(', ') || address, ...(unit ? { unit } : {}), ...(city ? { city } : {}) }
+}
 export const contacts = {
   phone: '+38 098 123 43 24',
   phoneHref: 'tel:+380981234324',
   email: 'info@aktiv-alb.com',
   address: 'Київ, вул. Ділова, 6, офіс 25',
+  /* Та сама адреса частинами — для картки офісу, див. splitAddress. */
+  office: { city: 'Київ', street: 'вул. Ділова, 6', unit: 'офіс 25' },
+  /* Заглушка: показывает, где стоит подсказка «як знайти». */
+  officeHint: 'Приклад: поверх, вхід, парковка — замініть у налаштуваннях сайту',
   hours: 'Пн — Пт, 9:00 – 18:00',
   messengers: [
     { label: 'Telegram', href: 'https://t.me/COMPANY_AKTIV' },
     { label: 'Viber', href: 'viber://chat?number=%2B380981234324' },
     { label: 'WhatsApp', href: 'https://wa.me/380981234324' },
   ],
-}
-
-/* ═══════════════ ФОРМАТИРОВАНИЕ ЦЕНЫ ═══════════════ */
-const nf = new Intl.NumberFormat('uk-UA')
-const unitSuffix = (u?: PriceSpec['unit']) =>
-  u === 'month' ? '/міс' : u === 'hour' ? '/год' : u === 'instance' ? ' / інстанція' : ''
-
-export function formatPrice(p?: PriceSpec): string | null {
-  if (!p) return null
-  if (p.mode === 'onRequest') return 'за запитом'
-  if (p.mode === 'percent') return `${p.percent} % ${p.percentBase ?? ''}`.trim()
-  if (typeof p.amount !== 'number') return null
-  if (typeof p.amountMax === 'number')
-    return `${nf.format(p.amount)} – ${nf.format(p.amountMax)} ₴${unitSuffix(p.unit)}`
-  return `від ${nf.format(p.amount)} ₴${unitSuffix(p.unit)}`
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -544,7 +515,7 @@ export const staticHome: HomeContent = {
   heroLede:
     'Ми беремо справу, лише коли бачимо шлях до кінця. І проходимо його повністю — від першої консультації до **грошей на рахунку клієнта**.',
   heroCtaPrimary: 'Розповісти про справу',
-  heroCtaSecondary: 'Вартість і калькулятор',
+  heroCtaSecondary: 'Напрями практики',
   promises: [
     {
       kicker: 'Чому доводимо до кінця',
@@ -703,3 +674,132 @@ export const staticTeamPage: TeamPageContent = {
   ctaPrimary: 'Розповісти про справу',
   ctaSecondary: 'Про компанію',
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   КАРʼЄРА
+
+   Все тексты ниже — ЗАГЛУШКИ: они показывают, что и где стоит на
+   странице, но ничего не утверждают от имени фирмы. `npm run seed`
+   кладёт их в Sanity («Сторінка «Карʼєра»» и «Вакансії»), там их и
+   заменяют настоящими. Всё, что заполнено в Sanity, важнее кода.
+
+   Вакансии-заглушки помечены example и на боевом домене не
+   показываются никогда: там без настоящих вакансий стоит честное
+   «зараз відкритих вакансій немає».
+   ═══════════════════════════════════════════════════════════════════ */
+
+export type VacancyDepartment = 'legal' | 'business' | 'office'
+
+export interface Vacancy {
+  slug: string
+  title: string
+  department: VacancyDepartment
+  experience?: string
+  format?: 'office' | 'hybrid' | 'remote'
+  employment?: 'full' | 'part' | 'intern'
+  summary?: string
+  weSeek: string[]
+  duties: string[]
+  weOffer: string[]
+  /** пример из кода, а не вакансия из Sanity */
+  example?: boolean
+}
+
+export interface CareerContent {
+  headEyebrow: string
+  headTitle: string
+  headTitleAccent: string
+  headLede: string
+  benefitsTitle: string
+  benefits: { icon?: IconName; title: string; text: string }[]
+  steps: { title: string; text: string; duration?: string }[]
+  quote?: { text: string; name: string; role: string; photoUrl?: string }
+  faq: { q: string; a: string }[]
+  cvTitle: string
+  cvText: string
+}
+
+export const DEPARTMENT_LABEL: Record<VacancyDepartment, string> = {
+  legal: 'Юридичний',
+  business: 'Робота з клієнтами',
+  office: 'Офіс',
+}
+export const FORMAT_LABEL = { office: 'Офіс', hybrid: 'Гібрид', remote: 'Віддалено' } as const
+export const EMPLOYMENT_LABEL = { full: 'Повна зайнятість', part: 'Часткова зайнятість', intern: 'Стажування' } as const
+
+export const staticCareer: CareerContent = {
+  headEyebrow: 'Карʼєра · приклад тексту',
+  headTitle: 'Заголовок сторінки —',
+  headTitleAccent: 'акцентна частина.',
+  headLede:
+    'Тут 2–3 речення: кого шукає фірма і чому до вас варто прийти. **Жирним** — головна думка. ' +
+    'Текст-заглушка: замініть у Sanity → «Сторінка «Карʼєра»» → «Перший екран».',
+  benefitsTitle: 'Заголовок блоку переваг',
+  benefits: [
+    { icon: 'people', title: 'Перевага 1', text: 'Одне-два речення: що саме отримує співробітник. Наприклад, про наставника на старті.' },
+    { icon: 'gavel', title: 'Перевага 2', text: 'Приклад: які справи людина вестиме і за що відповідатиме.' },
+    { icon: 'legislation', title: 'Перевага 3', text: 'Приклад: навчання, курси, підвищення кваліфікації.' },
+    { icon: 'finance', title: 'Перевага 4', text: 'Приклад: як складається дохід і як він зростає.' },
+    { icon: 'office', title: 'Перевага 5', text: 'Приклад: офіс, графік, можливість працювати з дому.' },
+    { icon: 'protection', title: 'Перевага 6', text: 'Приклад: оформлення, відпустка, лікарняні.' },
+  ],
+  steps: [
+    { title: 'Крок 1', text: 'Приклад: кандидат надсилає резюме через форму або на пошту.', duration: 'скільки триває' },
+    { title: 'Крок 2', text: 'Приклад: коротка розмова телефоном або онлайн.', duration: 'скільки триває' },
+    { title: 'Крок 3', text: 'Приклад: співбесіда з партнером в офісі.', duration: 'скільки триває' },
+    { title: 'Крок 4', text: 'Приклад: пропозиція з умовами і дата виходу.', duration: 'скільки триває' },
+  ],
+  faq: [
+    { q: 'Приклад питання кандидата — напр., чи можна без досвіду?', a: 'Відповідь фірми на 1–3 речення. Заглушка: замініть у Sanity → «Питання».' },
+    { q: 'Приклад питання — напр., чи потрібне свідоцтво адвоката?', a: 'Відповідь фірми на 1–3 речення.' },
+    { q: 'Приклад питання — напр., чи можна працювати віддалено?', a: 'Відповідь фірми на 1–3 речення.' },
+    { q: 'Приклад питання — напр., що робити, якщо вакансії немає?', a: 'Відповідь фірми на 1–3 речення.' },
+  ],
+  cvTitle: 'Надіслати резюме',
+  cvText: 'Приклад: хто подивиться резюме і за скільки днів ви відповідаєте. Заглушка — замініть у Sanity → «Форма резюме».',
+}
+
+/* Вакансии-заглушки. Помечены example: на сайте с плашкой «приклад»,
+   а на боевом домене не показываются вовсе — даже если их засеяли в
+   Sanity и забыли снять галочку «Приклад». */
+const EXAMPLE_LISTS = {
+  weSeek: ['Вимога 1 — напр., освіта', 'Вимога 2 — напр., досвід', 'Вимога 3 — напр., навички'],
+  duties: ['Обовʼязок 1 — що людина робить щодня', 'Обовʼязок 2', 'Обовʼязок 3'],
+  weOffer: ['Умова 1 — напр., дохід', 'Умова 2 — напр., графік', 'Умова 3 — напр., навчання'],
+}
+
+export const exampleVacancies: Vacancy[] = [
+  {
+    slug: 'example-1',
+    title: 'Назва посади 1',
+    department: 'legal',
+    experience: 'досвід — напр., від 2 років',
+    format: 'office',
+    employment: 'full',
+    summary: 'Два речення про роль: чим людина займатиметься і з ким працюватиме. Заглушка — замініть у Sanity → «Вакансії».',
+    ...EXAMPLE_LISTS,
+    example: true,
+  },
+  {
+    slug: 'example-2',
+    title: 'Назва посади 2',
+    department: 'legal',
+    experience: 'досвід — напр., без досвіду',
+    format: 'hybrid',
+    employment: 'intern',
+    summary: 'Два речення про роль. Заглушка.',
+    ...EXAMPLE_LISTS,
+    example: true,
+  },
+  {
+    slug: 'example-3',
+    title: 'Назва посади 3',
+    department: 'business',
+    experience: 'досвід — напр., від 1 року',
+    format: 'office',
+    employment: 'full',
+    summary: 'Два речення про роль. Заглушка.',
+    ...EXAMPLE_LISTS,
+    example: true,
+  },
+]

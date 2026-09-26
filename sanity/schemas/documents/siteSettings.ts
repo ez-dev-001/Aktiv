@@ -232,8 +232,65 @@ export const siteSettings = defineType({
     /* ── контакты ── */
     defineField({ name: 'phone', title: 'Телефон', type: 'string', group: 'contacts' }),
     defineField({ name: 'email', title: 'Пошта', type: 'string', group: 'contacts' }),
-    defineField({ name: 'address', title: 'Адреса', type: 'localeString', group: 'contacts' }),
+    /* ── Адреса: три поля замість одного рядка ──
+       Один рядок «Київ, вул. Ділова, 6, офіс 25» на картці офісу
+       переносився навмання — «Київ, вул.» на одному рядку, решта на
+       іншому. Розбита на частини адреса дає зрозумілу ієрархію:
+       вулиця великим, офіс і місто — дрібніше. Повний рядок для футера
+       й форми сайт складає з цих частин сам. */
+    defineField({
+      name: 'street',
+      title: 'Адреса — вулиця й будинок',
+      type: 'localeString',
+      group: 'contacts',
+      description: 'Напр. «вул. Ділова, 6». Найбільший рядок на картці офісу.',
+      validation: (r) => r.custom(localeMax(50)),
+    }),
+    defineField({
+      name: 'unit',
+      title: 'Адреса — офіс',
+      type: 'localeString',
+      group: 'contacts',
+      description: 'Напр. «офіс 25». Необовʼязково.',
+      validation: (r) => r.custom(localeMax(30)),
+    }),
+    defineField({
+      name: 'city',
+      title: 'Місто',
+      type: 'localeString',
+      group: 'contacts',
+      description: 'Напр. «Київ».',
+      validation: (r) => r.custom(localeMax(30)),
+    }),
+    defineField({
+      name: 'address',
+      title: 'Адреса одним рядком (застаріле)',
+      type: 'localeString',
+      group: 'contacts',
+      description:
+        'Потрібне, лише поки не заповнені три поля вище: тоді сайт розбирає цей рядок сам. ' +
+        'Коли вулиця, офіс і місто заповнені, це поле ігнорується.',
+    }),
     defineField({ name: 'hours', title: 'Години роботи', type: 'localeString', group: 'contacts' }),
+    defineField({
+      name: 'mapQuery',
+      title: 'Точка на карті',
+      type: 'string',
+      group: 'contacts',
+      description:
+        'Що шукати в Google Maps для картки офісу внизу сторінок. Найточніше — назва фірми так, ' +
+        'як вона підписана на карті («Юридична компанія АКТИВ, Київ»), або адреса без номера офісу. ' +
+        'Порожньо — береться поле «Адреса». Перевірте: відкрийте google.com/maps, вставте цей текст — ' +
+        'шпилька має стати на ваш вхід.',
+    }),
+    defineField({
+      name: 'officeHint',
+      title: 'Як знайти офіс',
+      type: 'localeString',
+      group: 'contacts',
+      description: 'Один рядок під адресою на картці: поверх, вхід, парковка. Напр. «3 поверх, вхід з двору, є парковка».',
+      validation: (r) => r.custom(localeMax(120)),
+    }),
     defineField({
       name: 'messengers',
       title: 'Месенджери',

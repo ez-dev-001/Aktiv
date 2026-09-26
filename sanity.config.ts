@@ -4,7 +4,7 @@ import { visionTool } from '@sanity/vision'
 import { schemaTypes } from './sanity/schemas'
 
 /** Документы, которых на сайте существует ровно по одному. */
-const SINGLETONS = ['siteSettings', 'homePage', 'aboutPage', 'teamPage'] as const
+const SINGLETONS = ['siteSettings', 'homePage', 'aboutPage', 'teamPage', 'careerPage'] as const
 
 /**
  * Один конфиг на две среды: студию (`npm run studio`) и будущий
@@ -46,6 +46,10 @@ export default defineConfig({
               .id('teamPage')
               .child(S.document().schemaType('teamPage').documentId('teamPage')),
             S.listItem()
+              .title('Сторінка «Карʼєра»')
+              .id('careerPage')
+              .child(S.document().schemaType('careerPage').documentId('careerPage')),
+            S.listItem()
               .title('Налаштування сайту')
               .id('siteSettings')
               .child(S.document().schemaType('siteSettings').documentId('siteSettings')),
@@ -53,7 +57,7 @@ export default defineConfig({
             S.documentTypeListItem('practiceCategory').title('Напрями'),
             S.documentTypeListItem('practice').title('Практики'),
             S.documentTypeListItem('teamMember').title('Команда'),
-            S.documentTypeListItem('quiz').title('Калькулятори'),
+            S.documentTypeListItem('vacancy').title('Вакансії'),
             S.documentTypeListItem('post').title('Блог'),
           ]),
     }),

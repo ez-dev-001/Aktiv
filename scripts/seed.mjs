@@ -10,7 +10,7 @@
  * Sanity приезжало 5 и 6. Причём цена альтернативной ликвидации тут
  * оставалась старой — 10 000 вместо 12 000.
  *
- * Теперь источник один: lib/content.ts и lib/quizzes.ts импортируются
+ * Теперь источник один: lib/content.ts импортируется
  * напрямую. Node читает TypeScript через --experimental-strip-types
  * (есть с 22.6), поэтому расхождение стало невозможным физически.
  *
@@ -29,8 +29,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { categories, contacts, figures, team } from '../lib/content.ts'
-import { quizCopy, quizzes } from '../lib/quizzes.ts'
-import { staticAbout, staticHome, staticTeamPage, trustFacts } from '../lib/content.ts'
+import { staticAbout, staticHome, staticTeamPage, trustFacts, staticCareer, exampleVacancies } from '../lib/content.ts'
 import { staticCookieTexts } from '../lib/consent.ts'
 
 /* .env.local читаем сами: скрипт запускается вне Next. */
@@ -77,6 +76,24 @@ const ONLY = (process.argv.find((a) => a.startsWith('--only=')) ?? '')
  */
 const PATCH_ONLY = new Set(['siteSettings', 'homePage', 'aboutPage', 'teamPage'])
 
+/**
+ * Документы, которые сид создаёт ОДИН раз и больше не трогает.
+ *
+ * «Карʼєра» и вакансии засеваются заглушками, которые фирма потом
+ * заменяет своим текстом. Перезапись при каждом `npm run seed` вернула
+ * бы заглушки поверх настоящих вакансий. Поэтому — createIfNotExists:
+ * документа нет — создаём, есть — не трогаем ни поля.
+ * Вернуть заглушки заново: удалить документ в студии и запустить сид.
+ */
+const CREATE_ONLY = new Set(['careerPage', 'vacancy'])
+
+/**
+ * Поля настроек, которые сид заполняет, только если они пустые.
+ * Адрес частями и подсказку «як знайти» фирма правит под себя — сид
+ * не должен возвращать заглушку поверх её правки.
+ */
+const SETTINGS_IF_MISSING = ['street', 'unit', 'city', 'officeHint', 'mapQuery']
+
 if (!token && !DRY) {
   console.error(
     '\n  Не заданий SANITY_API_WRITE_TOKEN.\n' +
@@ -108,7 +125,6 @@ const slugify = (s) =>
 const catId = (s) => `category-${s}`
 const pracId = (s) => `practice-${s}`
 const memberId = (s) => `member-${s}`
-const quizId = (s) => `quiz-${s}`
 
 /** Транслит для slug'ов команды: имена кириллицей, slug нужен латиницей. */
 const TR = {
@@ -140,6 +156,7 @@ const teamDocs = team.map((m, i) => {
     order: (i + 1) * 10,
     highlight: Boolean(m.key),
     slug: { _type: 'slug', current: slug },
+    practiceNote: L(m.practice),
   }
 })
 
@@ -172,26 +189,11 @@ for (const c of categories) {
       slug: { _type: 'slug', current: p.slug },
       category: { _type: 'reference', _ref: catId(c.slug) },
       legacyPaths: p.legacyPath ? [p.legacyPath] : undefined,
-      /* featured ставим тем, у кого есть цена: именно они поднимаются
-         на карточку главной, и правило совпадает с тем, что в коде. */
-      featured: Boolean(p.price?.mode === 'fixed' && typeof p.price.amount === 'number'),
+      /* «Показувати на головній» — первые пять направлений категории. */
+      featured: i < 5,
     }
 
     if (p.excerpt) doc.excerpt = T(p.excerpt)
-
-    if (p.price) {
-      doc.price = {
-        _type: 'priceSpec',
-        mode: p.price.mode,
-        amount: p.price.amount,
-        amountMax: p.price.amountMax,
-        percent: p.price.percent,
-        percentBase: L(p.price.percentBase),
-        unit: p.price.unit ?? 'once',
-        note: L(p.price.note),
-        showInPriceList: p.price.showInPriceList !== false,
-      }
-    }
 
     if (p.bodyText?.length) {
       /* bodyText — обычные абзацы; в Sanity это PortableText. */
@@ -223,7 +225,6 @@ for (const c of categories) {
         _type: 'package',
         _key: `p${k}`,
         name: L(pk.name),
-        price: pk.price,
         audience: LArr(pk.audience),
         includes: LArr(pk.includes),
         note: L(pk.note),
@@ -233,45 +234,6 @@ for (const c of categories) {
     practiceDocs.push(doc)
   })
 }
-
-/* ═══════════════ КАЛЬКУЛЯТОРЫ ═══════════════
-   Коэффициенты и тексты лежат в разных файлах — quizzes.ts держит
-   веса, quizCopy тексты, — а в Sanity это один документ. Склеиваем. */
-const quizDocs = Object.values(quizzes).map((cfg) => {
-  const copy = quizCopy[cfg.id]
-  return {
-    _id: quizId(cfg.id),
-    _type: 'quiz',
-    title: cfg.practice,
-    slug: { _type: 'slug', current: cfg.id },
-    category: { _type: 'reference', _ref: catId(cfg.id) },
-    heading: L(copy?.heading ?? cfg.practice),
-    /* Дисклеймер живёт под результатом, а не во вступлении. */
-    resultNote: T(copy?.disclaimer),
-    spreadLow: cfg.spread.low,
-    spreadHigh: cfg.spread.high,
-    roundTo: cfg.roundTo,
-    floor: cfg.floor,
-    steps: cfg.steps.map((st, si) => ({
-      _type: 'step',
-      _key: `st${si}`,
-      id: { _type: 'slug', current: st.id },
-      question: L(copy?.steps?.[st.id]?.q ?? st.id),
-      hint: L(copy?.steps?.[st.id]?.hint),
-      options: st.options.map((o, oi) => ({
-        _type: 'option',
-        _key: `o${si}_${oi}`,
-        id: { _type: 'slug', current: o.id },
-        label: L(copy?.steps?.[st.id]?.options?.[o.id] ?? o.id),
-        base: o.base,
-        factor: o.factor,
-        add: o.add,
-        successFeePercent: o.switchToPercent?.percent,
-        reason: L(o.reason),
-      })),
-    })),
-  }
-})
 
 /* ═══════════════ НАСТРОЙКИ САЙТА ═══════════════ */
 const settingsDoc = {
@@ -311,6 +273,11 @@ const settingsDoc = {
   phone: contacts.phone,
   email: contacts.email,
   address: L(contacts.address),
+  street: L(contacts.office.street),
+  unit: L(contacts.office.unit),
+  city: L(contacts.office.city),
+  /* Заглушка-подсказка: видно, где и как она стоит на картке офиса. */
+  officeHint: L(contacts.officeHint),
   hours: L(contacts.hours),
   messengers: contacts.messengers.map((m, i) => ({
     _type: 'messenger',
@@ -439,8 +406,56 @@ const teamPageDoc = {
   ctaSecondary: L(staticTeamPage.ctaSecondary),
 }
 
+/* ═══════════════ КАРʼЄРА (заглушки) ═══════════════
+   Текст страницы и вакансии-образцы — из lib/content.ts (staticCareer,
+   exampleVacancies). Всё — заглушки: показывают, что где стоит, и ничего
+   не утверждают от имени фирмы. Создаются один раз (CREATE_ONLY). */
+const careerDoc = {
+  _id: 'careerPage',
+  _type: 'careerPage',
+  headEyebrow: L(staticCareer.headEyebrow),
+  headTitle: L(staticCareer.headTitle),
+  headTitleAccent: L(staticCareer.headTitleAccent),
+  headLede: T(staticCareer.headLede),
+  benefitsTitle: L(staticCareer.benefitsTitle),
+  benefits: staticCareer.benefits.map((b, i) => ({
+    _type: 'benefit',
+    _key: `b${i}`,
+    icon: b.icon,
+    title: L(b.title),
+    text: T(b.text),
+  })),
+  steps: staticCareer.steps.map((st, i) => ({
+    _type: 'step',
+    _key: `s${i}`,
+    title: L(st.title),
+    text: T(st.text),
+    duration: L(st.duration),
+  })),
+  faq: staticCareer.faq.map((f, i) => ({ _type: 'qa', _key: `q${i}`, q: L(f.q), a: T(f.a) })),
+  cvTitle: L(staticCareer.cvTitle),
+  cvText: T(staticCareer.cvText),
+}
+
+const vacancyDocs = exampleVacancies.map((v, i) => ({
+  _id: `vacancy-${v.slug}`,
+  _type: 'vacancy',
+  title: L(v.title),
+  active: true,
+  example: true,
+  department: v.department,
+  experience: L(v.experience),
+  format: v.format,
+  employment: v.employment,
+  summary: T(v.summary),
+  weSeek: LArr(v.weSeek),
+  duties: LArr(v.duties),
+  weOffer: LArr(v.weOffer),
+  order: (i + 1) * 10,
+}))
+
 /* ═══════════════ ЗАПИСЬ ═══════════════ */
-const docs = [...teamDocs, ...categoryDocs, ...practiceDocs, ...quizDocs, settingsDoc, homeDoc, aboutDoc, teamPageDoc]
+const docs = [...teamDocs, ...categoryDocs, ...practiceDocs, settingsDoc, homeDoc, aboutDoc, teamPageDoc, careerDoc, ...vacancyDocs]
 
 /** Пустые поля выкидываем: undefined в Sanity лучше не отправлять. */
 const clean = (v) => {
@@ -478,25 +493,29 @@ if (DRY) {
     console.log('\n  Приклад практики з пакетами:')
     console.log(JSON.stringify(sample, null, 2).split('\n').slice(0, 30).join('\n'))
   }
-  const q = ready.find((d) => d._type === 'quiz')
-  if (q) {
-    console.log(`\n  Калькулятор «${q.title}»: ${q.steps.length} питань, ` +
-      `${q.steps.reduce((n, st) => n + st.options.length, 0)} варіантів, ` +
-      `діапазон ${q.spreadLow}–${q.spreadHigh}, округлення ${q.roundTo} ₴`)
-  }
   console.log('')
   process.exit(0)
 }
 
 const tx = ready.reduce((t, doc) => {
+  if (CREATE_ONLY.has(doc._type)) return t.createIfNotExists(doc)
   if (!PATCH_ONLY.has(doc._type)) return t.createOrReplace(doc)
   /* Синглтон: создаём пустой, если его нет, и дальше только
      проставляем свои поля. Чужие — лента клиентов, заголовки блока
      довіри — остаются как есть. */
   const { _id, _type, ...fields } = doc
+  const ifMissing = {}
+  if (_type === 'siteSettings') {
+    for (const k of SETTINGS_IF_MISSING) {
+      if (k in fields) {
+        ifMissing[k] = fields[k]
+        delete fields[k]
+      }
+    }
+  }
   return t
     .createIfNotExists({ _id, _type })
-    .patch(_id, (pt) => pt.set(fields))
+    .patch(_id, (pt) => (Object.keys(ifMissing).length ? pt.setIfMissing(ifMissing) : pt).set(fields))
 }, client.transaction())
 
 try {
@@ -506,11 +525,11 @@ try {
       `    ${teamDocs.length} фахівців\n` +
       `    ${categoryDocs.length} категорій\n` +
       `    ${practiceDocs.length} практик\n` +
-      `    ${quizDocs.length} калькулятори\n` +
       `    1 документ налаштувань (цифри, «Нам довіряють», контакти; стрічка клієнтів не торкнута)\n` +
       `    1 документ головної (перший екран, кредо, шлях справи, цитата)\n` +
       `    1 документ «Про компанію» (місія, візія, цінності, принципи)\n` +
-      `    1 документ «Команда» (заголовки, виконавець, заклик)\n`,
+      `    1 документ «Команда» (заголовки, виконавець, заклик)\n` +
+      `    «Карʼєра» і ${vacancyDocs.length} вакансії-заглушки — лише якщо їх ще не було\n`,
   )
   if (noExcerpt.length) {
     console.log(`  Без короткого опису — ${noExcerpt.length} практик. Вони опублікуються,`)
