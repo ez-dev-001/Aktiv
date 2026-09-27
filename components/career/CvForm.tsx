@@ -7,6 +7,7 @@ import { captureAttribution, readAttribution } from '@/lib/leads/client'
 import type { FieldErrors } from '@/lib/leads/types'
 import { validateLead } from '@/lib/leads/validate'
 import { Icon } from '@/components/site/Icon'
+import { PracticeSelect } from '@/components/ui/PracticeSelect'
 import { APPLY_EVENT } from './events'
 
 /**
@@ -139,8 +140,8 @@ export function CvForm({ positions }: { positions: string[] }) {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-busy={pending} className="grid gap-3.5">
-      <div className="grid gap-3.5 min-[560px]:grid-cols-2">
+    <form onSubmit={onSubmit} noValidate aria-busy={pending} className="grid min-w-0 grid-cols-1 gap-3.5">
+      <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
         <Field label="Імʼя" htmlFor="cv-name" error={errors.name} id="name">
           <input id="cv-name" name="name" autoComplete="name" placeholder="Імʼя та прізвище" className={FIELD} {...a11y('name')} onChange={() => clear('name')} />
         </Field>
@@ -148,33 +149,25 @@ export function CvForm({ positions }: { positions: string[] }) {
           <input id="cv-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="067 123 45 67" className={FIELD} {...a11y('phone')} onChange={() => clear('phone')} />
         </Field>
       </div>
-      <div className="grid gap-3.5 min-[560px]:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
         <Field label="Пошта" htmlFor="cv-email" error={errors.email} id="email">
           <input id="cv-email" name="email" type="email" autoComplete="email" placeholder="необовʼязково" className={FIELD} {...a11y('email')} onChange={() => clear('email')} />
         </Field>
         <Field label="Позиція" htmlFor="cv-position" error={errors.position} id="position">
-          <div className="relative">
-            <select
-              id="cv-position"
-              value={position}
-              onChange={(e) => {
-                setPosition(e.target.value)
-                clear('position')
-              }}
-              className={`${FIELD} appearance-none pr-10 ${position ? '' : 'text-on-dark-2'}`}
-              {...a11y('position')}
-            >
-              <option value="" disabled>
-                Оберіть позицію
-              </option>
-              {options.map((o) => (
-                <option key={o} value={o} className="text-ink">
-                  {o}
-                </option>
-              ))}
-            </select>
-            <Icon name="caret" className="pointer-events-none absolute right-4 top-1/2 size-3 -translate-y-1/2 text-accent-soft" />
-          </div>
+          <PracticeSelect
+            id="cv-position"
+            name="position"
+            options={options.map((o) => ({ value: o, label: o, group: '', soft: o === OTHER }))}
+            value={position}
+            onChange={(v) => {
+              setPosition(v)
+              clear('position')
+            }}
+            placeholder="Оберіть позицію"
+            listLabel="Позиція"
+            invalid={Boolean(errors.position)}
+            describedBy={errors.position ? 'cv-position-error' : undefined}
+          />
         </Field>
       </div>
 

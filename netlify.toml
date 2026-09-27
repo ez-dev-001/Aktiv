@@ -51,6 +51,15 @@
 # NODE_ENV Netlify выставит в production сам, и next build соберёт
 # продакшен-сборку — как и должен.
 
+# ── Image CDN: откуда разрешено брать картинки ──
+# Фото-заглушки идут через /.netlify/images на нашем домене, а не
+# напрямую с images.unsplash.com: на iPhone чужой домен картинок не
+# показывался (подробно — lib/photos.ts). Без этой строки Image CDN
+# отказывает любому внешнему адресу — и правильно: иначе через наш
+# домен можно было бы гонять чужие картинки.
+[images]
+  remote_images = ["https://images\\.unsplash\\.com/.*"]
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 

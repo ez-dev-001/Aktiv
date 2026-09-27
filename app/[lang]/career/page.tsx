@@ -186,7 +186,7 @@ export default async function CareerPage({ params }: { params: Promise<{ lang: s
 
       {/* ── РЕЗЮМЕ ── */}
       <section id="cv" className="on-dark bg-ink py-[clamp(64px,9vw,120px)] text-on-dark">
-        <div className="shell inner grid items-start gap-[clamp(32px,4.5vw,64px)] min-[920px]:grid-cols-[0.8fr_1.2fr]">
+        <div className="shell inner grid grid-cols-1 items-start gap-[clamp(32px,4.5vw,64px)] min-[920px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div>
             <Eyebrow>Резюме</Eyebrow>
             <Reveal className="text-[clamp(26px,4.6vw,44px)] leading-[1.1] !text-white">{c.cvTitle}</Reveal>

@@ -175,9 +175,15 @@ export function Header({
     }
   }, [drawer])
 
-  const closeDrawer = () => {
+  /* Фокус возвращается на бургер ТОЛЬКО при работе с клавиатуры.
+     После касания пальцем программный focus() на iPhone включал
+     :focus-visible — вокруг закрытого бургера оставалась розовая
+     рамка, будто кнопку «выделили». Для пальца она лишняя: фокус
+     никуда не терялся, его просто не было. Клавиатурное нажатие
+     отличает e.detail === 0 — у клика мышью или пальцем там 1. */
+  const closeDrawer = (e?: { detail: number }) => {
     setDrawer(false)
-    burgerRef.current?.focus()
+    if (!e || e.detail === 0) burgerRef.current?.focus()
   }
 
   /** Главная в текущей локали: «/» для украинской, «/en» и «/ru» для прочих. */
@@ -314,7 +320,7 @@ export function Header({
             aria-expanded={drawer}
             aria-controls="drawer"
             aria-label={drawer ? 'Закрити меню' : 'Меню'}
-            onClick={() => (drawer ? closeDrawer() : setDrawer(true))}
+            onClick={(e) => (drawer ? closeDrawer(e) : setDrawer(true))}
             className="relative ml-auto inline-flex size-11 items-center justify-end border-0 bg-transparent min-[980px]:hidden"
           >
             <span className="relative block h-[13px] w-[24px]">

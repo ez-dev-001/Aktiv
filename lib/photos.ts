@@ -10,9 +10,9 @@
  * загрузить фото в Sanity и передать URL. Больше нигде в проекте
  * адресов картинок нет, правка ровно в одном месте.
  *
- * Оптимизирует сам CDN Unsplash (`auto=format` отдаёт AVIF/WebP), а не
- * next/image: у оптимизатора Next на Netlify свои лимиты, а заглушкам
- * они не нужны. Когда фото переедут в Sanity — там ровно тот же приём
+ * Оптимизирует CDN (Unsplash локально, Image CDN Netlify на хостинге —
+ * см. photoUrl), а не next/image: у оптимизатора Next на Netlify свои
+ * лимиты, а заглушкам они не нужны. Когда фото переедут в Sanity — там ровно тот же приём
  * (`cdn.sanity.io` с параметрами), компонент Photo не изменится.
  *
  * TODO(client): фотосессия офиса и команды. До неё сайт нельзя
@@ -67,8 +67,37 @@ export const CATEGORY_PHOTO: Record<string, PhotoName> = {
 /** Ширины в srcset. Перекрывают всё от 320px до 2× на 1440. */
 const WIDTHS = [480, 768, 1024, 1440, 1920, 2400]
 
+/**
+ * Через свой домен, а не напрямую с Unsplash.
+ *
+ * На iPhone кадры с images.unsplash.com не показывались, а фото из
+ * Sanity рядом — показывались; на компьютере всё было в порядке.
+ * Вероятнее всего, дело в стороннем домене картинок: такие домены
+ * режут блокировщики контента, защита от отслеживания в Safari и
+ * фильтры сетей — и на сайте это пустые тёмные прямоугольники.
+ * Картинка со своего домена от всего этого не зависит.
+ *
+ * На Netlify кадры идут через его Image CDN — `/.netlify/images` на
+ * НАШЕМ домене. Он сам забирает оригинал с Unsplash, сам выбирает
+ * формат под браузер (AVIF или WebP) и кеширует. Для телефона это
+ * обычная картинка с того же сайта. Разрешённый источник прописан в
+ * netlify.toml ([images] remote_images) — чужие адреса CDN не примет.
+ *
+ * Локально (`npm run dev`) этого адреса нет, поэтому там — прямые
+ * ссылки, как раньше. Переключатель выставляет next.config.mjs по
+ * переменной NETLIFY, которую Netlify задаёт на сборке сам.
+ */
+const VIA_NETLIFY = process.env.NEXT_PUBLIC_IMAGE_PROXY === 'netlify'
+
+const unsplash = (photo: Photo, params: string) => `https://images.unsplash.com/photo-${photo.id}?${params}`
+
+const viaNetlify = (url: string, w: number) => `/.netlify/images?url=${encodeURIComponent(url)}&w=${w}&q=72`
+
 export function photoUrl(photo: Photo, w: number): string {
-  return `https://images.unsplash.com/photo-${photo.id}?auto=format&fit=crop&q=72&w=${w}`
+  return VIA_NETLIFY
+    ? /* оригинал в JPEG с запасом по качеству — сжимает уже Netlify */
+      viaNetlify(unsplash(photo, `fit=crop&fm=jpg&q=85&w=${w}`), w)
+    : unsplash(photo, `auto=format&fit=crop&q=72&w=${w}`)
 }
 
 export function photoSrcSet(photo: Photo): string {
@@ -77,7 +106,9 @@ export function photoSrcSet(photo: Photo): string {
 
 /** Крошечный кадр под размытие — грузится первым и держит место цветом. */
 export function photoBlur(photo: Photo): string {
-  return `https://images.unsplash.com/photo-${photo.id}?auto=format&fit=crop&q=40&w=24&blur=60`
+  return VIA_NETLIFY
+    ? viaNetlify(unsplash(photo, 'fit=crop&fm=jpg&q=40&w=24&blur=60'), 24)
+    : unsplash(photo, 'auto=format&fit=crop&q=40&w=24&blur=60')
 }
 
 /**

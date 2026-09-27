@@ -28,6 +28,13 @@ import { Icon } from '@/components/site/Icon'
  * Мобильный не исключение: панель раскрывается на всю ширину поля,
  * высота ограничена, внутри — обычная прокрутка. Системный пикер на
  * телефоне удобнее для списка из пяти пунктов, но не из сорока.
+ *
+ * ── Не только практики ──
+ * Тот же список стоит в форме резюме («Позиція»): две формы на сайте
+ * с разными выпадашками выглядели бы как два разных сайта. Для
+ * короткого списка поиск не нужен — он появляется сам, когда строк
+ * больше восьми. Пустое значение показывает placeholder, как
+ * «Оберіть позицію» у нативного select.
  */
 
 export type PracticeOption = {
@@ -74,12 +81,28 @@ export function PracticeSelect({
   onChange,
   name = 'practice',
   labelledBy,
+  id,
+  placeholder,
+  searchable = options.length > 8,
+  listLabel = 'Практика',
+  invalid = false,
+  describedBy,
 }: {
   options: PracticeOption[]
   value: string
   onChange: (v: string) => void
   name?: string
   labelledBy?: string
+  /** id кнопки — чтобы <label htmlFor> фокусировал поле */
+  id?: string
+  /** текст при пустом значении */
+  placeholder?: string
+  /** поле поиска в панели; по умолчанию — если строк больше восьми */
+  searchable?: boolean
+  /** подпись списка для читалки экрана */
+  listLabel?: string
+  invalid?: boolean
+  describedBy?: string
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -90,7 +113,7 @@ export function PracticeSelect({
   const queryRef = useRef<HTMLInputElement>(null)
   const listId = useId()
 
-  const current = options.find((o) => o.value === value) ?? options[0]
+  const current = options.find((o) => o.value === value) ?? (placeholder ? undefined : options[0])
 
   /* Фильтр ищет и по названию строки, и по названию блока: «банкрут»
      находит и практику, и всё содержимое блока «Ліквідація та
@@ -113,7 +136,8 @@ export function PracticeSelect({
     if (!open) return
     const i = shown.findIndex((o) => o.value === value)
     setCursor(i >= 0 ? i : 0)
-    queryRef.current?.focus()
+    /* Без поиска фокус остаётся на кнопке: стрелки и Enter ловит её onKeyDown. */
+    if (searchable) queryRef.current?.focus()
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Строка под курсором подкручивается в видимую часть панели —
@@ -201,6 +225,7 @@ export function PracticeSelect({
       <input type="hidden" name={name} value={value} />
 
       <button
+        id={id}
         type="button"
         onClick={() => setOpen((v) => !v)}
         onKeyDown={onKey}
@@ -208,15 +233,21 @@ export function PracticeSelect({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-labelledby={labelledBy}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
         className={
           'flex w-full items-center gap-3 rounded-[10px] border-0 bg-white/[0.055] px-4 py-3.5 text-left ' +
           'font-sans text-[15.5px] font-light text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] ' +
           'transition-shadow duration-200 focus:outline-none focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-accent)] ' +
-          (open ? 'shadow-[inset_0_0_0_1.5px_var(--color-accent)]' : '')
+          (open
+            ? 'shadow-[inset_0_0_0_1.5px_var(--color-accent)]'
+            : invalid
+              ? 'shadow-[inset_0_0_0_1.5px_var(--color-accent-soft)]'
+              : '')
         }
       >
-        <span className={`min-w-0 flex-1 truncate ${current?.soft ? 'text-on-dark' : ''}`}>
-          {current?.label}
+        <span className={`min-w-0 flex-1 truncate ${!current ? 'text-on-dark-2' : current.soft ? 'text-on-dark' : ''}`}>
+          {current?.label ?? placeholder}
         </span>
         <Icon
           name="caret"
@@ -238,6 +269,7 @@ export function PracticeSelect({
         <div
           className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[10px] bg-ink-2 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.65),inset_0_0_0_1px_var(--color-on-dark-hair)] min-[560px]:left-auto min-[560px]:right-0 min-[560px]:w-[min(400px,calc(100vw-2.5rem))]"
         >
+          {searchable && (
           <div className="border-b border-on-dark-hair p-2">
             <input
               ref={queryRef}
@@ -251,13 +283,14 @@ export function PracticeSelect({
               className="w-full rounded-[7px] border-0 bg-white/[0.05] px-3 py-2.5 font-sans text-[14.5px] font-light text-white placeholder:text-on-dark-2 focus:outline-none focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-accent)]"
             />
           </div>
+          )}
 
           <ul
             ref={listRef}
             id={listId}
             role="listbox"
-            aria-label="Практика"
-            className="m-0 max-h-[min(58vh,340px)] list-none overflow-y-auto overscroll-contain p-0"
+            aria-label={listLabel}
+            className={`m-0 max-h-[min(58vh,340px)] list-none overflow-y-auto overscroll-contain p-0 ${searchable ? '' : 'py-1.5'}`}
           >
             {shown.length === 0 && (
               <li className="px-4 py-5 text-[14px] text-on-dark-2">
