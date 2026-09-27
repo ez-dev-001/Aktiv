@@ -49,6 +49,7 @@ const ROUTES: readonly [string, 'page'][] = [
   ['/[lang]', 'page'],
   ['/[lang]/about', 'page'],
   ['/[lang]/team', 'page'],
+  ['/[lang]/career', 'page'],
   ['/[lang]/blog', 'page'],
   ['/[lang]/blog/[slug]', 'page'],
   ['/[lang]/practices/[category]', 'page'],

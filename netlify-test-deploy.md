@@ -24,8 +24,8 @@ npm run check
 npm run build
 ```
 
-`npm run check` — типи, схеми Sanity, GROQ-запити й прогін калькулятора
-на 432 комбінаціях. `npm run build` має закінчитись рядком
+`npm run check` — типи, схеми Sanity й GROQ-запити.
+`npm run build` має закінчитись рядком
 «Generating static pages (135/135)».
 
 Якщо обидві команди зелені, на Netlify збірка впаде хіба що через
