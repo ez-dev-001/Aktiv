@@ -89,11 +89,12 @@ export const ICONS = {
   phone: { label: '', d: ['M6.4 3.5h3.1l1.5 4-2.1 1.5a12.2 12.2 0 0 0 6.1 6.1l1.5-2.1 4 1.5v3.1a1.6 1.6 0 0 1-1.7 1.6C10.6 19.7 4.3 13.4 3.3 5.2A1.6 1.6 0 0 1 4.9 3.5z'] },
   message: { label: '', d: ['M4.5 5h15v10.5H9.8L4.5 19.5z'] },
   close: { label: '', d: ['M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8'] },
+  search: { label: '', d: ['M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13z', 'M15.3 15.3 20 20'] },
 } as const satisfies Record<string, Def>
 
 export type IconName = keyof typeof ICONS
 
-const UI_ICONS: readonly IconName[] = ['arrow', 'caret', 'phone', 'message', 'close']
+const UI_ICONS: readonly IconName[] = ['arrow', 'caret', 'phone', 'message', 'close', 'search']
 
 /** Иконки, которые редактор может выбрать в студии, в порядке показа. */
 export const PICKABLE_ICONS = (Object.keys(ICONS) as IconName[]).filter((k) => !UI_ICONS.includes(k))

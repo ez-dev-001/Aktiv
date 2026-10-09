@@ -145,7 +145,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
                   <button
                     type="button"
                     onClick={() => apply(v.title)}
-                    className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border-0 bg-accent px-5 text-[14.5px] font-medium text-white transition-colors hover:bg-accent-ink"
+                    className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border-0 bg-accent-btn px-5 text-[14.5px] font-medium text-white transition-colors hover:bg-accent-btn-hover"
                   >
                     Відгукнутися на вакансію
                     <Icon name="arrow" className="size-[15px]" />

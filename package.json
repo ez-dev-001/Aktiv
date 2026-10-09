@@ -18,7 +18,8 @@
     "check:groq": "node scripts/check-groq.mjs",
     "cleanup:prices": "node scripts/cleanup-prices.mjs",
     "sanity:doctor": "node scripts/doctor.mjs",
-    "term:diapazon": "node scripts/replace-term.mjs"
+    "term:diapazon": "node scripts/replace-term.mjs",
+    "home:copy": "node scripts/home-copy.mjs"
   },
   "dependencies": {
     "@portabletext/react": "^8.0.1",

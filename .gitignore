@@ -26,3 +26,8 @@ tsconfig.tsbuildinfo
 .netlify
 
 .DS_Store
+
+# ── Архіви оновлень і робочі файли ролика ──
+*.tgz
+hero-video/node_modules/
+hero-video/out/

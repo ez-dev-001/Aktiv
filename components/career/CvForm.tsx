@@ -282,7 +282,7 @@ export function CvForm({ positions }: { positions: string[] }) {
       <button
         type="submit"
         disabled={pending}
-        className="mt-1.5 inline-flex min-h-12 items-center gap-2.5 justify-self-start rounded-full border-0 bg-accent px-6 text-[15px] font-medium text-white transition-colors hover:bg-accent-ink disabled:opacity-80"
+        className="mt-1.5 inline-flex min-h-12 items-center gap-2.5 justify-self-start rounded-full border-0 bg-accent-btn px-6 text-[15px] font-medium text-white transition-colors hover:bg-accent-btn-hover disabled:opacity-80"
       >
         {pending ? (
           <>
@@ -296,7 +296,10 @@ export function CvForm({ positions }: { positions: string[] }) {
         )}
       </button>
       <p className="m-0 mt-1 max-w-[46ch] text-[12.5px] leading-relaxed text-on-dark-2">
-        Надсилаючи форму, ви погоджуєтесь на обробку персональних даних для відбору. Резюме видалимо за вашим запитом.
+        Надсилаючи форму, ви погоджуєтесь на обробку персональних даних для відбору. Резюме видалимо за вашим запитом.{' '}
+        <a href="/privacy" className="underline decoration-white/30 underline-offset-2 hover:text-white">
+          Політика конфіденційності
+        </a>
       </p>
     </form>
   )

@@ -36,7 +36,11 @@ export async function generateMetadata({
   const { lang, slug } = await params
   const p = await getPractice(slug, lang)
   if (!p) return { title: 'Практика' }
-  return { title: p.title, description: p.excerpt?.slice(0, 180) }
+  /* SEO-поля зі студії мають пріоритет; порожні — назва й короткий опис. */
+  return {
+    title: p.seoTitle || p.title,
+    description: (p.seoDescription || p.excerpt)?.slice(0, 180),
+  }
 }
 
 export default async function PracticePage({

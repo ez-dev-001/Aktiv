@@ -31,8 +31,8 @@ export async function generateMetadata({
   const cat = data.find((c) => c.slug === category)
   if (!cat) return { title: 'Практика' }
   return {
-    title: cat.title,
-    description: cat.excerpt.slice(0, 180),
+    title: cat.seoTitle || cat.title,
+    description: (cat.seoDescription || cat.excerpt).slice(0, 180),
   }
 }
 

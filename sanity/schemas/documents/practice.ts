@@ -140,9 +140,6 @@ export const practice = defineType({
       of: [defineArrayMember({ type: 'string' })],
       description: 'Напр. /practice/bankrutstvo/. Звідси генерується таблиця редиректів для Netlify.',
     }),
-    defineField({
-      name: 'featured', title: 'Показувати на головній', type: 'boolean', group: 'content', initialValue: false,
-    }),
     defineField({ name: 'order', title: 'Порядок у категорії', type: 'number', group: 'content', initialValue: 100 }),
   ],
 

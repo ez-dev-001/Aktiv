@@ -37,12 +37,15 @@ export function PostCard({
   href,
   withMedia,
   headingLevel = 'h3',
+  hideExcerpt = false,
 }: {
   post: Post
   /** Нет адреса — карточка не ссылка (статика без полного текста). */
   href?: string
   withMedia: boolean
   headingLevel?: 'h2' | 'h3' | 'h4'
+  /** на головній картка лише з назвою: мінімалізм, анонс читають у блозі */
+  hideExcerpt?: boolean
 }) {
   const H = headingLevel
   const date = fmtDate(post.publishedAt)
@@ -76,7 +79,7 @@ export function PostCard({
           {date && <span>{date}</span>}
         </span>
         <H className="m-0 font-serif text-[18px] font-semibold leading-snug text-ink">{post.title}</H>
-        {post.excerpt && <p className="m-0 text-[14px] leading-relaxed text-slate">{post.excerpt}</p>}
+        {post.excerpt && !hideExcerpt && <p className="m-0 text-[14px] leading-relaxed text-slate">{post.excerpt}</p>}
         {post.author && (
           <span className="pt-1 font-mono text-[10.5px] uppercase tracking-[0.09em] text-slate-2">{post.author}</span>
         )}

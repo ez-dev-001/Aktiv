@@ -61,7 +61,7 @@ export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
             href={`https://www.google.com/maps/dir/?api=1&destination=${q}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[14px] font-medium text-white transition-colors hover:bg-accent-ink"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent-btn px-5 text-[14px] font-medium text-white transition-colors hover:bg-accent-btn-hover"
           >
             Маршрут
             <Icon name="arrow" className="size-[14px]" />

@@ -173,9 +173,6 @@ export interface TrustFact {
 export interface TrustBlock {
   eyebrow: string
   heading: string
-  /** Пусто — абзаца не будет. См. getTrustBlock, как это отличается
-   *  от незаполненного поля. */
-  intro: string
   facts: TrustFact[]
   clients: ClientLogo[]
 }
@@ -183,17 +180,13 @@ export interface TrustBlock {
 interface RawTrust {
   eyebrow?: string
   heading?: string
-  intro?: string
-  introDefined?: boolean
-  facts?: { value?: string; label?: string; note?: string }[]
+  facts?: { value?: string; label?: string }[]
   clients?: ClientLogo[]
 }
 
 export const staticTrust: TrustBlock = {
   eyebrow: 'Нам довіряють',
-  heading: 'Вісімнадцять років практики, які можна перевірити',
-  intro:
-    'Ми не показуємо клієнтів без їхньої згоди: у справах про ліквідацію, ВЛК і сімейні спори анонімність — **частина послуги**. Наводимо те, що кожен може звірити з реєстрами.',
+  heading: 'Чому нам доручають справи',
   facts: staticTrustFacts,
   clients: [],
 }
@@ -212,7 +205,6 @@ export async function getTrustBlock(lang = 'ua'): Promise<Sourced<TrustBlock>> {
     .map((f) => ({
       value: nonEmpty(f?.value),
       label: nonEmpty(f?.label),
-      note: nonEmpty(f?.note) || undefined,
     }))
     .filter((f) => f.value && f.label)
 
@@ -223,28 +215,15 @@ export async function getTrustBlock(lang = 'ua'): Promise<Sourced<TrustBlock>> {
   const heading = nonEmpty(r.heading)
   const eyebrow = nonEmpty(r.eyebrow)
 
-  /* ── Вступный абзац: почему у него правило своё ──
-     Абзац объясняет, почему клиентов не показывают. Когда логотипов
-     наберётся десяток, он станет неуместен, и его надо будет убрать
-     из студии — значит пустое поле обязано означать «абзаца нет».
-     Но ровно так же выглядит поле, которое просто ещё не заводили, и
-     на таком датасете абзац пропал бы с живого сайта молча. Ровно это
-     и случилось при первом же запуске: в Sanity был один клиент,
-     trustIntro не заполнен — и текст со страницы исчез.
-     Признак defined(trustIntro) из GROQ разводит эти два случая:
-     поля нет — берём статику; поле есть и пустое — редактор его
-     очистил, и абзаца действительно не будет. */
-  const intro = r.introDefined ? nonEmpty(r.intro) : staticTrust.intro
 
   const known = Boolean(
-    heading || eyebrow || facts.length || clients.length || r.introDefined,
+    heading || eyebrow || facts.length || clients.length,
   )
 
   return {
     data: {
       eyebrow: eyebrow || staticTrust.eyebrow,
       heading: heading || staticTrust.heading,
-      intro,
       /* ── Цифры: подстановки нет ──
          Заголовок и надзаголовок падают на статику, потому что блок
          без заголовка — это сломанная страница. Сетка цифр — другое
@@ -446,6 +425,8 @@ export interface PracticeDetail {
   slug: string
   title: string
   excerpt?: string
+  seoTitle?: string
+  seoDescription?: string
   icon?: string
   body?: unknown
   /** Абзацы из статики: простой текст, а не PortableText.
@@ -519,6 +500,8 @@ export async function getBlog(lang = 'ua', cat = '', limit = 30): Promise<Source
 }
 
 export interface PostDetail extends Post {
+  seoTitle?: string
+  seoDescription?: string
   body?: unknown
   authorRole?: string
   practices?: { slug: string; title: string; category: string }[]
@@ -553,11 +536,24 @@ export async function getPostSlugs(): Promise<string[]> {
    scripts/seed.mjs импортирует их напрямую через node
    --experimental-strip-types, а Node не знает про tsconfig paths и
    падает на первом же `@/…` в цепочке импортов. */
-export type { HomePromise, HomeRule, HomeContent } from '@/lib/content'
+export type { HomeRule, HomeContent } from '@/lib/content'
 export { staticHome } from '@/lib/content'
 
 
 /** Непустая строка или подстановка из статики. */
+/** Ссылка на человека из команды: без имени это пустая ссылка, а не человек. */
+const person = (v: unknown): HomeContent['teamQuoteAuthor'] => {
+  if (!v || typeof v !== 'object') return undefined
+  const o = v as Record<string, unknown>
+  const name = typeof o.name === 'string' ? o.name.trim() : ''
+  if (!name) return undefined
+  return {
+    name,
+    role: typeof o.role === 'string' ? o.role.trim() : '',
+    ...(typeof o.photoUrl === 'string' && o.photoUrl ? { photoUrl: o.photoUrl } : {}),
+  }
+}
+
 const str = (v: unknown, fb: string): string =>
   typeof v === 'string' && v.trim() ? v : fb
 
@@ -597,24 +593,14 @@ export async function getHomeContent(lang = 'ua'): Promise<Sourced<HomeContent>>
     heroEyebrow: str(r.heroEyebrow, f.heroEyebrow),
     heroTitle: str(r.heroTitle, f.heroTitle),
     heroTitleAccent: str(r.heroTitleAccent, f.heroTitleAccent),
-    heroLede: str(r.heroLede, f.heroLede),
     heroCtaPrimary: str(r.heroCtaPrimary, f.heroCtaPrimary),
     heroCtaSecondary: str(r.heroCtaSecondary, f.heroCtaSecondary),
-    promises: list(r.promises, f.promises, (p) => ({
-      kicker: str(p.kicker, ''),
-      answer: str(p.answer, ''),
-      note: str(p.note, ''),
-    })),
-    credoEyebrow: str(r.credoEyebrow, f.credoEyebrow),
-    credoTitle: str(r.credoTitle, f.credoTitle),
-    credoLede: str(r.credoLede, f.credoLede),
-    credo: list(r.credo, f.credo, (x) => ({ title: str(x.title, ''), text: str(x.text, '') })),
-    pathEyebrow: str(r.pathEyebrow, f.pathEyebrow),
-    pathTitle: str(r.pathTitle, f.pathTitle),
-    path: list(r.path, f.path, (x) => ({ title: str(x.title, ''), text: str(x.text, '') })),
-    manifestoKicker: str(r.manifestoKicker, f.manifestoKicker),
-    manifestoQuote: str(r.manifestoQuote, f.manifestoQuote),
-    manifestoNote: str(r.manifestoNote, f.manifestoNote),
+    heroHeading: str(r.heroHeading, f.heroHeading),
+    heroLede: str(r.heroLede, f.heroLede),
+    credo: list(r.credo, f.credo, (x) => ({ title: str(x.title, '') })),
+    teamTitle: str(r.teamTitle, f.teamTitle),
+    teamQuote: str(r.teamQuote, f.teamQuote),
+    ...(person(r.teamQuoteAuthor) ? { teamQuoteAuthor: person(r.teamQuoteAuthor) } : {}),
   }
 
   /* «Из Sanity» — если документ вообще отдал хоть одно своё значение.

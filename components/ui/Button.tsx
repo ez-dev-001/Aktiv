@@ -15,7 +15,7 @@ const sizes: Record<Size, string> = {
 }
 
 const variants: Record<Variant, string> = {
-  solid: 'bg-accent text-white hover:bg-accent-ink',
+  solid: 'bg-accent-btn text-white hover:bg-accent-btn-hover',
   ghost: 'bg-transparent text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] hover:shadow-[inset_0_0_0_1px_var(--color-ink)]',
   ghostDark:
     'bg-transparent text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.3)] hover:shadow-[inset_0_0_0_1px_#fff]',

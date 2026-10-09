@@ -44,8 +44,8 @@ export async function generateMetadata({
     ? [{ url: imageUrl(p.cover, 1200, 630), width: 1200, height: 630, alt: p.cover.alt?.trim() || p.title }]
     : undefined
   return {
-    title: p.title,
-    description: p.excerpt?.slice(0, 180),
+    title: p.seoTitle || p.title,
+    description: (p.seoDescription || p.excerpt)?.slice(0, 180),
     openGraph: { type: 'article', publishedTime: p.publishedAt, ...(og ? { images: og } : {}) },
     twitter: og ? { card: 'summary_large_image', images: og.map((i) => i.url) } : undefined,
   }

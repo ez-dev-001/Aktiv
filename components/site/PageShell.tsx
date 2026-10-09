@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { PhotoName, PhotoSource } from '@/lib/photos'
 import { getCategories, getContacts } from '@/lib/sanity/content'
 import { toMenu } from '@/lib/menu'
-import { CaseLine, ScrollProgress } from './CaseLine'
+import { ScrollProgress } from './CaseLine'
 import { FloatingActions } from './FloatingActions'
 import { Header } from './Header'
 import { Photo } from './Photo'
@@ -27,7 +27,6 @@ export interface Station {
 
 export async function PageShell({
   lang,
-  stations,
   overDark = false,
   children,
 }: {
@@ -47,7 +46,6 @@ export async function PageShell({
       <ScrollProgress />
       <Header lang={lang} overDark={overDark} contacts={contacts} categories={toMenu(cats)} />
       <main id="top" className="relative">
-        <CaseLine stations={stations} />
         {children}
       </main>
       <Footer contacts={contacts} />

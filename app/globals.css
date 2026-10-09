@@ -29,6 +29,8 @@
   /* акцент */
   --color-accent: #fa2163;     /* логотип — крупные заливки, цифры, графика */
   --color-accent-ink: #d81b52; /* мелкий текст и ссылки на светлом */
+  --color-accent-btn: #e01055; /* заливка кнопок з білим текстом: 4.8:1 (WCAG AA); #fa2163 дає лише 3.8 */
+  --color-accent-btn-hover: #c40c47;
   --color-accent-soft: #ff6b92;/* акцентный текст на тёмном */
   --color-accent-wash: #fdf0f3;/* бледная подложка */
 
@@ -44,11 +46,11 @@
 
   /* текст на тёмном */
   --color-on-dark: #b8b2c8;
-  --color-on-dark-2: #8a83a0;
+  --color-on-dark-2: #9a93b0; /* 5.4:1 на #241a4d */
   --color-on-dark-hair: #372c5e;
 
-  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-sans: "Onest", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Manrope", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
@@ -72,8 +74,10 @@
      104px рельсу больше не нужны: столько требовала вертикальная
      подпись станции. Подписи стали всплывающими, и рельсу хватает
      полос 16 и 44 плюс точка — 76px с запасом. */
+  /* Линию дела слева убрали по просьбе клиента: рельс больше не
+     рисуется, и отступ под него нулевой на любой ширине. */
   @media (min-width: 1000px) {
-    :root { --rail: 76px; --hdr: 74px; }
+    :root { --rail: 0px; --hdr: 74px; }
   }
 
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -99,6 +103,12 @@
   }
   /* крупный дисплей — лёгкий вес: 600 в 68px забивает полосу набора */
   h1 { font-weight: 400; letter-spacing: -0.024em; }
+  /* Playfair Display за замовчуванням має «старовинні» цифри з
+     виносними елементами (2007, 300+ стрибають по висоті). Для цифр,
+     телефонів і сум потрібні рівні — вмикаємо lnum усюди. font-feature-
+     settings, а не font-variant-numeric, щоб не сперечатися з
+     tabular-nums від Tailwind. */
+  html { font-feature-settings: "lnum" 1; }
   ::selection { background: var(--color-accent); color: #fff; }
   :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; border-radius: 2px; }
   a { color: inherit; text-decoration: none; }
@@ -401,4 +411,113 @@
    чтобы три колонки не «выстреливали» на экран.
    ═══════════════════════════════════════════════════════════════════ */
 .vacancy[open] .vacancy-body { animation: vacancy-in 420ms var(--ease-out-quint) both; }
+/* ── Знак на першому екрані (HeroMark) ──
+   Легкий паралакс прокрутки. --hm (0…1) виставляє компонент.
+   Сама сцена — нижче, блок «HeroMark: сцена з Remotion». */
+.hero-mark-media {
+  translate: 0 calc(var(--hm, 0) * 40px);
+  scale: calc(1 + var(--hm, 0) * 0.05);
+}
+@media (prefers-reduced-motion: reduce) { .hero-mark-media { translate: none; scale: none; } }
+
+/* ── HeroMark: сцена з Remotion у HTML + SVG + CSS ──
+   Базові значення = останній кадр; keyframes описують лише, звідки
+   елемент приходить (fill-mode both). Час — від першої відмальовки.
+   Анімуються тільки transform / opacity / clip-path / dashoffset.
+   transform-origin у px усередині SVG = одиниці viewBox. */
+.hm { --hm-io: cubic-bezier(0.65, 0, 0.35, 1); --hm-out: cubic-bezier(0.16, 1, 0.3, 1); }
+
+.hm-glow {
+  background: radial-gradient(closest-side, rgb(250 33 99 / 0.3), rgb(120 40 144 / 0.16) 47%, rgb(60 34 120 / 0.1) 75%, rgb(20 11 51 / 0));
+  opacity: 0.78; animation: hm-glow 4.17s linear both;
+}
+@keyframes hm-glow { 0% { opacity: 0; } 32% { opacity: 0.55; } 59% { opacity: 0.7; } 69% { opacity: 1; } 100% { opacity: 0.78; } }
+
+/* поштовх від удару: увесь знак, центр кільця = 38% / 50% полотна */
+.hm-pulse { transform-origin: 38% 50%; animation: hm-pulse 0.67s ease-out 2.43s both; }
+@keyframes hm-pulse { 0% { transform: scale(1); } 22% { transform: scale(1.018); } 100% { transform: scale(1); } }
+
+/* кадр: ірис (clip-path) + наближення + проявлення */
+.hm-photo { clip-path: circle(50% at 50% 50%); animation: hm-iris 1.6s var(--hm-out) 0.53s both; }
+@keyframes hm-iris { from { clip-path: circle(0% at 50% 50%); } }
+.hm-photo-img { filter: grayscale(1) contrast(1.06); transform: scale(1.04); animation: hm-zoom 3.14s var(--hm-out) 0.53s both; }
+@keyframes hm-zoom { from { transform: scale(1.32); } }
+.hm-dim { opacity: 0; animation: hm-undim 1.8s var(--hm-out) 0.53s both; }
+@keyframes hm-undim { from { opacity: 0.65; } }
+.hm-refl { opacity: 0.4; animation: hm-refl 1.9s ease-out 2.33s both; }
+@keyframes hm-refl { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0.4; } }
+
+.hm-ring { stroke-dasharray: 1 1.05; stroke-dashoffset: 0; animation: hm-draw 1.5s var(--hm-io) 0.1s both; }
+/* 1.02 і проміжок 1.05, а не рівно 1: інакше через округлення на
+   кінці шляху світиться волосинка ще до старту. */
+@keyframes hm-draw { from { stroke-dashoffset: 1.02; } }
+
+.hm-comet { opacity: 0; transform-origin: 87.5px 90.5px; transform: rotate(340deg);
+  animation: hm-comet-turn 1.5s var(--hm-io) 0.1s both, hm-comet-fade 1.7s linear 0.1s both; }
+@keyframes hm-comet-turn { from { transform: rotate(20deg); } to { transform: rotate(340deg); } }
+@keyframes hm-comet-fade { 0% { opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+.hm-inner { opacity: 1; animation: hm-in 1s linear 1.33s both; }
+.hm-orbit { stroke-dasharray: 1 1.05; stroke-dashoffset: 0; animation: hm-draw 2.33s var(--hm-io) 0.87s both; }
+.hm-dot { opacity: 0.35; animation: hm-in 0.55s linear both; }
+.hm-dot-0 { animation-delay: 2.33s; } .hm-dot-1 { animation-delay: 2.43s; } .hm-dot-2 { animation-delay: 2.53s; } .hm-dot-3 { animation-delay: 2.63s; }
+@keyframes hm-in { from { opacity: 0; } }
+
+.hm-arrow { transform: translateX(0); animation: hm-shoot 0.87s cubic-bezier(0.2, 1.25, 0.32, 1) 1.93s both; }
+@keyframes hm-shoot { from { transform: translateX(-245px); } }
+.hm-streak { opacity: 0; animation: hm-streak 0.7s linear 1.93s both; }
+@keyframes hm-streak { 0% { opacity: 0; } 22% { opacity: 0.85; } 100% { opacity: 0; } }
+.hm-arrow-glow { opacity: 0.5; animation: hm-in 0.6s ease-out 2.75s both; }
+
+.hm-flash { opacity: 0; animation: hm-flash 0.8s ease-out 2.4s both; }
+@keyframes hm-flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+.hm-ripple { opacity: 0; transform-origin: 87.5px 90.5px; animation: hm-ripple 1.2s var(--hm-out) 2.47s both; }
+@keyframes hm-ripple { 0% { opacity: 0; transform: scale(1); } 5% { opacity: 0.55; } 100% { opacity: 0; transform: scale(1.47); } }
+
+.hm-sheen { opacity: 0; stroke-dasharray: 0.14 1; stroke-dashoffset: -1; animation: hm-sheen 1.3s var(--hm-io) 2.87s both; }
+@keyframes hm-sheen { 0% { opacity: 0; stroke-dashoffset: 0.14; } 15% { opacity: 0.45; } 85% { opacity: 0.45; } 100% { opacity: 0; stroke-dashoffset: -1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hm, .hm * { animation: none !important; }
+}
+
+/* «Обрати напрям» на першому екрані: стрілка біля підпису ледь
+   похитується вниз — підказка, що кнопка веде нижче по сторінці. */
+.dir-picker-cue { animation: dir-cue 1.8s ease-in-out infinite; }
+@keyframes dir-cue { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) { .dir-picker-cue { animation: none; } }
+
+/* Напрям, відкритий з першого екрана, коротко підсвічується рамкою. */
+.explorer-flash { animation: explorer-in 0.45s cubic-bezier(0.22, 1, 0.36, 1), explorer-flash 1.6s ease-out 0.35s; }
+@keyframes explorer-flash {
+  0% { box-shadow: 0 0 0 0 rgb(250 33 99 / 0), 0 18px 44px -24px rgb(20 11 51 / 0.18); }
+  25% { box-shadow: 0 0 0 4px rgb(250 33 99 / 0.45), 0 18px 44px -24px rgb(20 11 51 / 0.18); }
+  100% { box-shadow: 0 0 0 0 rgb(250 33 99 / 0), 0 18px 44px -24px rgb(20 11 51 / 0.18); }
+}
+
+/* Панель напряму в провіднику практик: м'яка поява при перемиканні. */
+.explorer-panel { animation: explorer-in 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes explorer-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* Полоса в активной строке направлений на первом экране: сколько
+   осталось до следующей. Длительность задаёт компонент. */
+.hero-dir-progress { transform: scaleX(0); animation: hero-dir-fill linear forwards; }
+@keyframes hero-dir-fill { to { transform: scaleX(1); } }
+
 @keyframes vacancy-in { from { opacity: 0; transform: translateY(-6px); } }
+
+/* ── «Нам довіряють»: картки виїжджають при прокрутці ──
+   Лише там, де браузер вміє scroll-driven анімації; інакше картки
+   просто стоять. При «зменшеному русі» — теж стоять. */
+@keyframes trust-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.985); }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .trust-card {
+      animation: trust-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}

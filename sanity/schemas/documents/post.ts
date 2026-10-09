@@ -94,13 +94,6 @@ export const post = defineType({
     }),
     defineField({ name: 'body', title: 'Текст', type: 'localeBlock', group: 'content' }),
     defineField({
-      name: 'featured',
-      title: 'Показувати на головній',
-      type: 'boolean',
-      group: 'content',
-      initialValue: false,
-    }),
-    defineField({
       name: 'seoTitle',
       title: 'Title',
       type: 'localeString',

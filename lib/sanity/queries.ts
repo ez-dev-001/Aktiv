@@ -18,6 +18,8 @@ export const CATEGORIES_QUERY = groq`
   "slug": slug.current,
   "title": coalesce(title[$lang], title.ua),
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
+  "seoTitle": coalesce(seoTitle[$lang], seoTitle.ua),
+  "seoDescription": coalesce(seoDescription[$lang], seoDescription.ua),
   icon,
   order,
   "photo": photo{
@@ -29,7 +31,6 @@ export const CATEGORIES_QUERY = groq`
     "slug": slug.current,
     "title": coalesce(title[$lang], title.ua),
     "excerpt": coalesce(excerpt[$lang], excerpt.ua),
-    featured,
     "legacyPath": legacyPaths[0]
   }
 }`
@@ -188,12 +189,9 @@ export const TRUST_QUERY = groq`
 *[_type == "siteSettings"][0] {
   "eyebrow": coalesce(trustEyebrow[$lang], trustEyebrow.ua),
   "heading": coalesce(trustHeading[$lang], trustHeading.ua),
-  "intro":   coalesce(trustIntro[$lang], trustIntro.ua),
-  "introDefined": defined(trustIntro),
   "facts": trustFacts[] {
     value,
-    "label": coalesce(label[$lang], label.ua),
-    "note":  coalesce(note[$lang], note.ua)
+    "label": coalesce(label[$lang], label.ua)
   },
   "clients": clients[permission == true] {
     name,
@@ -209,6 +207,8 @@ export const PRACTICE_QUERY = groq`
   "slug": slug.current,
   "title": coalesce(title[$lang], title.ua),
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
+  "seoTitle": coalesce(seoTitle[$lang], seoTitle.ua),
+  "seoDescription": coalesce(seoDescription[$lang], seoDescription.ua),
   icon,
   "body": coalesce(body[$lang], body.ua),
   "includes": includes[]{ "text": coalesce(@[$lang], @.ua) }.text,
@@ -260,6 +260,8 @@ export const POST_QUERY = groq`
   "slug": slug.current,
   "title": coalesce(title[$lang], title.ua),
   "excerpt": coalesce(excerpt[$lang], excerpt.ua),
+  "seoTitle": coalesce(seoTitle[$lang], seoTitle.ua),
+  "seoDescription": coalesce(seoDescription[$lang], seoDescription.ua),
   "body": coalesce(body[$lang], body.ua),
   category, publishedAt,
   "cover": cover{ asset, crop, hotspot, alt, "lqip": asset->metadata.lqip },
@@ -286,34 +288,23 @@ export const HOME_QUERY = groq`
   "heroEyebrow":      coalesce(heroEyebrow[$lang], heroEyebrow.ua),
   "heroTitle":        coalesce(heroTitle[$lang], heroTitle.ua),
   "heroTitleAccent":  coalesce(heroTitleAccent[$lang], heroTitleAccent.ua),
-  "heroLede":         coalesce(heroLede[$lang], heroLede.ua),
   "heroCtaPrimary":   coalesce(heroCtaPrimary[$lang], heroCtaPrimary.ua),
   "heroCtaSecondary": coalesce(heroCtaSecondary[$lang], heroCtaSecondary.ua),
 
-  "promises": promises[] {
-    "kicker": coalesce(kicker[$lang], kicker.ua),
-    "answer": coalesce(answer[$lang], answer.ua),
-    "note":   coalesce(note[$lang], note.ua)
-  },
+  "heroHeading":      coalesce(heroHeading[$lang], heroHeading.ua),
+  "heroLede":         coalesce(heroLede[$lang], heroLede.ua),
 
-  "credoEyebrow": coalesce(credoEyebrow[$lang], credoEyebrow.ua),
-  "credoTitle":   coalesce(credoTitle[$lang], credoTitle.ua),
-  "credoLede":    coalesce(credoLede[$lang], credoLede.ua),
   "credo": credo[] {
-    "title": coalesce(title[$lang], title.ua),
-    "text":  coalesce(text[$lang], text.ua)
+    "title": coalesce(title[$lang], title.ua)
   },
 
-  "pathEyebrow": coalesce(pathEyebrow[$lang], pathEyebrow.ua),
-  "pathTitle":   coalesce(pathTitle[$lang], pathTitle.ua),
-  "path": path[] {
-    "title": coalesce(title[$lang], title.ua),
-    "text":  coalesce(text[$lang], text.ua)
-  },
-
-  "manifestoKicker": coalesce(manifestoKicker[$lang], manifestoKicker.ua),
-  "manifestoQuote":  coalesce(manifestoQuote[$lang], manifestoQuote.ua),
-  "manifestoNote":   coalesce(manifestoNote[$lang], manifestoNote.ua)
+  "teamTitle": coalesce(teamTitle[$lang], teamTitle.ua),
+  "teamQuote": coalesce(teamQuote[$lang], teamQuote.ua),
+  "teamQuoteAuthor": teamQuoteAuthor-> {
+    "name": coalesce(name[$lang], name.ua),
+    "role": coalesce(role[$lang], role.ua),
+    "photoUrl": photo.asset->url
+  }
 }`
 
 /**

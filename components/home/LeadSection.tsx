@@ -1,5 +1,6 @@
 'use client'
 
+import { CHOOSE_PRACTICE_EVENT } from './DirectionPicker'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import {
   categories as staticCategories,
@@ -99,6 +100,17 @@ export function LeadSection({
     if (fromUrl && index.has(fromUrl)) setPractice(fromUrl)
   }, [index])
 
+  /* «Консультація з цього напряму» в блоці практик: напрям приходить
+     подією, без перезавантаження сторінки. */
+  useEffect(() => {
+    const onChoose = (e: Event) => {
+      const v = String((e as CustomEvent).detail ?? '')
+      if (index.has(v)) setPractice(v)
+    }
+    window.addEventListener(CHOOSE_PRACTICE_EVENT, onChoose)
+    return () => window.removeEventListener(CHOOSE_PRACTICE_EVENT, onChoose)
+  }, [index])
+
   function onFirstInput() {
     if (touched) return
     setTouched(true)
@@ -177,9 +189,9 @@ export function LeadSection({
           <div>
             <Eyebrow>Консультація</Eyebrow>
             <Reveal className="text-[clamp(26px,4.6vw,44px)] leading-[1.1] !text-white">Розкажіть про справу</Reveal>
-            <p className="lede mt-6 text-on-dark">
-              Передзвонюємо в робочі години. На консультації одразу скажемо, чи бачимо шлях — це перше
-              правило кредо.
+            {/* Один рядок замість абзацу: що буде після заявки. */}
+            <p className="m-0 mt-4 max-w-[40ch] text-[15.5px] leading-relaxed text-on-dark">
+              Перша консультація — безкоштовно. Юрист оцінить перспективу й чесно скаже, чи є шлях.
             </p>
 
             <dl className="mt-[38px] grid gap-x-6 gap-y-[22px] min-[480px]:grid-cols-2">
@@ -339,7 +351,11 @@ export function LeadSection({
             </Button>
 
             <p className="m-0 mt-1 max-w-[44ch] text-[12.5px] leading-relaxed text-on-dark-2">
-              Надсилаючи форму, ви погоджуєтесь на обробку даних для звʼязку у вашій справі.
+              Надсилаючи форму, ви погоджуєтесь на обробку даних для звʼязку у вашій справі —{' '}
+              <a href="/privacy" className="underline decoration-white/30 underline-offset-2 hover:text-white">
+                політика конфіденційності
+              </a>
+              .
             </p>
           </form>
         </div>

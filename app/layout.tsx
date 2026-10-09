@@ -7,8 +7,9 @@ import { SITE_URL } from '@/lib/site'
  * Корневой лейаут. Локаль подставляет app/[lang]/layout.tsx,
  * здесь только шрифты и то, что общее для всех языков.
  *
- * Шрифты: Source Serif 4 (серифный акцидентный) + Onest (гротеск) +
- * IBM Plex Mono (цифры и метки). Все три с полной кириллицей —
+ * Шрифты: Playfair Display (заголовки, контрастная антиква) + Manrope
+ * (текст, интерфейс) + IBM Plex Mono (цифры и метки). Выбраны клиентом
+ * из семи пар (было Source Serif 4 + Onest). Все три с полной кириллицей —
  * критично для украинского: половина «красивых» серифов на Google Fonts
  * не имеет ні «і», ні «ї», ні «є».
  *
@@ -48,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Onest:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
         />
       </head>
       <body>{children}</body>

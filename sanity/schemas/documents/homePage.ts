@@ -32,10 +32,8 @@ export const homePage = defineType({
   type: 'document',
   groups: [
     { name: 'hero', title: 'Перший екран', default: true },
-    { name: 'promises', title: 'Три обіцянки' },
-    { name: 'credo', title: 'Кредо' },
-    { name: 'path', title: 'Шлях справи' },
-    { name: 'manifesto', title: 'Цитата на фото' },
+    { name: 'credo', title: 'Місія' },
+    { name: 'team', title: 'Блок «Команда»' },
   ],
 
   fields: [
@@ -71,14 +69,6 @@ export const homePage = defineType({
       validation: (r) => r.custom(localeMax(50)),
     }),
     defineField({
-      name: 'heroLede',
-      title: 'Підзаголовок',
-      type: 'localeText',
-      group: 'hero',
-      description: 'Один-два речення під заголовком. **Жирним** виділяються частини всередині.',
-      validation: (r) => r.custom(localeMax(240)),
-    }),
-    defineField({
       name: 'heroCtaPrimary',
       title: 'Головна кнопка',
       type: 'localeString',
@@ -91,136 +81,78 @@ export const homePage = defineType({
       title: 'Друга кнопка',
       type: 'localeString',
       group: 'hero',
-      description: 'Веде до блоку практик нижче на сторінці.',
+      description: 'Кнопка з напрямами: плавно прокручує сторінку до блоку практик. Напр. «Обрати напрям».',
       validation: (r) => r.custom(localeMax(34)),
     }),
-
-    /* ═══════════ ТРИ ОБЕЩАНИЯ ═══════════ */
+    /* H1 і продовження — один абзац під слоганом. Слоган — образ,
+       H1 каже пошуковику й людині прямо, що робить фірма. */
     defineField({
-      name: 'promises',
-      title: 'Три обіцянки',
-      type: 'array',
-      group: 'promises',
-      description:
-        'Смуга під першим екраном. Рівно три — сітка в три колонки, четверта запис її ламає, ' +
-        'а дві залишають дірку.',
-      validation: (r) => r.max(3).warning('Смуга розрахована на три обіцянки'),
-      of: [
-        defineArrayMember({
-          type: 'object',
-          name: 'promise',
-          fields: [
-            defineField({
-              name: 'kicker',
-              title: 'Питання',
-              type: 'localeString',
-              description: 'Дрібний рядок над відповіддю. Напр. «Перша консультація».',
-            }),
-            defineField({
-              name: 'answer',
-              title: 'Відповідь',
-              type: 'localeString',
-              description: 'Коротко й категорично. Напр. «Без оплати».',
-            }),
-            defineField({ name: 'note', title: 'Пояснення', type: 'localeText' }),
-          ],
-          preview: {
-            select: { title: 'answer.ua', subtitle: 'kicker.ua' },
-          },
-        }),
-      ],
-    }),
-
-    /* ═══════════ КРЕДО ═══════════ */
-    defineField({ name: 'credoEyebrow', title: 'Надзаголовок', type: 'localeString', group: 'credo' }),
-    defineField({
-      name: 'credoTitle',
-      title: 'Заголовок блоку',
+      name: 'heroHeading',
+      title: 'Заголовок H1 (що ми робимо)',
       type: 'localeString',
-      group: 'credo',
-      validation: (r) => r.custom(localeMax(120)),
+      group: 'hero',
+      description:
+        'Абзац під великим слоганом, білим. Словами, які шукають у Google. ' +
+        'Напр. «Юридичний супровід бізнесу і захист прав у судах України».',
+      validation: (r) => r.custom(localeMax(90)),
     }),
-    defineField({ name: 'credoLede', title: 'Вступний текст', type: 'localeText', group: 'credo' }),
+    defineField({
+      name: 'heroLede',
+      title: 'Продовження після H1',
+      type: 'localeText',
+      group: 'hero',
+      description:
+        'Одне речення тим самим кеглем, але тихіше: напрями й чим відрізняємось. До 140 знаків — ' +
+        'разом із H1 це має бути 3–4 рядки, не більше.',
+      validation: (r) => r.custom(localeMax(140)),
+    }),
+
+    /* ═══════════ МІСІЯ: «ЯК МИ ЦЕ РОБИМО» ═══════════ */
     defineField({
       name: 'credo',
       title: 'Правила',
       type: 'array',
       group: 'credo',
       description:
-        'Нумерація на сайті рахується сама від порядку в цьому списку. Блок «Цитата на фото» ' +
-        'нижче посилається на четверте правило — якщо міняєте порядок, перевірте підпис там.',
+        'Блок «Як ми це робимо» під місією: короткі формулювання, без пояснень. ' +
+        'Нумерація рахується сама. Саму місію редагують у «Про компанію».',
       of: [
         defineArrayMember({
           type: 'object',
           name: 'rule',
           fields: [
             defineField({ name: 'title', title: 'Правило', type: 'localeString' }),
-            defineField({
-              name: 'text',
-              title: 'Пояснення',
-              type: 'localeText',
-              description: '**Жирним** виділяються частини всередині.',
-            }),
           ],
-          preview: { select: { title: 'title.ua', subtitle: 'text.ua' } },
+          preview: { select: { title: 'title.ua' } },
         }),
       ],
     }),
 
-    /* ═══════════ ШЛЯХ СПРАВИ ═══════════ */
-    defineField({ name: 'pathEyebrow', title: 'Надзаголовок', type: 'localeString', group: 'path' }),
+    /* ═══════════ БЛОК «КОМАНДА» ═══════════ */
     defineField({
-      name: 'pathTitle',
-      title: 'Заголовок блоку',
-      type: 'localeString',
-      group: 'path',
-      validation: (r) => r.custom(localeMax(120)),
-    }),
-    defineField({
-      name: 'path',
-      title: 'Станції',
-      type: 'array',
-      group: 'path',
-      description: 'Сітка на чотири колонки. Номери станцій рахуються самі.',
-      validation: (r) => r.max(4).warning('Сітка розрахована на чотири станції'),
-      of: [
-        defineArrayMember({
-          type: 'object',
-          name: 'station',
-          fields: [
-            defineField({ name: 'title', title: 'Назва станції', type: 'localeString' }),
-            defineField({ name: 'text', title: 'Опис', type: 'localeText' }),
-          ],
-          preview: { select: { title: 'title.ua', subtitle: 'text.ua' } },
-        }),
-      ],
-    }),
-
-    /* ═══════════ ЦИТАТА НА ФОТО ═══════════ */
-    defineField({
-      name: 'manifestoKicker',
-      title: 'Надпис над цитатою',
-      type: 'localeString',
-      group: 'manifesto',
-      description: 'Напр. «Четверте правило».',
-      validation: (r) => r.custom(localeMax(40)),
-    }),
-    defineField({
-      name: 'manifestoQuote',
+      name: 'teamQuote',
       title: 'Цитата',
-      type: 'localeString',
-      group: 'manifesto',
+      type: 'localeText',
+      group: 'team',
       description:
-        'Набирається великим кеглем поверх фотографії. Коротко: довший рядок ' +
-        'на телефоні займе весь екран.',
-      validation: (r) => r.custom(localeMax(70)),
+        'Кілька речень від керуючого партнера: як фірма веде справи. Поки поле порожнє, на тестовому ' +
+        'сайті видно заглушку, а на справжньому блок цитати просто не показується.',
+      validation: (r) => r.custom(localeMax(420)),
     }),
     defineField({
-      name: 'manifestoNote',
-      title: 'Пояснення під цитатою',
-      type: 'localeText',
-      group: 'manifesto',
-      validation: (r) => r.custom(localeMax(220)),
+      name: 'teamQuoteAuthor',
+      title: 'Автор цитати',
+      type: 'reference',
+      to: [{ type: 'teamMember' }],
+      group: 'team',
+      description: 'Імʼя, посада й фото підтягуються з картки в «Команді».',
+    }),
+    defineField({
+      name: 'teamTitle',
+      title: 'Заголовок',
+      type: 'localeString',
+      group: 'team',
+      validation: (r) => r.custom(localeMax(120)),
     }),
   ],
 

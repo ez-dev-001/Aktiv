@@ -236,7 +236,7 @@ export function Header({
             aria-label="АКТИВ, на головну"
             className="mr-auto flex min-h-11 shrink-0 items-center"
           >
-            <Logo />
+            <Logo onDark={light} />
           </a>
 
           <nav

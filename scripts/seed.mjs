@@ -252,13 +252,7 @@ const settingsDoc = {
      скрипту там делать нечего (см. PATCH_ONLY ниже — именно поэтому
      настройки обновляются патчем, а не заменой). */
   trustEyebrow: L('Нам довіряють'),
-  trustHeading: L(
-    'Вісімнадцять років практики, які можна перевірити',
-  ),
-  trustIntro: T(
-    'Ми не показуємо клієнтів без їхньої згоди: у справах про ліквідацію, ВЛК і сімейні спори ' +
-      'анонімність — **частина послуги**. Наводимо те, що кожен може звірити з реєстрами.',
-  ),
+  trustHeading: L('Чому нам доручають справи'),
   trustFacts: trustFacts.map((f, i) => ({
     _type: 'fact',
     _key: `t${i}`,
@@ -298,36 +292,15 @@ const homeDoc = {
   heroEyebrow: L(staticHome.heroEyebrow),
   heroTitle: L(staticHome.heroTitle),
   heroTitleAccent: L(staticHome.heroTitleAccent),
-  heroLede: T(staticHome.heroLede),
   heroCtaPrimary: L(staticHome.heroCtaPrimary),
   heroCtaSecondary: L(staticHome.heroCtaSecondary),
-  promises: staticHome.promises.map((p, i) => ({
-    _type: 'promise',
-    _key: `p${i}`,
-    kicker: L(p.kicker),
-    answer: L(p.answer),
-    note: T(p.note),
-  })),
-  credoEyebrow: L(staticHome.credoEyebrow),
-  credoTitle: L(staticHome.credoTitle),
-  credoLede: T(staticHome.credoLede),
+  heroHeading: L(staticHome.heroHeading),
+  heroLede: T(staticHome.heroLede),
   credo: staticHome.credo.map((r, i) => ({
     _type: 'rule',
     _key: `r${i}`,
     title: L(r.title),
-    text: T(r.text),
   })),
-  pathEyebrow: L(staticHome.pathEyebrow),
-  pathTitle: L(staticHome.pathTitle),
-  path: staticHome.path.map((r, i) => ({
-    _type: 'station',
-    _key: `s${i}`,
-    title: L(r.title),
-    text: T(r.text),
-  })),
-  manifestoKicker: L(staticHome.manifestoKicker),
-  manifestoQuote: L(staticHome.manifestoQuote),
-  manifestoNote: T(staticHome.manifestoNote),
 }
 
 /* ═══════════════ «ПРО КОМПАНІЮ» ═══════════════ */

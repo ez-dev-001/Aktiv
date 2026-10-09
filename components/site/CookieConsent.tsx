@@ -107,7 +107,7 @@ export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTex
             <button
               type="button"
               onClick={() => decide({ analytics: true, marketing: true })}
-              className="min-h-11 rounded-[10px] border-0 bg-accent px-3 text-[13.5px] font-medium text-white transition-[filter] hover:brightness-95"
+              className="min-h-11 rounded-[10px] border-0 bg-accent-btn px-3 text-[13.5px] font-medium text-white transition-[filter] hover:bg-accent-btn-hover"
             >
               Прийняти всі
             </button>
@@ -115,7 +115,7 @@ export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTex
           <button
             type="button"
             onClick={() => setView('settings')}
-            className="mt-2.5 w-full border-0 bg-transparent p-1 text-[13px] text-slate-2 underline decoration-slate-2/40 underline-offset-2 hover:text-ink"
+            className="mt-2.5 w-full border-0 bg-transparent p-1 text-[13px] text-slate underline decoration-slate/40 underline-offset-2 hover:text-ink"
           >
             Налаштувати
           </button>

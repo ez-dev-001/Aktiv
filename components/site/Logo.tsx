@@ -43,16 +43,26 @@ export function LogoMark({ className = 'size-6', ...rest }: React.SVGProps<SVGSV
  * сверху. Малиновый #fa2163 на тёмно-фиолетовом даёт контраст около
  * 4.9:1 — выше порога для крупного текста.
  *
- * «LAW FIRM» — нейтральный серо-лиловый: он одинаково спокойно
- * читается и на бумаге, и на тёмном.
+ * «LAW FIRM» — чёрный, как просил клиент. На тёмном фоне (прозрачная
+ * шапка над фото, футер) чёрный пропал бы совсем, поэтому там подпись
+ * белая: onDark. Знак и «AKTIV» цвет не меняют никогда.
+ *
+ * Размер увеличен по просьбе клиента: знак 22 → 30 px по высоте,
+ * «AKTIV» 21 → 28 px (на телефоне 25 px, чтобы шапка не теснилась).
  */
-export function Logo({ className = '' }: { className?: string }) {
+export function Logo({ className = '', onDark = false }: { className?: string; onDark?: boolean }) {
   return (
-    <span className={`flex items-center gap-2.5 leading-none ${className}`}>
-      <LogoMark className="h-[22px] w-[29px] shrink-0 text-accent" />
+    <span className={`flex items-center gap-3 leading-none ${className}`}>
+      <LogoMark className="h-[26px] w-[35px] shrink-0 text-accent min-[980px]:h-[30px] min-[980px]:w-[41px]" />
       <span className="flex flex-col">
-        <span className="font-serif text-[21px] font-bold leading-none tracking-[0.05em] text-accent">AKTIV</span>
-        <span className="mt-[3px] font-mono text-[7.5px] leading-none tracking-[0.3em] text-slate-2">LAW FIRM</span>
+        <span className="font-serif text-[25px] font-bold leading-none tracking-[0.05em] text-accent min-[980px]:text-[28px]">AKTIV</span>
+        <span
+          className={`mt-1 font-mono text-[8.5px] font-medium leading-none tracking-[0.3em] transition-colors duration-[420ms] min-[980px]:text-[9.5px] ${
+            onDark ? 'text-white' : 'text-ink'
+          }`}
+        >
+          LAW FIRM
+        </span>
       </span>
     </span>
   )

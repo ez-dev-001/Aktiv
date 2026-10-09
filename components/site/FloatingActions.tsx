@@ -15,7 +15,7 @@ import { LogoMark } from './Logo'
  * Здесь то же место, но:
  *
  *  • блок прячется, когда форма заявки в кадре — незачем дублировать CTA,
- *    который уже перед глазами;
+ *    который уже перед глазами; на главной — и пока виден первый экран;
  *  • «наверх» появляется только после полутора экранов прокрутки;
  *  • все отступы считаются от env(safe-area-inset-bottom), иначе на
  *    айфонах с жестовой панелью кнопка уезжает под неё;
@@ -33,14 +33,21 @@ export function FloatingActions({ contacts = staticContacts }: { contacts?: Cont
   const [open, setOpen] = useState(false)
   const [showTop, setShowTop] = useState(false)
   const [hidden, setHidden] = useState(false)
+  const [inHero, setInHero] = useState(false)
   const box = useRef<HTMLDivElement>(null)
 
   /* «наверх» после 1.5 экранов */
   useEffect(() => {
     let raf = 0
+    /* На головній перший екран уже має обидві дії — «Розповісти про
+       справу» і телефон. Кружок поверх нього лише дублював їх і на
+       телефоні перекривав «Обрати напрям». Тому він зʼявляється, коли
+       перший екран майже прокручено. На інших сторінках #hero немає. */
+    const hero = document.getElementById('hero')
     const paint = () => {
       raf = 0
       setShowTop(window.scrollY > window.innerHeight * 1.5)
+      setInHero(!!hero && hero.getBoundingClientRect().bottom > window.innerHeight * 0.35)
     }
     const tick = () => {
       if (!raf) raf = requestAnimationFrame(paint)
@@ -97,7 +104,7 @@ export function FloatingActions({ contacts = staticContacts }: { contacts?: Cont
   return (
     <div
       ref={box}
-      data-hidden={hidden}
+      data-hidden={hidden || inHero}
       /* собственное имя перехода: блок связи живёт поверх страниц
          и не должен уезжать вместе с содержимым при переходе */
       style={{ viewTransitionName: 'site-actions' }}
