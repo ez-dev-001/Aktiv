@@ -48,7 +48,7 @@ export async function PageShell({
       <main id="top" className="relative">
         {children}
       </main>
-      <Footer contacts={contacts} />
+      <Footer contacts={contacts} categories={cats} />
       <FloatingActions contacts={contacts} />
     </>
   )

@@ -43,7 +43,7 @@ export const homePage = defineType({
       title: 'Надзаголовок',
       type: 'localeString',
       group: 'hero',
-      description: 'Дрібний рядок над заголовком. Напр. «Юридична компанія «АКТИВ» · Київ · з 2007 року».',
+      description: 'Зараз на сайті не показується (перший екран у форматі «заголовок + абзац»). Лишається про запас.',
       validation: (r) => r.custom(localeMax(90)),
     }),
     /* Заголовок разрезан на две части не из вредности: вторая половина
@@ -52,15 +52,15 @@ export const homePage = defineType({
        либо HTML в поле, либо потерю курсива. */
     defineField({
       name: 'heroTitle',
-      title: 'Заголовок — перша частина',
+      title: 'Слоган — перша частина',
       type: 'localeString',
       group: 'hero',
-      description: 'Набирається звичайним накресленням, білим.',
+      description: 'Велика фраза з водяним знаком «АКТИВ» під блоком практик. Звичайним накресленням.',
       validation: (r) => r.custom(localeMax(70)),
     }),
     defineField({
       name: 'heroTitleAccent',
-      title: 'Заголовок — акцентна частина',
+      title: 'Слоган — акцентна частина',
       type: 'localeString',
       group: 'hero',
       description:
@@ -81,30 +81,36 @@ export const homePage = defineType({
       title: 'Друга кнопка',
       type: 'localeString',
       group: 'hero',
-      description: 'Кнопка з напрямами: плавно прокручує сторінку до блоку практик. Напр. «Обрати напрям».',
+      description: 'Тихе посилання поруч із головною кнопкою: веде до блоку «Команда». Напр. «Ознайомитись».',
       validation: (r) => r.custom(localeMax(34)),
     }),
-    /* H1 і продовження — один абзац під слоганом. Слоган — образ,
-       H1 каже пошуковику й людині прямо, що робить фірма. */
+    /* H1 першого екрана в два поля — як і слоган: друга частина
+       набирається курсивом у малиновому. */
     defineField({
       name: 'heroHeading',
-      title: 'Заголовок H1 (що ми робимо)',
+      title: 'Заголовок H1 — перша частина',
       type: 'localeString',
       group: 'hero',
       description:
-        'Абзац під великим слоганом, білим. Словами, які шукають у Google. ' +
-        'Напр. «Юридичний супровід бізнесу і захист прав у судах України».',
-      validation: (r) => r.custom(localeMax(90)),
+        'Великий заголовок першого екрана: що робить фірма, словами, які шукають у Google. ' +
+        'Напр. «Юридичний супровід бізнесу і».',
+      validation: (r) => r.custom(localeMax(70)),
+    }),
+    defineField({
+      name: 'heroHeadingAccent',
+      title: 'Заголовок H1 — акцентна частина',
+      type: 'localeString',
+      group: 'hero',
+      description: 'Продовження заголовка курсивом у малиновому. Напр. «захист ваших прав».',
+      validation: (r) => r.custom(localeMax(50)),
     }),
     defineField({
       name: 'heroLede',
-      title: 'Продовження після H1',
+      title: 'Абзац під заголовком',
       type: 'localeText',
       group: 'hero',
-      description:
-        'Одне речення тим самим кеглем, але тихіше: напрями й чим відрізняємось. До 140 знаків — ' +
-        'разом із H1 це має бути 3–4 рядки, не більше.',
-      validation: (r) => r.custom(localeMax(140)),
+      description: 'Два речення: хто ми, з якого року, які напрями і чим відрізняємось. До 260 знаків.',
+      validation: (r) => r.custom(localeMax(260)),
     }),
 
     /* ═══════════ МІСІЯ: «ЯК МИ ЦЕ РОБИМО» ═══════════ */

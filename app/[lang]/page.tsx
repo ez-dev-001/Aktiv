@@ -3,11 +3,10 @@ import { FloatingActions } from '@/components/site/FloatingActions'
 import { Header } from '@/components/site/Header'
 import { toMenu } from '@/lib/menu'
 import type { Metadata } from 'next'
-import { Credo, Footer, Hero, Journal, Practices, TeamIntro } from '@/components/home/Sections'
+import { Claim, Footer, Hero, Journal, Practices, TeamIntro } from '@/components/home/Sections'
 import { SITE_URL } from '@/lib/site'
 import { LeadSection } from '@/components/home/LeadSection'
 import {
-  getAboutContent,
   getCategories,
   getContacts,
   getHomeContent,
@@ -31,13 +30,12 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const { lang } = await params
   /* Sanity, если настроен и заполнен; иначе статика из lib/content.ts.
      Компонентам всё равно — форма данных одна. */
-  const [cats, posts, crew, contacts, home, about] = await Promise.all([
+  const [cats, posts, crew, contacts, home] = await Promise.all([
     getCategories(lang),
     getPosts(lang, 3),
     getTeam(lang),
     getContacts(lang),
     getHomeContent(lang),
-    getAboutContent(lang),
   ])
 
   /* Керуючий партнер — автор цитаты в блоке «Команда», если автора
@@ -94,35 +92,26 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <Header lang={lang} overDark contacts={contacts.data} categories={toMenu(cats.data)} />
 
       <main id="top" className="relative">
-        {/* ── Порядок блоків ──
-            Від того, з чим людина прийшла, до того, як звернутися:
-            1. перший екран — хто ми, де, телефон і кнопка;
-            2. практики — одразу другим блоком: відвідувач шукає свою
-               проблему, а не історію фірми;
-            3. команда — хто саме веде справу (живе фото партнера);
-            4. цифри — докази;
-            5. місія й п'ять правил — як працюємо;
-            6. блог — свіжі розбори (від двох статей);
-            7. форма.
-            Фото-банер із цитатою прибрано: він нічого не додавав. */}
-        <Hero
-          home={home.data}
-          directions={cats.data.map((x) => ({ slug: x.slug, title: x.title, icon: x.icon }))}
-          phone={{ label: c.phone, href: c.phoneHref }}
-        />
-        <Practices categories={cats.data} />
+        {/* ── Порядок блоків — як в armada.law (затверджено за макетом) ──
+            1. перший екран — H1, абзац, кнопка до форми, знак;
+            2. команда — хто веде справи;
+            3. практика — напрями й послуги плашками;
+            4. головна фраза з водяним знаком;
+            5. нам довіряють — логотипи клієнтів;
+            6. блог (від двох статей);
+            7. форма — без змін. */}
+        <Hero home={home.data} />
         <TeamIntro lang={lang} home={home.data} members={crew.data} author={quoteAuthor} />
+        <Practices categories={cats.data} lang={lang} />
+        <Claim home={home.data} />
         <TrustedBy lang={lang} />
-        <Credo home={home.data} mission={about.data.mission} />
-        {/* Блог — лише коли є з чого обирати. Одна картка під великим
-            заголовком «Розбираємо рішення судів…» виглядає як порожня
-            полиця. Блок повернеться сам із другою статтею; блог і так
-            є в меню. */}
+        {/* Блог — лише коли є з чого обирати: одна картка під великим
+            заголовком виглядає як порожня полиця. */}
         {posts.data.length >= 2 && <Journal lang={lang} posts={posts.data} clickable={posts.source === 'sanity'} />}
         <LeadSection contacts={contacts.data} categories={cats.data} />
       </main>
 
-      <Footer contacts={contacts.data} />
+      <Footer contacts={contacts.data} categories={cats.data} />
       <FloatingActions contacts={contacts.data} />
     </>
   )

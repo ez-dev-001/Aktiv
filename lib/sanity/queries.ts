@@ -292,6 +292,7 @@ export const HOME_QUERY = groq`
   "heroCtaSecondary": coalesce(heroCtaSecondary[$lang], heroCtaSecondary.ua),
 
   "heroHeading":      coalesce(heroHeading[$lang], heroHeading.ua),
+  "heroHeadingAccent": coalesce(heroHeadingAccent[$lang], heroHeadingAccent.ua),
   "heroLede":         coalesce(heroLede[$lang], heroLede.ua),
 
   "credo": credo[] {

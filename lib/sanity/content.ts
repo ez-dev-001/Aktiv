@@ -596,6 +596,7 @@ export async function getHomeContent(lang = 'ua'): Promise<Sourced<HomeContent>>
     heroCtaPrimary: str(r.heroCtaPrimary, f.heroCtaPrimary),
     heroCtaSecondary: str(r.heroCtaSecondary, f.heroCtaSecondary),
     heroHeading: str(r.heroHeading, f.heroHeading),
+    heroHeadingAccent: str(r.heroHeadingAccent, f.heroHeadingAccent),
     heroLede: str(r.heroLede, f.heroLede),
     credo: list(r.credo, f.credo, (x) => ({ title: str(x.title, '') })),
     teamTitle: str(r.teamTitle, f.teamTitle),

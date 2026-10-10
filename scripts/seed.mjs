@@ -295,6 +295,7 @@ const homeDoc = {
   heroCtaPrimary: L(staticHome.heroCtaPrimary),
   heroCtaSecondary: L(staticHome.heroCtaSecondary),
   heroHeading: L(staticHome.heroHeading),
+  heroHeadingAccent: L(staticHome.heroHeadingAccent),
   heroLede: T(staticHome.heroLede),
   credo: staticHome.credo.map((r, i) => ({
     _type: 'rule',

@@ -296,18 +296,20 @@ export function Header({
                 </a>
               ))}
             </div>
+            {/* Телефон кнопкою-пігулкою, як в armada.law: над тёмним
+                першим екраном — прозора з контуром, на папері — заповнена. */}
             <a
               href={contacts.phoneHref}
               onClick={() => trackPhone('header')}
-              className={`hidden min-h-11 items-center whitespace-nowrap font-mono text-[13px] transition-colors duration-[420ms] min-[1240px]:inline-flex ${
-                light ? 'text-white' : 'text-ink'
+              className={`inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-[18px] text-[14.5px] font-medium transition-[background-color,color,box-shadow] duration-[420ms] ${
+                light
+                  ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.2)] hover:bg-white/[0.14]'
+                  : 'bg-ink text-white hover:bg-ink-2'
               }`}
             >
+              <Icon name="phone" className="size-4 text-accent-soft" />
               {contacts.phone}
             </a>
-            <ButtonLink href="#contact" size="sm">
-              Консультація
-            </ButtonLink>
           </div>
 
           {/* ── бургер ──

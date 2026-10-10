@@ -8,7 +8,8 @@
  *
  * ── Що чіпає ──
  * Документ homePage, лише три поля:
- *   • heroHeading і heroLede — H1 і його продовження під слоганом;
+ *   • heroHeading, heroHeadingAccent, heroLede, heroCtaPrimary, heroCtaSecondary —
+ *     заголовок, абзац і кнопки першого екрана;
  *   • credo    — нові назви п'яти правил (ключі елементів зберігаються);
  *   • credoEyebrow — «Місія».
  * З прапорцем --trust ще siteSettings:
@@ -60,9 +61,12 @@ const L = (ua) => ({ _type: 'localeString', ua })
 
 /* ═══════════ НОВІ ТЕКСТИ ═══════════ */
 
-const HERO_HEADING = 'Юридичний супровід бізнесу і захист прав у судах України'
+const HERO_HEADING = 'Юридичний супровід бізнесу і'
+const HERO_HEADING_ACCENT = 'захист ваших прав'
+const HERO_CTA_PRIMARY = 'Отримати консультацію'
+const HERO_CTA_SECONDARY = 'Ознайомитись'
 const HERO_LEDE =
-  'Ліквідація та банкрутство, судові спори, нерухомість і військове право — з власним приватним виконавцем у команді.'
+  'Юридична компанія «АКТИВ» з 2007 року веде ліквідації та банкрутства, судові спори, справи з нерухомістю й військове право. Власний приватний виконавець у команді — тому рішення суду для наших клієнтів стає грошима, а не папером.'
 
 const CREDO_TITLES = [
   'Беремося за справу, лише коли бачимо шлях.',
@@ -85,7 +89,7 @@ const TRUST_FACTS = [
 /* ═══════════ ЧИТАЄМО ПОТОЧНЕ ═══════════ */
 
 const cur = await client.fetch(`{
-  "home": *[_id == "homePage"][0]{ _id, heroHeading, heroLede, credo, credoEyebrow },
+  "home": *[_id == "homePage"][0]{ _id, heroHeading, heroHeadingAccent, heroLede, heroCtaPrimary, heroCtaSecondary, credo, credoEyebrow },
   "homeDraft": defined(*[_id == "drafts.homePage"][0]._id),
   "settings": *[_id == "siteSettings"][0]{ _id, trustEyebrow, trustHeading, trustFacts },
   "settingsDraft": defined(*[_id == "drafts.siteSettings"][0]._id)
@@ -107,6 +111,9 @@ const homeSet = {}
 
 homeSet.heroHeading = { ...(cur.home.heroHeading ?? {}), _type: 'localeString', ua: HERO_HEADING }
 homeSet.heroLede = { ...(cur.home.heroLede ?? {}), _type: 'localeText', ua: HERO_LEDE }
+homeSet.heroHeadingAccent = { ...(cur.home.heroHeadingAccent ?? {}), _type: 'localeString', ua: HERO_HEADING_ACCENT }
+homeSet.heroCtaPrimary = { ...(cur.home.heroCtaPrimary ?? {}), _type: 'localeString', ua: HERO_CTA_PRIMARY }
+homeSet.heroCtaSecondary = { ...(cur.home.heroCtaSecondary ?? {}), _type: 'localeString', ua: HERO_CTA_SECONDARY }
 
 const credoNow = cur.home.credo ?? []
 const credo = CREDO_TITLES.map((title, i) => {
@@ -118,7 +125,10 @@ homeSet.credoEyebrow = { ...(cur.home.credoEyebrow ?? {}), _type: 'localeString'
 
 console.log('\n── Головна сторінка (homePage) ──')
 show('H1 першого екрана', ua(cur.home.heroHeading), HERO_HEADING)
+show('H1 — акцент', ua(cur.home.heroHeadingAccent), HERO_HEADING_ACCENT)
 show('абзац під H1', ua(cur.home.heroLede), HERO_LEDE)
+show('головна кнопка', ua(cur.home.heroCtaPrimary), HERO_CTA_PRIMARY)
+show('посилання поруч', ua(cur.home.heroCtaSecondary), HERO_CTA_SECONDARY)
 CREDO_TITLES.forEach((t, i) => show(`правило ${i + 1}`, ua(credoNow[i]?.title), t))
 show('надзаголовок місії', ua(cur.home.credoEyebrow), 'Місія')
 if (cur.homeDraft) console.log('\n  ! У студії є неопублікована чернетка головної. Після її публікації ці поля повернуться до чернетки.')
