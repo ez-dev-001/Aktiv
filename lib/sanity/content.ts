@@ -173,12 +173,15 @@ export interface TrustFact {
 export interface TrustBlock {
   eyebrow: string
   heading: string
+  /** абзац під заголовком «Нам довіряють» */
+  text: string
   facts: TrustFact[]
   clients: ClientLogo[]
 }
 
 interface RawTrust {
   eyebrow?: string
+  text?: string
   heading?: string
   facts?: { value?: string; label?: string }[]
   clients?: ClientLogo[]
@@ -187,6 +190,7 @@ interface RawTrust {
 export const staticTrust: TrustBlock = {
   eyebrow: 'Нам довіряють',
   heading: 'Чому нам доручають справи',
+  text: 'Серед клієнтів «АКТИВ» — компанії й підприємці, які доручають нам ліквідації, судові спори та стягнення боргів. Логотипи показуємо лише з дозволу клієнта.',
   facts: staticTrustFacts,
   clients: [],
 }
@@ -224,6 +228,7 @@ export async function getTrustBlock(lang = 'ua'): Promise<Sourced<TrustBlock>> {
     data: {
       eyebrow: eyebrow || staticTrust.eyebrow,
       heading: heading || staticTrust.heading,
+      text: nonEmpty(r.text) || staticTrust.text,
       /* ── Цифры: подстановки нет ──
          Заголовок и надзаголовок падают на статику, потому что блок
          без заголовка — это сломанная страница. Сетка цифр — другое
@@ -601,6 +606,8 @@ export async function getHomeContent(lang = 'ua'): Promise<Sourced<HomeContent>>
     credo: list(r.credo, f.credo, (x) => ({ title: str(x.title, '') })),
     teamTitle: str(r.teamTitle, f.teamTitle),
     teamQuote: str(r.teamQuote, f.teamQuote),
+    teamText: str(r.teamText, f.teamText),
+    practicesText: str(r.practicesText, f.practicesText),
     ...(person(r.teamQuoteAuthor) ? { teamQuoteAuthor: person(r.teamQuoteAuthor) } : {}),
   }
 

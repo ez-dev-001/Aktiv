@@ -253,6 +253,7 @@ const settingsDoc = {
      настройки обновляются патчем, а не заменой). */
   trustEyebrow: L('Нам довіряють'),
   trustHeading: L('Чому нам доручають справи'),
+  trustText: T('Серед клієнтів «АКТИВ» — компанії й підприємці, які доручають нам ліквідації, судові спори та стягнення боргів. Логотипи показуємо лише з дозволу клієнта.'),
   trustFacts: trustFacts.map((f, i) => ({
     _type: 'fact',
     _key: `t${i}`,
@@ -297,6 +298,8 @@ const homeDoc = {
   heroHeading: L(staticHome.heroHeading),
   heroHeadingAccent: L(staticHome.heroHeadingAccent),
   heroLede: T(staticHome.heroLede),
+  teamText: T(staticHome.teamText),
+  practicesText: T(staticHome.practicesText),
   credo: staticHome.credo.map((r, i) => ({
     _type: 'rule',
     _key: `r${i}`,

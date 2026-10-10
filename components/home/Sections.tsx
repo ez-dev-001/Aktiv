@@ -156,8 +156,7 @@ export function TeamIntro({
           )}
           <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">Команда</Reveal>
           <p className="m-0 mt-[18px] max-w-[56ch] text-[15.5px] leading-[1.65] text-slate">
-            У «АКТИВ» — {members.length} фахівців: адвокати, юристи та власний приватний виконавець. Кожну справу веде
-            конкретний адвокат, з яким ви на прямому звʼязку.
+            {home.teamText.replaceAll('{n}', String(members.length))}
           </p>
           <div className="mt-[22px] flex flex-wrap items-center gap-5">
             <ArrowLink href={href} className="text-[15px] font-semibold">
@@ -252,7 +251,15 @@ export function Claim({ home = staticHome }: { home?: HomeContent }) {
    Сплит, як «Наша експертиза» в Армади: ліворуч тёмна половина з
    текстом, праворуч світла з плашками послуг (PracticeTabs). Половини
    йдуть від краю до краю, текст вирівняний по сітці сторінки. */
-export function Practices({ categories = staticCategories, lang = 'ua' }: { categories?: Category[]; lang?: string }) {
+export function Practices({
+  categories = staticCategories,
+  lang = 'ua',
+  text = staticHome.practicesText,
+}: {
+  categories?: Category[]
+  lang?: string
+  text?: string
+}) {
   const groups = categories.map((c) => ({
     slug: c.slug,
     title: c.title,
@@ -269,8 +276,7 @@ export function Practices({ categories = staticCategories, lang = 'ua' }: { cate
             Наша <em className="text-accent-soft">практика</em>
           </Reveal>
           <p className="m-0 mt-[18px] text-[15.5px] leading-[1.65] text-on-dark">
-            З 2007 року супроводжуємо бізнес і людей у Києві та по всій Україні: від ліквідації компаній і судових спорів до
-            захисту прав військовослужбовців.
+            {text}
           </p>
           <ArrowLink href={href} className="mt-[22px] text-[15px] font-semibold !text-accent-soft">
             Усі {total} послуг

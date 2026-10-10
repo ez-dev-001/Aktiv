@@ -102,7 +102,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             7. форма — без змін. */}
         <Hero home={home.data} />
         <TeamIntro lang={lang} home={home.data} members={crew.data} author={quoteAuthor} />
-        <Practices categories={cats.data} lang={lang} />
+        <Practices categories={cats.data} lang={lang} text={home.data.practicesText} />
         <Claim home={home.data} />
         <TrustedBy lang={lang} />
         {/* Блог — лише коли є з чого обирати: одна картка під великим

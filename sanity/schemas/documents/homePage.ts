@@ -32,6 +32,7 @@ export const homePage = defineType({
   type: 'document',
   groups: [
     { name: 'hero', title: 'Перший екран', default: true },
+    { name: 'practices', title: 'Блок «Наша практика»' },
     { name: 'credo', title: 'Місія' },
     { name: 'team', title: 'Блок «Команда»' },
   ],
@@ -134,15 +135,35 @@ export const homePage = defineType({
       ],
     }),
 
+    /* ═══════════ БЛОК «НАША ПРАКТИКА» ═══════════ */
+    defineField({
+      name: 'practicesText',
+      title: 'Абзац у тёмній половині',
+      type: 'localeText',
+      group: 'practices',
+      description: 'Два-три рядки під «Наша практика». Самі напрями й послуги беруться з розділу «Практики».',
+      validation: (r) => r.custom(localeMax(240)),
+    }),
+
     /* ═══════════ БЛОК «КОМАНДА» ═══════════ */
+    defineField({
+      name: 'teamText',
+      title: 'Абзац під «Команда»',
+      type: 'localeText',
+      group: 'team',
+      description:
+        'Два речення про команду. {n} на сайті заміниться на кількість людей у розділі «Команда» — ' +
+        'число не треба оновлювати вручну.',
+      validation: (r) => r.custom(localeMax(260)),
+    }),
     defineField({
       name: 'teamQuote',
       title: 'Цитата',
       type: 'localeText',
       group: 'team',
       description:
-        'Кілька речень від керуючого партнера: як фірма веде справи. Поки поле порожнє, на тестовому ' +
-        'сайті видно заглушку, а на справжньому блок цитати просто не показується.',
+        'Кілька речень від керуючого партнера: як фірма веде справи. Поки поле порожнє, блок цитати ' +
+        'на сайті просто не показується.',
       validation: (r) => r.custom(localeMax(420)),
     }),
     defineField({

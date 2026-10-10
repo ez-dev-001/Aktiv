@@ -81,8 +81,7 @@ export async function TrustedBy({
         <div>
           <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">{t.eyebrow || 'Нам довіряють'}</Reveal>
           <p className="m-0 mt-[18px] max-w-[46ch] text-[15.5px] leading-[1.65] text-slate">
-            Серед клієнтів «АКТИВ» — компанії й підприємці, які доручають нам ліквідації, судові спори та стягнення боргів.
-            Логотипи показуємо лише з дозволу клієнта.
+            {t.text}
           </p>
           {preview && (
             <p className="m-0 mt-4 max-w-[46ch] text-[13px] leading-relaxed text-slate-2">

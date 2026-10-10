@@ -81,6 +81,14 @@ export const siteSettings = defineType({
       validation: (r) => r.custom(localeMax(120)),
     }),
     defineField({
+      name: 'trustText',
+      title: 'Абзац під заголовком',
+      type: 'localeText',
+      group: 'trust',
+      description: 'Два речення ліворуч від логотипів клієнтів.',
+      validation: (r) => r.custom(localeMax(260)),
+    }),
+    defineField({
       name: 'trustFacts',
       title: 'Цифри, які можна перевірити',
       type: 'array',

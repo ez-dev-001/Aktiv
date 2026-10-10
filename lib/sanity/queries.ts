@@ -189,6 +189,7 @@ export const TRUST_QUERY = groq`
 *[_type == "siteSettings"][0] {
   "eyebrow": coalesce(trustEyebrow[$lang], trustEyebrow.ua),
   "heading": coalesce(trustHeading[$lang], trustHeading.ua),
+  "text": coalesce(trustText[$lang], trustText.ua),
   "facts": trustFacts[] {
     value,
     "label": coalesce(label[$lang], label.ua)
@@ -301,6 +302,8 @@ export const HOME_QUERY = groq`
 
   "teamTitle": coalesce(teamTitle[$lang], teamTitle.ua),
   "teamQuote": coalesce(teamQuote[$lang], teamQuote.ua),
+  "teamText": coalesce(teamText[$lang], teamText.ua),
+  "practicesText": coalesce(practicesText[$lang], practicesText.ua),
   "teamQuoteAuthor": teamQuoteAuthor-> {
     "name": coalesce(name[$lang], name.ua),
     "role": coalesce(role[$lang], role.ua),
