@@ -48,19 +48,37 @@ export function Hero({ home = staticHome }: { home?: HomeContent }) {
         className="absolute inset-0 -z-[1] bg-[radial-gradient(55%_70%_at_4%_0%,rgb(60_34_120/0.45),transparent_70%),radial-gradient(40%_60%_at_78%_55%,rgb(250_33_99/0.14),transparent_70%)]"
       />
 
-      <div className="shell inner relative z-[2] grid min-h-[clamp(620px,92svh,860px)] items-center gap-y-2 pb-[clamp(40px,5vw,64px)] pt-[clamp(104px,12vw,140px)] min-[1000px]:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
-        <div className="relative z-[2] min-w-0 max-w-[640px]">
-          <h1 className="m-0 font-serif text-[clamp(40px,5.6vw,78px)] font-normal leading-[1.02] tracking-[-0.022em] text-white [text-wrap:balance]">
+      {/* ── Сітка першого екрана ──
+          Комп'ютер (від 1000px): ліворуч текст, праворуч великий знак,
+          що йде за край — формат armada.law.
+          Телефон і планшет (варіант «A» з макетів): знак — маленький
+          анімований значок у рядку «Київ · з 2007 року», під ним
+          великий заголовок і повний абзац. Кнопки на телефоні не тут,
+          а в липкій панелі внизу екрана (MobileDock), тому тут лише
+          «Ознайомитись», притиснуте до низу першого екрана.
+          Знак один і той самий (HeroMark), змінюється лише його місце
+          в сітці: два знаки на сторінці дублювали б id градієнтів SVG. */}
+      <div className="shell inner relative z-[2] grid min-h-[clamp(600px,100svh,860px)] grid-cols-[auto_minmax(0,1fr)] min-[600px]:min-h-[640px] grid-rows-[auto_1fr] content-start items-center gap-x-3 pb-[104px] pt-[calc(var(--hdr)+28px)] min-[1000px]:min-h-[clamp(620px,92svh,860px)] min-[1000px]:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] min-[1000px]:grid-rows-1 min-[1000px]:content-center min-[1000px]:gap-y-2 min-[1000px]:pb-[clamp(40px,5vw,64px)] min-[1000px]:pt-[clamp(104px,12vw,140px)]">
+        <div className="col-start-1 row-start-1 -my-3 -ml-1 mr-1 w-[124px] min-w-0 min-[600px]:w-[150px] min-[1000px]:col-start-2 min-[1000px]:m-0 min-[1000px]:-mr-[24%] min-[1000px]:w-[min(760px,128%)] min-[1000px]:justify-self-end">
+          <HeroMark />
+        </div>
+        <p className="col-start-2 row-start-1 m-0 font-mono text-[10px] uppercase leading-[1.5] tracking-[0.14em] text-accent-soft min-[1000px]:hidden">
+          Київ · з 2007 року
+        </p>
+
+        <div className="relative z-[2] col-span-2 row-start-2 flex min-w-0 max-w-[640px] flex-col self-stretch pt-[22px] min-[1000px]:col-span-1 min-[1000px]:col-start-1 min-[1000px]:row-start-1 min-[1000px]:self-center min-[1000px]:pt-0">
+          <h1 className="m-0 font-serif text-[clamp(38px,5.6vw,78px)] font-normal leading-[1.03] tracking-[-0.022em] text-white [text-wrap:balance]">
             {home.heroHeading}{' '}
             {home.heroHeadingAccent && <em className="text-accent-soft">{home.heroHeadingAccent}</em>}
           </h1>
           {home.heroLede && (
-            <p className="m-0 mt-[clamp(20px,2.6vw,30px)] max-w-[54ch] text-[clamp(15.5px,1.3vw,17.5px)] leading-[1.62] text-white/[0.72]">
+            <p className="m-0 mt-[clamp(16px,2.6vw,30px)] max-w-[54ch] text-[clamp(15px,1.3vw,17.5px)] leading-[1.6] text-white/[0.72]">
               {home.heroLede}
             </p>
           )}
-          <div className="mt-[clamp(28px,3.4vw,40px)] flex flex-wrap items-center gap-x-[30px] gap-y-2">
-            <ButtonLink href="#contact" arrow className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)] max-[639px]:w-full">
+          <div className="mt-auto flex flex-wrap items-center gap-x-[30px] gap-y-2 pt-6 min-[1000px]:mt-[clamp(28px,3.4vw,40px)] min-[1000px]:pt-0">
+            {/* на телефоні й планшеті головна кнопка живе в MobileDock */}
+            <ButtonLink href="#contact" arrow className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)] max-[999px]:hidden">
               {home.heroCtaPrimary}
             </ButtonLink>
             <a href="#team" className="group inline-flex min-h-12 items-center gap-2.5 text-[16px] font-medium text-white">
@@ -70,12 +88,6 @@ export function Hero({ home = staticHome }: { home?: HomeContent }) {
               </span>
             </a>
           </div>
-        </div>
-
-        {/* Знак великий і йде за правий край — як образ у Армади. На
-            телефоні він під кнопками й так само зрізаний праворуч. */}
-        <div className="-mb-10 -mr-[34%] mt-4 w-[118%] min-w-0 justify-self-end min-[1000px]:m-0 min-[1000px]:-mr-[24%] min-[1000px]:w-[min(760px,128%)]">
-          <HeroMark />
         </div>
       </div>
     </section>

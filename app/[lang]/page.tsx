@@ -1,5 +1,6 @@
 import { ScrollProgress } from '@/components/site/CaseLine'
 import { FloatingActions } from '@/components/site/FloatingActions'
+import { MobileDock } from '@/components/site/MobileDock'
 import { Header } from '@/components/site/Header'
 import { toMenu } from '@/lib/menu'
 import type { Metadata } from 'next'
@@ -112,7 +113,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </main>
 
       <Footer contacts={contacts.data} categories={cats.data} />
-      <FloatingActions contacts={contacts.data} />
+      {/* Телефон і планшет: липка панель «консультація + дзвінок» замість кружка. */}
+      <FloatingActions contacts={contacts.data} desktopOnly />
+      <MobileDock contacts={contacts.data} label={home.data.heroCtaPrimary} />
     </>
   )
 }

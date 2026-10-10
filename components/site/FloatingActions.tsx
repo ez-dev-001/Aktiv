@@ -29,7 +29,14 @@ import { LogoMark } from './Logo'
 
 type Channel = 'viber' | 'telegram' | 'whatsapp'
 
-export function FloatingActions({ contacts = staticContacts }: { contacts?: Contacts }) {
+export function FloatingActions({
+  contacts = staticContacts,
+  desktopOnly = false,
+}: {
+  contacts?: Contacts
+  /** на телефоні й планшеті замість кружка — липка панель MobileDock */
+  desktopOnly?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const [showTop, setShowTop] = useState(false)
   const [hidden, setHidden] = useState(false)
@@ -108,7 +115,7 @@ export function FloatingActions({ contacts = staticContacts }: { contacts?: Cont
       /* собственное имя перехода: блок связи живёт поверх страниц
          и не должен уезжать вместе с содержимым при переходе */
       style={{ viewTransitionName: 'site-actions' }}
-      className="pointer-events-none fixed right-[max(16px,env(safe-area-inset-right,0px))] bottom-[max(16px,env(safe-area-inset-bottom,0px))] z-[70] flex flex-col items-end gap-2.5 transition-[opacity,transform] duration-300 data-[hidden=true]:pointer-events-none data-[hidden=true]:translate-y-3 data-[hidden=true]:opacity-0 sm:right-[max(24px,env(safe-area-inset-right,0px))] sm:bottom-[max(24px,env(safe-area-inset-bottom,0px))]"
+      className={`${desktopOnly ? 'max-[999px]:hidden ' : ''}pointer-events-none fixed right-[max(16px,env(safe-area-inset-right,0px))] bottom-[max(16px,env(safe-area-inset-bottom,0px))] z-[70] flex flex-col items-end gap-2.5 transition-[opacity,transform] duration-300 data-[hidden=true]:pointer-events-none data-[hidden=true]:translate-y-3 data-[hidden=true]:opacity-0 sm:right-[max(24px,env(safe-area-inset-right,0px))] sm:bottom-[max(24px,env(safe-area-inset-bottom,0px))]`}
     >
       {/* ── наверх ── */}
       <button
