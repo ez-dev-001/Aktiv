@@ -33,7 +33,29 @@ export const isIndexedLocale = (lang: string) => (INDEXED_LOCALES as readonly st
  * сторінка розгортає у своїй generateMetadata:
  *   return { title, description, ...pageMeta(lang, '/about') }
  */
-export function pageMeta(lang: string, path: string): Pick<Metadata, 'alternates' | 'robots'> {
+/** Картинка для соцмереж і месенджерів (1200×630, public/og.jpg). */
+export const OG_IMAGE = { url: '/og.jpg', width: 1200, height: 630, alt: 'Юридична компанія «АКТИВ», Київ' }
+
+/**
+ * Open Graph і Twitter для сторінки. Дочірній openGraph у Next замінює
+ * батьківський ЦІЛКОМ, тому тут повний набір: тип, назва сайту, мова,
+ * адреса сторінки й картинка. twitter:site/creator не ставимо — акаунта
+ * фірми в X/Twitter немає.
+ */
+export function socialMeta(lang: string, url: string): Pick<Metadata, 'openGraph' | 'twitter'> {
+  return {
+    openGraph: {
+      type: 'website',
+      siteName: 'ЮК «АКТИВ»',
+      locale: lang !== DEFAULT_LOCALE && isLocale(lang) ? 'en_US' : 'uk_UA',
+      url,
+      images: [OG_IMAGE],
+    },
+    twitter: { card: 'summary_large_image', images: [OG_IMAGE.url] },
+  }
+}
+
+export function pageMeta(lang: string, path: string): Pick<Metadata, 'alternates' | 'robots' | 'openGraph' | 'twitter'> {
   const indexed = isIndexedLocale(lang)
   const canonical = localePath(indexed ? lang : DEFAULT_LOCALE, path)
   const languages =
@@ -46,6 +68,7 @@ export function pageMeta(lang: string, path: string): Pick<Metadata, 'alternates
   return {
     alternates: { canonical, ...(languages ? { languages } : {}) },
     ...(indexed ? {} : { robots: { index: false, follow: true } }),
+    ...socialMeta(lang, canonical),
   }
 }
 

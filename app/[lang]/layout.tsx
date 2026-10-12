@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { LOCALES, isLocale } from '@/lib/i18n'
+import { localePath, socialMeta } from '@/lib/seo'
 import { getCookieTexts } from '@/lib/sanity/content'
 import { CookieConsent } from '@/components/site/CookieConsent'
 import { Attribution } from '@/components/site/Attribution'
@@ -21,7 +22,7 @@ export async function generateMetadata({
   return {
     /* Повний openGraph: дочірній openGraph замінює кореневий цілком, тож
        type і siteName повторюємо тут. Локаль у форматі Open Graph (uk_UA). */
-    openGraph: { type: 'website', siteName: 'ЮК «АКТИВ»', locale: isLocale(lang) && lang !== 'ua' ? 'en_US' : 'uk_UA' },
+    ...socialMeta(lang, localePath(lang, '')),
   }
 }
 

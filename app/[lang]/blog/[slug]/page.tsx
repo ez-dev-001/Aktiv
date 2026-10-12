@@ -45,16 +45,19 @@ export async function generateMetadata({
      1200×630: этот размер Facebook, Telegram, Viber и LinkedIn
      показывают без обрезки. Обрезает CDN по точке фокуса из студии,
      поэтому главное на фото не уедет за край и здесь. Без обложки
-     превью будет без картинки — это честнее, чем чужое стоковое фото. */
+     превью будет с общей картинкой сайта (public/og.jpg). Формат — jpg:
+     auto=format отдал бы AVIF, а Facebook и Viber его не показывают. */
   const og = hasImage(p.cover)
-    ? [{ url: imageUrl(p.cover, 1200, 630), width: 1200, height: 630, alt: p.cover.alt?.trim() || p.title }]
+    ? [{ url: imageUrl(p.cover, 1200, 630).replace('auto=format', 'fm=jpg'), width: 1200, height: 630, alt: p.cover.alt?.trim() || p.title }]
     : undefined
+  const base = pageMeta(lang, `/blog/${p.slug}`)
   return {
-    ...pageMeta(lang, `/blog/${p.slug}`),
+    ...base,
     title: p.seoTitle || p.title,
     description: (p.seoDescription || p.excerpt)?.slice(0, 180),
-    openGraph: { type: 'article', publishedTime: p.publishedAt, ...(og ? { images: og } : {}) },
-    twitter: og ? { card: 'summary_large_image', images: og.map((i) => i.url) } : undefined,
+    /* Обкладинка статті — якщо є; інакше загальна картинка сайту з base. */
+    openGraph: { ...base.openGraph, type: 'article', publishedTime: p.publishedAt, ...(og ? { images: og } : {}) },
+    twitter: og ? { card: 'summary_large_image', images: og.map((i) => i.url) } : base.twitter,
   }
 }
 
