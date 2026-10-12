@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { needsMedia } from '@/components/site/PostCard'
 import { BLOG_CATEGORIES, getBlog, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
 import { PageShell } from '@/components/site/PageShell'
@@ -14,15 +15,21 @@ import { BlogFeed, BlogFilterProvider, BlogSearch, type FeedItem } from '@/compo
  * материалы лежали в одной рубрике «Новини», 19 страниц пагинации подряд.
  *
  * Рубрики — плашки из тех, что реально есть у статей, и ?cat= в адресе:
- * ссылка на рубрику делится и открывается уже отфильтрованной. Фильтр,
+ * ссылка на рубрику делится и открывается уже отфильтрованной (?cat=
+ * читает клиент — так страница остаётся статической и отдаётся с CDN
+ * мгновенно, а не рендерится на каждый запрос). Фильтр,
  * поиск и страницы — на клиенте по загруженному списку (BlogFeed):
  * запрос лёгкий, без текста статей, а переключение мгновенное.
  */
 
-export const metadata: Metadata = {
-  title: 'Блог',
-  description:
-    'Розбори рішень судів, зміни законодавства та кейси ЮК «АКТИВ». Пишемо про те, що впливає на бізнес і власність клієнтів.',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    ...pageMeta(lang, '/blog'),
+    title: 'Блог: судова практика й зміни законодавства',
+    description:
+      'Розбори рішень судів, зміни законодавства та кейси ЮК «АКТИВ». Пишемо про те, що впливає на бізнес і власність клієнтів.',
+  }
 }
 
 /* Скільки статей тягнемо в стрічку. Раніше було 40 без пагінації —
@@ -33,13 +40,10 @@ const SEARCH_FROM = 7
 
 export default async function BlogPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ lang: string }>
-  searchParams: Promise<{ cat?: string }>
 }) {
   const { lang } = await params
-  const { cat = '' } = await searchParams
   const prefix = lang === 'ua' ? '' : `/${lang}`
   const [{ data: posts, source }, { data: team }] = await Promise.all([getBlog(lang, '', LIMIT), getTeam(lang)])
 
@@ -106,7 +110,6 @@ export default async function BlogPage({
                   }
                 }
                 cats={cats}
-                initialCat={cat}
                 stubNote={!clickable}
               />
             )}

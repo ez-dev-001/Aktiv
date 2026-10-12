@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { Icon } from '@/components/site/Icon'
 import { PageShell } from '@/components/site/PageShell'
 import { DownLink, HeroActions, PageHero } from '@/components/site/PageHero'
@@ -8,10 +9,14 @@ import { Bold } from '@/components/ui/Bold'
 import { getAboutContent } from '@/lib/sanity/content'
 import { TrustedBy } from '@/components/home/TrustedBy'
 
-export const metadata: Metadata = {
-  title: 'Про компанію',
-  description:
-    'Юридична компанія «АКТИВ»: місія, візія, цінності та принципи роботи. Київ, з 2007 року. 10 адвокатів і приватний виконавець у команді.',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    ...pageMeta(lang, '/about'),
+    title: { absolute: 'Про компанію «АКТИВ» — юридична компанія в Києві' },
+    description:
+      'Юридична компанія «АКТИВ»: місія, візія, цінності та принципи роботи. Київ, з 2007 року. 10 адвокатів і приватний виконавець у команді.',
+  }
 }
 
 /*

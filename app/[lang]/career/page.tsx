@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { CvForm } from '@/components/career/CvForm'
 import { VacancyList } from '@/components/career/VacancyList'
 import { Faq, Kicker, SEC, SecHead } from '@/components/site/Blocks'
@@ -29,10 +30,14 @@ import { getCareer, getContacts, getVacancies } from '@/lib/sanity/content'
  * Текст — Sanity «Сторінка «Карʼєра»», вакансии — «Вакансії».
  */
 
-export const metadata: Metadata = {
-  title: 'Карʼєра',
-  description:
-    'Вакансії юридичної компанії «АКТИВ» у Києві: адвокати, юристи, помічники. Наставник, реальні справи, прозоре зростання доходу. Надішліть резюме.',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    ...pageMeta(lang, '/career'),
+    title: 'Карʼєра: вакансії юриста й адвоката в Києві',
+    description:
+      'Вакансії юридичної компанії «АКТИВ» у Києві: адвокати, юристи, помічники. Наставник, реальні справи, прозоре зростання доходу. Надішліть резюме.',
+  }
 }
 
 const plural = (n: number) =>

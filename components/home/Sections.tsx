@@ -181,7 +181,7 @@ export function TeamIntro({
                   <img
                     key={m.slug ?? m.name}
                     src={teamPhoto(m.photoUrl, 120)}
-                    alt=""
+                    alt={m.name}
                     loading="lazy"
                     decoding="async"
                     className="size-10 rounded-full object-cover ring-[3px] ring-paper"

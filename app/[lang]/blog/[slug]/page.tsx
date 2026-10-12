@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { Cover } from '@/components/site/Cover'
 import { hasImage, imageUrl } from '@/lib/sanity/image'
 import { LOCALES } from '@/lib/i18n'
@@ -49,6 +50,7 @@ export async function generateMetadata({
     ? [{ url: imageUrl(p.cover, 1200, 630), width: 1200, height: 630, alt: p.cover.alt?.trim() || p.title }]
     : undefined
   return {
+    ...pageMeta(lang, `/blog/${p.slug}`),
     title: p.seoTitle || p.title,
     description: (p.seoDescription || p.excerpt)?.slice(0, 180),
     openGraph: { type: 'article', publishedTime: p.publishedAt, ...(og ? { images: og } : {}) },

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CONSENT_BOOTSTRAP } from '@/lib/consent'
-import { SITE_URL } from '@/lib/site'
+import { SITE_URL, isIndexable } from '@/lib/site'
 
 /**
  * Корневой лейаут. Локаль подставляет app/[lang]/layout.tsx,
@@ -25,7 +25,10 @@ export const metadata: Metadata = {
   description:
     'Ліквідація та банкрутство, судовий захист бізнесу, нерухомість і військове право. Київ, з 2007 року. Перша консультація без оплати, робота без передоплати.',
   openGraph: { type: 'website', locale: 'uk_UA', siteName: 'ЮК «АКТИВ»' },
-  robots: { index: true, follow: true },
+  /* Тестові адреси (*.netlify.app, предпросмотри) — noindex і в мета-тезі,
+     не лише в robots.txt: так копія сайту не потрапить у видачу, навіть
+     якщо на неї хтось пошле посилання. Боєвий домен — index. */
+  robots: isIndexable() ? { index: true, follow: true } : { index: false, follow: false },
 }
 
 export const viewport: Viewport = {

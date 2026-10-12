@@ -84,6 +84,9 @@ export function PracticeTabs({ groups }: { groups: PracticeGroup[] }) {
         })}
       </div>
 
+      {/* Невидимий підзаголовок напряму — для читалок екрана і структури
+          заголовків (H2 «Наша практика» → H3 напрям). */}
+      <h3 className="sr-only">{g.title}</h3>
       <ul
         key={g.slug}
         id={`${base}-panel`}

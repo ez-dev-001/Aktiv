@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
-import { DEFAULT_LOCALE, HREFLANG, LOCALES, type Locale } from '@/lib/i18n'
+import { DEFAULT_LOCALE, HREFLANG, type Locale } from '@/lib/i18n'
+import { INDEXED_LOCALES } from '@/lib/seo'
 import { SITE_URL } from '@/lib/site'
 import { getSitemapData } from '@/lib/sanity/content'
 
@@ -33,15 +34,21 @@ export const revalidate = 3600
 const withLang = (lang: Locale, path: string) =>
   lang === DEFAULT_LOCALE ? path || '/' : `/${lang}${path}`
 
+/* Лише мови з перекладом (INDEXED_LOCALES у lib/seo.ts). Поки там
+   тільки українська, англійських адрес у карті немає: вони показують
+   український текст і закриті noindex. hreflang — лише коли мов кілька. */
 function entry(path: string, lastModified?: string): MetadataRoute.Sitemap {
-  const languages = Object.fromEntries([
-    ...LOCALES.map((l) => [HREFLANG[l], SITE_URL + withLang(l, path)]),
-    ['x-default', SITE_URL + withLang(DEFAULT_LOCALE, path)],
-  ])
-  return LOCALES.map((lang) => ({
+  const languages =
+    INDEXED_LOCALES.length > 1
+      ? Object.fromEntries([
+          ...INDEXED_LOCALES.map((l) => [HREFLANG[l], SITE_URL + withLang(l, path)]),
+          ['x-default', SITE_URL + withLang(DEFAULT_LOCALE, path)],
+        ])
+      : undefined
+  return INDEXED_LOCALES.map((lang: Locale) => ({
     url: SITE_URL + withLang(lang, path),
     ...(lastModified ? { lastModified } : {}),
-    alternates: { languages },
+    ...(languages ? { alternates: { languages } } : {}),
   }))
 }
 

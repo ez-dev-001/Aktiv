@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { Kicker, SEC } from '@/components/site/Blocks'
 import { PageHero } from '@/components/site/PageHero'
 import { PageShell } from '@/components/site/PageShell'
@@ -25,9 +26,14 @@ import { getContacts } from '@/lib/sanity/content'
  * визит из поиска испортил бы счёт конверсий.
  */
 
-export const metadata: Metadata = {
-  title: 'Дякуємо',
-  robots: { index: false, follow: false },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  /* noindex лишається: сторінка після заявки не для пошуку */
+  return {
+    ...pageMeta(lang, '/dyakuyemo'),
+    title: 'Дякуємо',
+    robots: { index: false, follow: false },
+  }
 }
 
 export default async function ThanksPage({ params }: { params: Promise<{ lang: string }> }) {

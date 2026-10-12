@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import type { ReactNode } from 'react'
 import { PageShell } from '@/components/site/PageShell'
 import { HeroChips, PageHero } from '@/components/site/PageHero'
@@ -30,10 +31,14 @@ import { isLiveSite } from '@/lib/site'
  * Контакти беруться з Sanity (Налаштування сайту), як і всюди.
  */
 
-export const metadata: Metadata = {
-  title: 'Політика конфіденційності',
-  description:
-    'Як юридична компанія «АКТИВ» обробляє персональні дані з форм на сайті та які cookie використовує.',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    ...pageMeta(lang, '/privacy'),
+    title: 'Політика конфіденційності',
+    description:
+      'Як юридична компанія «АКТИВ» обробляє персональні дані з форм на сайті та які cookie використовує.',
+  }
 }
 
 const UPDATED = '8 жовтня 2026 р.'

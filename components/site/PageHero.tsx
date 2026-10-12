@@ -2,6 +2,7 @@ import { preload } from 'react-dom'
 import type { ReactNode } from 'react'
 import { HeroMark } from '@/components/home/HeroMark'
 import { PHOTOS, photoUrl } from '@/lib/photos'
+import { absUrl } from '@/lib/seo'
 
 /**
  * Перший екран внутрішньої сторінки — у форматі головної (armada.law).
@@ -122,8 +123,22 @@ export function PageHero({
 }
 
 export function Crumbs({ items }: { items: Crumb[] }) {
+  /* BreadcrumbList для Google: у видачі замість адреси показується
+     «АКТИВ › Практики › Ліквідація…». Останній пункт — поточна сторінка,
+     для неї адреса не обовʼязкова. */
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.label,
+      ...(c.href && !c.href.includes('#') && i < items.length - 1 ? { item: absUrl(c.href) } : {}),
+    })),
+  }
   return (
     <nav aria-label="Ви тут" className="mb-[22px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
       <ol className="m-0 flex list-none flex-wrap gap-x-2.5 gap-y-1.5 p-0 font-mono text-[10.5px] uppercase leading-[1.4] tracking-[0.13em] text-on-dark-2">
         {items.map((c, i) => {
           const last = i === items.length - 1

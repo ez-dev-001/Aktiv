@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { HREFLANG, HTML_LANG, LOCALES, isLocale, localeHome } from '@/lib/i18n'
+import { LOCALES, isLocale } from '@/lib/i18n'
 import { getCookieTexts } from '@/lib/sanity/content'
 import { CookieConsent } from '@/components/site/CookieConsent'
 import { Attribution } from '@/components/site/Attribution'
@@ -15,16 +15,13 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>
 }): Promise<Metadata> {
   const { lang } = await params
-  /* hreflang строится из того же списка, что и маршруты. Раньше он был
-     записан руками и после удаления русской версии продолжал бы
-     объявлять Google /ru — адрес, которого больше нет. */
-  const languages = Object.fromEntries(LOCALES.map((l) => [HREFLANG[l], localeHome(l)]))
+  /* Canonical і hreflang — НЕ тут, а в кожній сторінці (lib/seo.ts →
+     pageMeta). Тут вони успадковувались усіма сторінками мови, і
+     canonical кожної вказував на головну. */
   return {
-    alternates: {
-      canonical: localeHome(lang),
-      languages: { ...languages, 'x-default': '/' },
-    },
-    openGraph: { locale: isLocale(lang) ? HTML_LANG[lang] : 'uk' },
+    /* Повний openGraph: дочірній openGraph замінює кореневий цілком, тож
+       type і siteName повторюємо тут. Локаль у форматі Open Graph (uk_UA). */
+    openGraph: { type: 'website', siteName: 'ЮК «АКТИВ»', locale: isLocale(lang) && lang !== 'ua' ? 'en_US' : 'uk_UA' },
   }
 }
 

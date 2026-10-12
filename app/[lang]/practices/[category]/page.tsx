@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta, withCity } from '@/lib/seo'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories } from '@/lib/content'
@@ -36,7 +37,8 @@ export async function generateMetadata({
   const cat = data.find((c) => c.slug === category)
   if (!cat) return { title: 'Практика' }
   return {
-    title: cat.seoTitle || cat.title,
+    ...pageMeta(lang, `/practices/${cat.slug}`),
+    title: cat.seoTitle || withCity(cat.title),
     description: (cat.seoDescription || cat.excerpt).slice(0, 180),
   }
 }

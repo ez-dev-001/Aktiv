@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icon } from '@/components/site/Icon'
 
 /**
@@ -69,19 +69,24 @@ export function BlogFeed({
   items,
   featured,
   cats,
-  initialCat,
   stubNote,
 }: {
   items: FeedItem[]
   /** найновіша стаття великою карткою — лише в «Усі» без пошуку */
   featured?: { slug: string; node: ReactNode }
   cats: { id: string; label: string }[]
-  initialCat: string
   /** статика без Sanity: пояснення, чому картки не відкриваються */
   stubNote?: boolean
 }) {
   const { q, setQ } = useContext(FeedCtx)
-  const [cat, setCat] = useState(cats.some((c) => c.id === initialCat) ? initialCat : '')
+  const [cat, setCat] = useState('')
+  /* ?cat= з адреси — після завантаження: сторінка статична, тож сервер
+     параметра не бачить. Посилання на рубрику однаково відкривається
+     відфільтрованим. */
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('cat')
+    if (c && cats.some((x) => x.id === c)) setCat(c)
+  }, [cats])
   /* сторінка привʼязана до фільтра: новий фільтр — знову з першої */
   const [pg, setPg] = useState({ key: '', n: 1 })
   const top = useRef<HTMLDivElement>(null)

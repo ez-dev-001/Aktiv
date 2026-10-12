@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { absUrl, pageMeta, withCity } from '@/lib/seo'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories } from '@/lib/content'
@@ -33,14 +34,15 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ lang: string; slug: string }>
+  params: Promise<{ lang: string; category: string; slug: string }>
 }): Promise<Metadata> {
-  const { lang, slug } = await params
+  const { lang, category, slug } = await params
   const p = await getPractice(slug, lang)
   if (!p) return { title: 'Практика' }
   /* SEO-поля зі студії мають пріоритет; порожні — назва й короткий опис. */
   return {
-    title: p.seoTitle || p.title,
+    ...pageMeta(lang, `/practices/${p.category?.slug ?? category}/${p.slug}`),
+    title: p.seoTitle || withCity(p.title),
     description: (p.seoDescription || p.excerpt)?.slice(0, 180),
   }
 }
@@ -136,8 +138,34 @@ export default async function PracticePage({
     { k: 'Перша консультація', v: 'Безкоштовно' },
   ]
 
+  /* Розмітка для пошуку: послуга (Service від фірми з головної) і,
+     якщо є, питання-відповіді (FAQPage) — їх Google і AI-асистенти
+     беруть як готові відповіді. */
+  const ld = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      name: p.title,
+      ...(p.excerpt ? { description: p.excerpt } : {}),
+      serviceType: catTitle,
+      url: absUrl(`/practices/${catSlug}/${p.slug}`),
+      areaServed: { '@type': 'Country', name: 'Україна' },
+      provider: { '@id': absUrl('/#firm') },
+    },
+    ...(faq.length > 0
+      ? [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+          },
+        ]
+      : []),
+  ]
+
   return (
     <PageShell lang={lang} overDark>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
       <PageHero
         small
         crumbs={[

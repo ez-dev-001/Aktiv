@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 import { getCategories, getTeam, getTeamPage, type TeamMember } from '@/lib/sanity/content'
 import { PageShell } from '@/components/site/PageShell'
 import { DownLink, HeroActions, PageHero } from '@/components/site/PageHero'
@@ -9,10 +10,14 @@ import { Icon } from '@/components/site/Icon'
 import { ExecutorSpot } from '@/components/team/ExecutorSpot'
 import { PeopleGrid, type Group } from '@/components/team/PeopleGrid'
 
-export const metadata: Metadata = {
-  title: 'Команда',
-  description:
-    'Фахівці ЮК «АКТИВ»: партнери, адвокати, військовий юрист і приватний виконавець у штаті. Справу веде конкретна людина, а не відділ.',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    ...pageMeta(lang, '/team'),
+    title: 'Команда: адвокати й юристи в Києві',
+    description:
+      'Фахівці ЮК «АКТИВ»: партнери, адвокати, військовий юрист і приватний виконавець у штаті. Справу веде конкретна людина, а не відділ.',
+  }
 }
 
 /** Група для фільтра: з kind у Sanity; у статиці kind немає — з тексту ролі. */

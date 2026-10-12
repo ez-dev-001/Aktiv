@@ -1,0 +1,84 @@
+import type { Metadata } from 'next'
+import { DEFAULT_LOCALE, HREFLANG, isLocale, type Locale } from './i18n'
+import { SITE_URL } from './site'
+
+/**
+ * Canonical, hreflang і robots для кожної сторінки — з одного місця.
+ *
+ * ── Чому окремий файл (SEO-аудит, жовтень 2026) ──
+ * Раніше canonical ставив layout мови, і він вказував на ГОЛОВНУ для
+ * всіх сторінок: /about, /team, усі 36 практик і статті казали Google
+ * «я копія головної». Такі сторінки пошуковик склеює з головною й не
+ * показує у видачі. Тепер кожна сторінка передає свій шлях.
+ *
+ * ── Англійська версія ──
+ * Маршрути /en/... існують, але перекладу в Sanity ще немає: сторінки
+ * показують український текст. Для Google це дублі всього сайту з
+ * неправильною мовою. Тому, поки мова не в INDEXED_LOCALES:
+ *   • її сторінки — noindex, follow, canonical на український двійник;
+ *   • вона не потрапляє в hreflang і карту сайту.
+ * Коли переклад зʼявиться — додайте 'en' у INDEXED_LOCALES, і все
+ * увімкнеться саме.
+ */
+export const INDEXED_LOCALES: readonly Locale[] = ['ua']
+
+/** Шлях для мови: основна — без префікса. `path` — '' або '/about'. */
+export const localePath = (lang: string, path: string) =>
+  lang === DEFAULT_LOCALE || !isLocale(lang) ? path || '/' : `/${lang}${path}`
+
+export const isIndexedLocale = (lang: string) => (INDEXED_LOCALES as readonly string[]).includes(lang)
+
+/**
+ * alternates + robots для сторінки. Повертає частину Metadata, яку
+ * сторінка розгортає у своїй generateMetadata:
+ *   return { title, description, ...pageMeta(lang, '/about') }
+ */
+export function pageMeta(lang: string, path: string): Pick<Metadata, 'alternates' | 'robots'> {
+  const indexed = isIndexedLocale(lang)
+  const canonical = localePath(indexed ? lang : DEFAULT_LOCALE, path)
+  const languages =
+    INDEXED_LOCALES.length > 1
+      ? {
+          ...Object.fromEntries(INDEXED_LOCALES.map((l) => [HREFLANG[l], localePath(l, path)])),
+          'x-default': localePath(DEFAULT_LOCALE, path),
+        }
+      : undefined
+  return {
+    alternates: { canonical, ...(languages ? { languages } : {}) },
+    ...(indexed ? {} : { robots: { index: false, follow: true } }),
+  }
+}
+
+/** Абсолютна адреса — для JSON-LD (там відносні адреси не працюють). */
+export const absUrl = (path: string) => (path.startsWith('http') ? path : `${SITE_URL}${path.startsWith('/') ? '' : '/'}${path}`)
+
+const DAYS: Record<string, string> = { пн: 'Monday', вт: 'Tuesday', ср: 'Wednesday', чт: 'Thursday', пт: 'Friday', сб: 'Saturday', нд: 'Sunday' }
+const ORDER = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'нд']
+
+/**
+ * «Пн — Пт, 9:00 – 18:00» → OpeningHoursSpecification для schema.org.
+ * Розбирає лише такий простий формат; інакше — undefined (краще без
+ * годин у розмітці, ніж неправильні).
+ */
+export function openingHours(hours: string) {
+  const t = hours.toLowerCase().match(/(\d{1,2}):(\d{2})\s*[–—-]\s*(\d{1,2}):(\d{2})/)
+  const d = hours.toLowerCase().match(/(пн|вт|ср|чт|пт|сб|нд)\s*[–—-]\s*(пн|вт|ср|чт|пт|сб|нд)/)
+  if (!t || !d) return undefined
+  const [, h1 = '', m1 = '', h2 = '', m2 = ''] = t
+  const from = ORDER.indexOf(d[1] ?? ''), to = ORDER.indexOf(d[2] ?? '')
+  if (from < 0 || to < from) return undefined
+  const pad = (h: string, m: string) => `${h.padStart(2, '0')}:${m}`
+  return {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ORDER.slice(from, to + 1).map((k) => DAYS[k]),
+    opens: pad(h1, m1),
+    closes: pad(h2, m2),
+  }
+}
+
+/**
+ * Заголовок сторінки практики без SEO-поля зі студії: коротку назву
+ * доповнюємо містом — запити здебільшого локальні («банкрутство фізичних
+ * осіб Київ»). Довгі назви не чіпаємо, щоб title не обрізався у видачі.
+ */
+export const withCity = (title: string) => (title.length <= 40 && !/киє?в|київ/i.test(title) ? `${title} у Києві` : title)

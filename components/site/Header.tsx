@@ -360,10 +360,10 @@ export function Header({
             >
               {categories.map((c) => (
                 <div key={c.slug}>
-                  <h5 className="mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
+                  <p className="m-0 mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
                     <Icon name={c.icon} className="size-[19px] text-accent" />
                     {c.title}
-                  </h5>
+                  </p>
                   {/* Все направления, без обрезки. Раньше здесь стояло
                       slice(0, 9), и в судовій практиці два пункта из
                       одиннадцати не показывались вовсе — ровно тот
@@ -428,9 +428,9 @@ export function Header({
                       aria-hidden={!on}
                       className={`[grid-area:1/1] transition-opacity duration-200 ${on ? 'visible opacity-100' : 'invisible opacity-0'}`}
                     >
-                      <h5 className="mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
+                      <p className="m-0 mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
                         {c.title}
-                      </h5>
+                      </p>
                       <div className="gap-x-[30px] [column-fill:balance] min-[1180px]:columns-3 columns-2">
                         {c.practices.map((p) => (
                           <a

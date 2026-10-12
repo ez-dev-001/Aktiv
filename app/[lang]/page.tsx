@@ -4,6 +4,7 @@ import { MobileDock } from '@/components/site/MobileDock'
 import { Header } from '@/components/site/Header'
 import { toMenu } from '@/lib/menu'
 import type { Metadata } from 'next'
+import { openingHours, pageMeta } from '@/lib/seo'
 import { Claim, Footer, Hero, Journal, Practices, TeamIntro } from '@/components/home/Sections'
 import { SITE_URL } from '@/lib/site'
 import { LeadSection } from '@/components/home/LeadSection'
@@ -21,10 +22,14 @@ import { TrustedBy } from '@/components/home/TrustedBy'
    (її і так покаже Google). Description ~150 знаків: що робимо, де і
    чому варто звернутися. «absolute» — щоб шаблон «%s — ЮК «АКТИВ»» з
    кореневого layout не дописав назву вдруге. */
-export const metadata: Metadata = {
-  title: { absolute: 'Юридична компанія в Києві — ліквідація, банкрутство, суди' },
-  description:
-    'Ліквідація та банкрутство, судові спори, нерухомість і військове право. Київ, з 2007 року. Безкоштовна перша консультація, без передоплати.',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    ...pageMeta(lang, ''),
+    title: { absolute: 'Юридична компанія в Києві — ліквідація, банкрутство, суди' },
+    description:
+      'Юридичні послуги в Києві з 2007 року: ліквідація та банкрутство, судові спори, нерухомість і військове право. Перша консультація безкоштовно.',
+  }
 }
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
@@ -52,6 +57,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
      картку з контактами у видачі та підтримує локальний пошук «юрист
      Київ». Дані — ті самі, що на сторінці (Sanity), щоб не розійшлися. */
   const c = contacts.data
+  const hours = openingHours(c.hours)
+  /* sameAs — лише публічні профілі (канал у Telegram), не посилання на чат. */
+  const sameAs = c.messengers.map((m) => m.href).filter((h) => /^https:\/\/t\.me\//.test(h))
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LegalService',
@@ -69,6 +77,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       addressLocality: c.office.city || 'Київ',
       addressCountry: 'UA',
     },
+    image: `${SITE_URL}/icon.svg`,
+    ...(hours ? { openingHoursSpecification: [hours] } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
     areaServed: { '@type': 'Country', name: 'Україна' },
     knowsAbout: cats.data.map((x) => x.title),
     hasOfferCatalog: {
@@ -81,12 +92,25 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     },
   }
 
+  /* WebSite — «що це за сайт і чий він»: назва для видачі й звʼязок із
+     фірмою. SearchAction не додаємо: пошуку по сайту немає. */
+  const website = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE_URL}/#website`,
+    name: 'ЮК «АКТИВ»',
+    alternateName: 'Юридична компанія «АКТИВ»',
+    url: SITE_URL,
+    inLanguage: 'uk-UA',
+    publisher: { '@id': `${SITE_URL}/#firm` },
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         /* < екранується, щоб текст із Sanity не міг закрити тег script. */
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, website]).replace(/</g, '\\u003c') }}
       />
       <ScrollProgress />
       {/* overDark: первый экран тёмный, шапка стартует прозрачной */}
