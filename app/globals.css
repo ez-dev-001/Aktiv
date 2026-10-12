@@ -480,6 +480,8 @@
 @media (prefers-reduced-motion: reduce) {
   .hm, .hm * { animation: none !important; }
 }
+/* Внутрішні сторінки: знак статичний, одразу останній кадр (HeroMark still). */
+.hm-still .hm, .hm-still .hm * { animation: none !important; }
 
 /* «Обрати напрям» на першому екрані: стрілка біля підпису ледь
    похитується вниз — підказка, що кнопка веде нижче по сторінці. */

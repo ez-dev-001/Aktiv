@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { PageHead, PageShell } from '@/components/site/PageShell'
+import { PageShell } from '@/components/site/PageShell'
+import { HeroChips, PageHero } from '@/components/site/PageHero'
 import { CookieSettingsLink } from '@/components/site/CookieConsent'
 import { CONSENT_COOKIE, CONSENT_DAYS } from '@/lib/consent'
 import { getContacts } from '@/lib/sanity/content'
@@ -37,10 +38,9 @@ export const metadata: Metadata = {
 
 const UPDATED = '8 жовтня 2026 р.'
 
-const STATIONS = [{ id: 'head', label: 'Політика' }]
-
 export default async function PrivacyPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
+  const prefix = lang === 'ua' ? '' : `/${lang}`
   const { data: c } = await getContacts(lang)
   const draft = !isLiveSite()
 
@@ -58,34 +58,50 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
   ] as const
 
   return (
-    <PageShell lang={lang} stations={STATIONS}>
-      <PageHead
-        eyebrow="Документи"
-        title="Політика конфіденційності"
+    <PageShell lang={lang} overDark form={false}>
+      <PageHero
+        compact
+        small
+        crumbs={[{ label: 'Головна', href: prefix || '/' }, { label: 'Політика конфіденційності' }]}
+        title="Політика"
+        accent="конфіденційності"
         lede="Коротко: ми просимо лише те, що потрібно, щоб звʼязатися з вами у справі. Статистику й рекламу вмикаємо тільки з вашої згоди. Усе, що ви розповідаєте про справу, захищене адвокатською таємницею."
-      />
+      >
+        <HeroChips items={[...(draft ? ['Чернетка для перевірки фірмою'] : []), `Оновлено ${UPDATED}`]} />
+      </PageHero>
 
-      <section className="pb-[clamp(64px,9vw,128px)]">
-        <div className="shell inner grid gap-[clamp(32px,5vw,72px)] min-[1000px]:grid-cols-[minmax(0,0.32fr)_minmax(0,1fr)]">
-          {/* Зміст: на десктопі липне збоку, на телефоні — звичайний список. */}
-          <nav aria-label="Зміст" className="min-[1000px]:sticky min-[1000px]:top-[calc(var(--hdr)+24px)] min-[1000px]:self-start">
-            <p className="m-0 mb-3 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate-2">Зміст</p>
-            <ol className="m-0 grid list-none gap-0.5 border-l border-hair p-0">
-              {toc.map(([id, label], i) => (
-                <li key={id}>
-                  <a
-                    href={`#${id}`}
-                    className="-ml-px flex min-h-9 items-center gap-3 border-l border-transparent pl-4 text-[14px] text-slate transition-colors hover:border-accent hover:text-ink"
-                  >
-                    <span className="font-mono text-[10.5px] text-slate-2">{String(i + 1).padStart(2, '0')}</span>
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
+      <section className="py-[clamp(48px,7vw,96px)]">
+        <div className="shell inner grid items-start gap-[clamp(28px,4vw,64px)] min-[960px]:grid-cols-[260px_minmax(0,1fr)]">
+          {/* Ліва колонка: на компʼютері липне збоку, на телефоні — звичайні картки над текстом. */}
+          <aside className="grid gap-3 min-[960px]:sticky min-[960px]:top-[calc(var(--hdr)+24px)]">
+            <nav aria-label="Зміст" className="rounded-[22px] bg-white p-6 shadow-[inset_0_0_0_1px_var(--color-hair)]">
+              <p className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">Розділи</p>
+              <ol className="m-0 grid list-none gap-0.5 p-0">
+                {toc.map(([id, label], i) => (
+                  <li key={id}>
+                    <a href={`#${id}`} className="group flex gap-2.5 py-2 text-[14.5px] leading-[1.4] text-slate transition-colors hover:text-ink">
+                      <span className="font-mono text-[11px] font-medium leading-[1.9] text-slate-2 transition-colors group-hover:text-accent-ink">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+            <div className="on-dark rounded-[22px] bg-ink p-6 text-white">
+              <p className="m-0 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-on-dark-2">Питання щодо даних</p>
+              <p className="m-0 mt-3 text-[14.5px] leading-[1.6] text-on-dark">Напишіть — відповімо протягом 30 календарних днів.</p>
+              <a
+                href={`mailto:${c.email}`}
+                className="mt-[18px] flex min-h-[50px] w-full items-center justify-center rounded-full bg-accent-btn px-5 text-[15px] font-semibold text-white transition-colors hover:bg-accent-btn-hover"
+              >
+                {c.email}
+              </a>
+            </div>
+          </aside>
 
-          <article className="min-w-0 max-w-[72ch]">
+          <article className="min-w-0 max-w-[76ch]">
             {draft && (
               <p className="m-0 mb-8 rounded-[12px] bg-[#fbf3e3] px-4 py-3 text-[13.5px] leading-relaxed text-[#8a5a0b]">
                 <b className="font-semibold">Чернетка для перевірки фірмою.</b> Уточніть повну назву юрособи, код ЄДРПОУ
@@ -164,16 +180,18 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
                 <CookieSettingsLink className="cursor-pointer text-accent-ink underline decoration-accent/40 underline-offset-[3px] hover:decoration-accent" />
                 .
               </P>
-              <div className="my-6 overflow-x-auto rounded-[14px] shadow-[inset_0_0_0_1px_var(--color-hair)]">
-                <table className="w-full min-w-[560px] border-collapse text-left text-[14px] leading-snug">
-                  <thead>
-                    <tr className="bg-paper-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-slate-2">
-                      <th className="px-4 py-3 font-normal">Категорія</th>
-                      <th className="px-4 py-3 font-normal">Що це</th>
-                      <th className="px-4 py-3 font-normal">Строк</th>
+              {/* На телефоні таблиця стає картками: рядок — блок, заголовки колонок
+                  ховаються, а «Строк» отримує власний підпис. */}
+              <div className="my-6">
+                <table className="w-full border-collapse text-left text-[14.5px] max-[600px]:block">
+                  <thead className="max-[600px]:hidden">
+                    <tr>
+                      <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">Категорія</th>
+                      <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">Що це</th>
+                      <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">Строк</th>
                     </tr>
                   </thead>
-                  <tbody className="text-slate">
+                  <tbody className="text-[#3b3450] max-[600px]:block">
                     <Row
                       cat="Необхідні"
                       what={
@@ -274,16 +292,18 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
 
 function Part({ id, n, title, children }: { id: string; n: number; title: string; children: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-[calc(var(--hdr)+24px)] border-t border-hair pt-[clamp(26px,3.4vw,40px)] pb-2 first-of-type:border-t-0 first-of-type:pt-0">
-      <p className="m-0 mb-2 font-mono text-[11px] tracking-[0.12em] text-accent-ink">{String(n).padStart(2, '0')}</p>
-      <h2 className="mb-5 mt-0 text-[clamp(22px,3vw,30px)] leading-[1.15]">{title}</h2>
+    <section id={id} className="mb-[30px] scroll-mt-[calc(var(--hdr)+24px)] border-b border-hair pb-[30px] last:mb-0 last:border-b-0 last:pb-0">
+      <h2 className="m-0 mb-3.5 flex gap-3.5 font-serif text-[clamp(24px,2.6vw,30px)] font-normal leading-[1.2] text-ink">
+        <span className="font-mono text-[12px] font-medium leading-[2.6] text-accent-ink">{String(n).padStart(2, '0')}</span>
+        {title}
+      </h2>
       {children}
     </section>
   )
 }
 
 function P({ children }: { children: ReactNode }) {
-  return <p className="mb-5 mt-0 text-[16.5px] leading-[1.68] text-slate">{children}</p>
+  return <p className="mb-4 mt-0 text-[16px] leading-[1.7] text-[#3b3450]">{children}</p>
 }
 
 function A({ href, children }: { href: string; children: ReactNode }) {
@@ -296,10 +316,10 @@ function A({ href, children }: { href: string; children: ReactNode }) {
 
 function Ul({ items }: { items: ReactNode[] }) {
   return (
-    <ul className="mb-6 mt-0 grid list-none gap-3 p-0">
+    <ul className="mb-5 mt-0 grid list-none gap-2.5 p-0">
       {items.map((it, i) => (
-        <li key={i} className="grid grid-cols-[16px_1fr] gap-3 text-[16px] leading-[1.6] text-slate [&_b]:font-medium [&_b]:text-ink">
-          <span className="mt-[0.62em] size-[5px] rounded-full bg-accent" />
+        <li key={i} className="grid grid-cols-[14px_1fr] gap-2.5 text-[16px] leading-[1.7] text-[#3b3450] [&_b]:font-semibold [&_b]:text-ink">
+          <span aria-hidden="true" className="mt-[0.72em] size-[5px] rounded-full bg-accent" />
           <span>{it}</span>
         </li>
       ))}
@@ -309,10 +329,17 @@ function Ul({ items }: { items: ReactNode[] }) {
 
 function Row({ cat, what, term }: { cat: string; what: ReactNode; term: string }) {
   return (
-    <tr className="border-t border-hair-soft align-top">
-      <td className="px-4 py-3.5 font-medium text-ink">{cat}</td>
-      <td className="px-4 py-3.5">{what}</td>
-      <td className="whitespace-nowrap px-4 py-3.5">{term}</td>
+    <tr className="align-top max-[600px]:block max-[600px]:border-b max-[600px]:border-hair max-[600px]:py-3">
+      <td className="border-b border-hair px-3 py-3.5 font-semibold text-ink max-[600px]:block max-[600px]:border-0 max-[600px]:px-0 max-[600px]:py-[3px]">
+        {cat}
+      </td>
+      <td className="border-b border-hair px-3 py-3.5 leading-[1.55] max-[600px]:block max-[600px]:border-0 max-[600px]:px-0 max-[600px]:py-[3px]">
+        {what}
+      </td>
+      <td className="whitespace-nowrap border-b border-hair px-3 py-3.5 max-[600px]:block max-[600px]:border-0 max-[600px]:px-0 max-[600px]:py-[3px]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate min-[601px]:hidden">Строк · </span>
+        {term}
+      </td>
     </tr>
   )
 }

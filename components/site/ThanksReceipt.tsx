@@ -22,32 +22,41 @@ function useReceipt() {
 
 export function ThanksTitle() {
   const r = useReceipt()
-  return (
+  /* Імʼя — курсивом рожевим, як акцент заголовка на інших сторінках.
+     Без квитанції — нейтральне «Дякуємо за звернення». */
+  return r?.firstName ? (
     <>
-      {r?.firstName ? `Дякуємо, ${r.firstName}.` : 'Дякуємо.'}
-      <br />
-      <em className="text-accent-ink">Заявку прийнято.</em>
+      Дякуємо, <em className="text-accent-soft">{r.firstName}.</em>
+    </>
+  ) : (
+    <>
+      Дякуємо <em className="text-accent-soft">за звернення.</em>
     </>
   )
 }
 
-export function ThanksCard() {
+/**
+ * «Ваше звернення» — напівпрозора картка на темному першому екрані.
+ * З квитанцією: напрям і час надсилання. Без неї (зайшли напряму) —
+ * лише те, що правда для будь-кого: коли чекати дзвінка і графік.
+ */
+export function ThanksCard({ hours }: { hours: string }) {
   const r = useReceipt()
-  if (!r || !r.firstName) return null
-  const rows: [string, string][] = [
-    ...(r.practiceTitle && r.practiceTitle !== 'Ще не знаю' ? ([['Напрям', r.practiceTitle]] as [string, string][]) : []),
-    ['Надіслано', new Date(r.at).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })],
-  ]
+  const rows: [string, string][] = []
+  if (r?.firstName) {
+    if (r.practiceTitle && r.practiceTitle !== 'Ще не знаю') rows.push(['Напрям', r.practiceTitle])
+    rows.push(['Надіслано', new Date(r.at).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })])
+  }
+  rows.push(['Коли передзвонимо', STEPS[0]!.when])
+  if (!r?.firstName) rows.push(['Графік', hours])
   return (
-    <div className="thanks-rise rounded-[14px] bg-white p-[clamp(20px,2.6vw,28px)] shadow-[0_1px_2px_rgb(20_11_51/0.045),0_14px_34px_-20px_rgb(20_11_51/0.13)] [animation-delay:240ms]">
-      <p className="m-0 mb-4 font-mono text-[10px] uppercase tracking-[0.13em] text-slate-2">Ваше звернення</p>
+    <div className="thanks-rise rounded-[22px] bg-white/[0.05] p-[26px] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] [animation-delay:240ms]">
+      <p className="m-0 mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-on-dark-2">Ваше звернення</p>
       <dl className="m-0 grid gap-3.5">
         {rows.map(([k, v]) => (
-          <div key={k} className="grid gap-0.5">
-            <dt className="text-[12.5px] text-slate-2">{k}</dt>
-            <dd className="m-0 text-[15px] leading-snug text-ink">
-              {v}
-            </dd>
+          <div key={k}>
+            <dt className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-on-dark-2">{k}</dt>
+            <dd className="m-0 mt-[3px] font-serif text-[17px] font-semibold leading-[1.35] text-white">{v}</dd>
           </div>
         ))}
       </dl>
@@ -78,18 +87,23 @@ const STEPS = [
 export function ThanksSteps() {
   const steps = STEPS
   return (
-    <ol className="m-0 mt-2 grid list-none gap-[clamp(12px,1.6vw,18px)] p-0 min-[860px]:grid-cols-3">
+    <ol className="m-0 mt-[22px] grid list-none gap-3 p-0 min-[860px]:grid-cols-3">
       {steps.map((s, i) => (
         <li
           key={s.title}
-          className="thanks-rise flex flex-col gap-3 rounded-[14px] bg-white p-[clamp(20px,2.6vw,28px)] shadow-[inset_0_0_0_1px_var(--color-hair)]"
+          className="thanks-rise flex flex-col items-start rounded-[20px] bg-white px-[22px] pb-[26px] pt-6 shadow-[inset_0_0_0_1px_var(--color-hair)]"
           style={{ animationDelay: `${320 + i * 90}ms` }}
         >
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-accent-ink">
-            {String(i + 1).padStart(2, '0')} · {s.when}
+          <span aria-hidden="true" className="font-serif text-[44px] leading-none text-accent-ink">
+            {String(i + 1).padStart(2, '0')}
           </span>
-          <h2 className="m-0 text-[clamp(19px,2.4vw,23px)] leading-tight">{s.title}</h2>
-          <p className="m-0 text-[14.5px] leading-relaxed text-slate">{s.text}</p>
+          <h2 className="m-0 mt-4 font-serif text-[19px] font-semibold leading-[1.25] text-ink">{s.title}</h2>
+          <p className="m-0 mt-2 text-[14.5px] leading-[1.6] text-slate">{s.text}</p>
+          <span className="mt-auto pt-3.5">
+            <span className="inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-slate shadow-[inset_0_0_0_1px_var(--color-hair)]">
+              {s.when}
+            </span>
+          </span>
         </li>
       ))}
     </ol>

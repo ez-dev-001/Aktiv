@@ -2,19 +2,24 @@ import type { Metadata } from 'next'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories } from '@/lib/content'
-import { getCategories } from '@/lib/sanity/content'
-import { Icon } from '@/components/site/Icon'
-import { PageHead, PageShell, SectionHead } from '@/components/site/PageShell'
-import { ButtonLink } from '@/components/ui/Button'
-import { categoryPhoto } from '@/lib/sanity/image'
+import { getCategories, getContacts } from '@/lib/sanity/content'
+import { PageShell } from '@/components/site/PageShell'
+import { DownLink, HeroActions, PageHero } from '@/components/site/PageHero'
+import { Band, NumRows, SEC, SecHead } from '@/components/site/Blocks'
+import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
+import { ArrowLink, ButtonLink } from '@/components/ui/Button'
 import { TrustedBy } from '@/components/home/TrustedBy'
+import { getCategoryPeople, getCategoryPosts } from '@/components/practice/data'
+import { LeadTeam, plural, splitConj, splitDash } from '@/components/practice/Parts'
 
 /**
- * Страница категории практик — «одна страница Послуги» первого этапа.
+ * Сторінка напряму практики — у форматі головної (armada.law).
  *
- * Это не список ссылок, как было на старом сайте, а страница услуги:
- * все направления с ценами, калькулятор вилки для тех категорий,
- * где он есть, и явный ответ на вопрос «сколько это стоит».
+ * Перший екран → «хто веде напрям» (лише коли в студії хтось
+ * привʼязаний до його практик) → пронумеровані послуги з посиланнями →
+ * «Нам довіряють» → статті за темою (якщо є привʼязані) → Telegram →
+ * форма (PageShell). Кейсів немає: даних під них поки нема, а
+ * вигадані історії на сайті юрфірми неприпустимі.
  */
 
 export function generateStaticParams() {
@@ -46,99 +51,117 @@ export default async function CategoryPage({
   const cat = data.find((c) => c.slug === category)
   if (!cat) notFound()
 
-  const stations = [
-    { id: 'head', label: cat.title.split(/\s|,/)[0] ?? 'Практика' },
-    { id: 'directions', label: 'Напрями' },
-    { id: 'trust', label: 'Довіра' },
-    { id: 'contact', label: 'Консультація' },
-  ]
+  const [people, posts, { data: contacts }] = await Promise.all([
+    getCategoryPeople(cat.slug, lang),
+    getCategoryPosts(cat.slug, lang, 3),
+    getContacts(lang),
+  ])
 
-  const photo = categoryPhoto(cat)
+  const prefix = lang === 'ua' ? '' : `/${lang}`
+  /* Відносне посилання: форма на цій же сторінці й сама обере напрям. */
+  const consult = `?practice=cat:${encodeURIComponent(cat.slug)}#contact`
+  const [title, accent] = splitConj(cat.title)
+  const n = cat.practices.length
+  const telegram = contacts.messengers.find((m) => /telegram/i.test(m.label) || /t\.me\//i.test(m.href))
+  const withMedia = needsMedia(posts)
 
   return (
-    <PageShell lang={lang} stations={stations} overDark={!!photo}>
-      <PageHead
-        photo={photo}
-        eyebrow={`Практики · ${cat.practices.length} напрямів`}
-        title={cat.title}
+    <PageShell lang={lang} overDark>
+      <PageHero
+        crumbs={[
+          { label: 'Головна', href: prefix || '/' },
+          { label: 'Практики', href: `${prefix}/#practices` },
+          { label: cat.title },
+        ]}
+        title={title}
+        accent={accent}
         lede={cat.excerpt}
-        aside={
-          <div className={`grid gap-4 border-t-2 pt-[22px] ${photo ? 'border-white/70' : 'border-ink'}`}>
-            <div className="flex flex-wrap gap-2.5">
-              <ButtonLink href="#contact" arrow>
-                Консультація
-              </ButtonLink>
-              <ButtonLink href="#directions" variant={photo ? 'ghostDark' : 'ghost'}>
-                Усі напрями
-              </ButtonLink>
-            </div>
+      >
+        <HeroActions>
+          <ButtonLink href={consult} arrow>
+            Отримати консультацію
+          </ButtonLink>
+          {n > 0 && (
+            <DownLink href="#services">
+              {n} {plural(n, ['послуга', 'послуги', 'послуг'])}
+            </DownLink>
+          )}
+        </HeroActions>
+      </PageHero>
+
+      {/* ── ХТО ВЕДЕ НАПРЯМ ── лише якщо хтось привʼязаний у студії */}
+      {people.length > 0 && <LeadTeam people={people} contactHref={consult} />}
+
+      {/* ── ПОСЛУГИ НАПРЯМУ ── */}
+      {n > 0 && (
+        <section id="services" className={`scroll-mt-[var(--hdr)] bg-paper-2 ${SEC}`}>
+          <div className="shell inner">
+            <SecHead
+              eyebrow="Послуги напряму"
+              title="Що ми робимо"
+              lede="Оберіть послугу, щоб дізнатися більше, — або опишіть ситуацію у формі нижче, і ми підкажемо, що підходить."
+              row
+            />
+            <NumRows
+              items={cat.practices.map((p) => ({
+                title: splitDash(p.title)[0],
+                text: p.excerpt,
+                href: `${prefix}/practices/${cat.slug}/${p.slug}`,
+              }))}
+            />
           </div>
-        }
-      />
-
-      {/* ── НАПРЯМИ ── */}
-      <section id="directions" className="bg-paper-2 py-[clamp(52px,7vw,104px)]">
-        <div className="shell inner">
-          <SectionHead
-            eyebrow="Напрями"
-            title={`Що входить у «${cat.title.toLowerCase()}»`}
-            lede="Кожен напрям — окрема послуга з відповідальним адвокатом."
-          />
-          <ul className="grid list-none gap-px border border-hair bg-hair p-0 min-[700px]:grid-cols-2">
-            {cat.practices.map((p) => {
-              return (
-                <li key={p.slug} className="bg-white">
-                  <a
-                    href={`/practices/${cat.slug}/${p.slug}`}
-                    className="group flex h-full min-h-[104px] flex-col gap-2 p-[clamp(18px,2.4vw,26px)] transition-colors hover:bg-paper"
-                  >
-                    <span className="flex items-start justify-between gap-3">
-                      <span className="font-serif text-[16.5px] font-semibold leading-snug text-ink transition-colors group-hover:text-accent-ink">
-                        {p.title}
-                      </span>
-                      <Icon
-                        name="arrow"
-                        className="mt-1 size-4 shrink-0 text-slate-2 transition-[transform,color] duration-[240ms] group-hover:translate-x-1 group-hover:text-accent"
-                      />
-                    </span>
-                    {p.excerpt && (
-                      <span className="max-w-[46ch] text-[13.5px] leading-snug text-slate">{p.excerpt}</span>
-                    )}
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
-
-        </div>
-      </section>
+        </section>
+      )}
 
       <TrustedBy lang={lang} />
 
-      {/* ── CTA ── */}
-      <section id="contact" className="py-[clamp(52px,7vw,96px)]">
-        <div className="shell inner">
-          <div className="flex flex-wrap items-end justify-between gap-8 border-t-2 border-ink pt-8">
-            <div>
-              <h2 className="max-w-[22ch] text-[clamp(22px,3.6vw,34px)] leading-[1.14]">
-                Опишіть ситуацію — скажемо, чи бачимо шлях
+      {/* ── СТАТТІ ЗА ТЕМОЮ ── лише привʼязані до практик напряму */}
+      {posts.length > 0 && (
+        <section aria-labelledby="posts-h" className={`bg-paper-2 ${SEC}`}>
+          <div className="shell inner">
+            <div className="mb-[clamp(28px,3vw,36px)] flex flex-wrap items-end justify-between gap-4">
+              <h2
+                id="posts-h"
+                className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink"
+              >
+                Статті за темою
               </h2>
-              <p className="mt-4 max-w-[46ch] text-[15px] text-slate">
-                Перша консультація без оплати. Якщо перспективи немає — скажемо одразу, а не після
-                підписання договору.
-              </p>
+              <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
+                Усі статті
+              </ArrowLink>
             </div>
-            <div className="flex flex-wrap gap-2.5">
-              <ButtonLink href={`${lang === 'ua' ? '' : `/${lang}`}/?practice=cat:${encodeURIComponent(cat.slug)}#contact`} arrow>
-                Отримати консультацію
-              </ButtonLink>
-              <ButtonLink href={lang === 'ua' ? '/#practices' : `/${lang}/#practices`} variant="ghost">
-                Усі практики
-              </ButtonLink>
-            </div>
+            <ul className={POST_GRID}>
+              {posts.map((a) => (
+                <li key={a.slug}>
+                  <PostCard post={a} href={`${prefix}/blog/${a.slug}`} withMedia={withMedia} />
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* ── TELEGRAM ── лише якщо канал є в контактах */}
+      {telegram && (
+        /* Без статей перед банером — «Нам довіряють» на тому ж тлі: його
+            нижній відступ уже є, повний верхній зробив би діру. Невеликий
+            лишається на випадок, коли блоку довіри немає (у проді без логотипів). */
+        <section aria-label="Написати в Telegram" className={posts.length > 0 ? SEC : 'pb-[clamp(56px,8vw,112px)] pt-[clamp(12px,2vw,24px)]'}>
+          <div className="shell inner">
+            <Band
+              dark
+              title={`Питання щодо напряму «${cat.title}»?`}
+              accent="Напишіть у Telegram"
+              text={contacts.hours ? `Відповідаємо в робочий час: ${contacts.hours}.` : undefined}
+              actions={
+                <ButtonLink href={telegram.href} target="_blank" rel="noopener noreferrer" arrow>
+                  Написати в Telegram
+                </ButtonLink>
+              }
+            />
+          </div>
+        </section>
+      )}
     </PageShell>
   )
 }

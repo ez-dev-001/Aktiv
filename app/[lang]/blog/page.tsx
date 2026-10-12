@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
-import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
-import { BLOG_CATEGORIES, getBlog } from '@/lib/sanity/content'
-import { PageHead, PageShell } from '@/components/site/PageShell'
-import { ButtonLink } from '@/components/ui/Button'
+import { needsMedia } from '@/components/site/PostCard'
+import { BLOG_CATEGORIES, getBlog, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
+import { PageShell } from '@/components/site/PageShell'
+import { PageHero } from '@/components/site/PageHero'
+import { BlogCard, FeaturedCard, type CardAuthor } from '@/components/blog/BlogCard'
+import { BlogFeed, BlogFilterProvider, BlogSearch, type FeedItem } from '@/components/blog/BlogFeed'
 
 /**
  * Лента блога.
@@ -11,8 +13,10 @@ import { ButtonLink } from '@/components/ui/Button'
  * и регулярные публикации. Но лента там не фильтровалась ничем: все
  * материалы лежали в одной рубрике «Новини», 19 страниц пагинации подряд.
  *
- * Здесь фильтр по рубрикам через ?cat= — обычными ссылками, без JS.
- * Работает при выключенном JS, индексируется и делится ссылкой.
+ * Рубрики — плашки из тех, что реально есть у статей, и ?cat= в адресе:
+ * ссылка на рубрику делится и открывается уже отфильтрованной. Фильтр,
+ * поиск и страницы — на клиенте по загруженному списку (BlogFeed):
+ * запрос лёгкий, без текста статей, а переключение мгновенное.
  */
 
 export const metadata: Metadata = {
@@ -21,11 +25,11 @@ export const metadata: Metadata = {
     'Розбори рішень судів, зміни законодавства та кейси ЮК «АКТИВ». Пишемо про те, що впливає на бізнес і власність клієнтів.',
 }
 
-const STATIONS = [
-  { id: 'head', label: 'Блог' },
-  { id: 'feed', label: 'Матеріали' },
-  { id: 'contact', label: 'Консультація' },
-]
+/* Скільки статей тягнемо в стрічку. Раніше було 40 без пагінації —
+   решта архіву (а на старому сайті їх 71) просто не відкривалась. */
+const LIMIT = 150
+/* Пошук має сенс, коли статей більше, ніж видно на одному екрані. */
+const SEARCH_FROM = 7
 
 export default async function BlogPage({
   params,
@@ -37,102 +41,78 @@ export default async function BlogPage({
   const { lang } = await params
   const { cat = '' } = await searchParams
   const prefix = lang === 'ua' ? '' : `/${lang}`
-  const { data: posts, source } = await getBlog(lang, cat, 40)
+  const [{ data: posts, source }, { data: team }] = await Promise.all([getBlog(lang, '', LIMIT), getTeam(lang)])
 
   /* Без Sanity статьи открывать нечего: в статике есть только анонсы.
      Поэтому карточки в этом режиме не кликабельны — лучше, чем 404. */
   const clickable = source === 'sanity'
+  const href = (p: Post) => (clickable ? `${prefix}/blog/${p.slug}` : undefined)
   /* Место под обложку — если она есть хоть у одной статьи в списке.
      Почему решение принимается для всего списка сразу — в PostCard. */
   const withMedia = needsMedia(posts)
 
+  /* Автор у статті — лише імʼя; фото й роль беремо з команди. */
+  const author = (p: Post): CardAuthor | undefined => {
+    if (!p.author) return undefined
+    const m = team.find((t) => t.name === p.author)
+    return { name: p.author, role: m?.role, photo: teamPhoto(m?.photoUrl, 120) }
+  }
+
+  /* Рубрика → ключ для ?cat=: id з BLOG_CATEGORIES, якщо назва відома,
+     інакше сама назва (рубрику могли додати в студії пізніше). */
+  const catKey = (label?: string) => BLOG_CATEGORIES.find((c) => c.label === label)?.id || label || ''
+  const cats = [...new Set(posts.map((p) => p.category).filter((c): c is string => !!c))].map((label) => ({
+    id: catKey(label),
+    label,
+  }))
+
+  const [first] = posts
+  const items: FeedItem[] = posts.map((p) => ({
+    slug: p.slug,
+    cat: catKey(p.category),
+    hay: `${p.title} ${p.excerpt ?? ''}`,
+    node: <BlogCard post={p} href={href(p)} withMedia={withMedia} author={author(p)} headingLevel="h2" />,
+  }))
+
   return (
-    <PageShell lang={lang} stations={STATIONS}>
-      <PageHead
-        eyebrow="Блог"
-        title={
-          <>
-            Розбираємо рішення судів, поки вони ще{' '}
-            <span className="font-normal italic text-accent-ink">мають значення.</span>
-          </>
-        }
-        lede="Зміни законодавства, позиції Верховного Суду та кейси з нашої практики — без переказу новин, з висновком для бізнесу."
-      />
+    <PageShell lang={lang} overDark>
+      <BlogFilterProvider>
+        <PageHero
+          compact
+          crumbs={[{ label: 'Головна', href: `${prefix}/` }, { label: 'Блог' }]}
+          title="Розбираємо рішення судів, поки вони ще"
+          accent="мають значення."
+          lede="Зміни законодавства, позиції Верховного Суду та кейси з нашої практики — без переказу новин, з висновком для бізнесу."
+        >
+          {posts.length >= SEARCH_FROM && <BlogSearch />}
+        </PageHero>
 
-      <section id="feed" className="pb-[clamp(52px,8vw,104px)]">
-        <div className="shell inner">
-          {/* ── фильтр ── */}
-          <nav aria-label="Рубрики" className="mb-8 flex flex-wrap gap-2 border-y border-hair py-4">
-            {BLOG_CATEGORIES.map((c) => {
-              const active = cat === c.id
-              const href = c.id ? `${prefix}/blog?cat=${c.id}` : `${prefix}/blog`
-              return (
-                <a
-                  key={c.id || 'all'}
-                  href={href}
-                  aria-current={active ? 'page' : undefined}
-                  className={`inline-flex min-h-10 items-center rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.08em] transition-[background-color,color,box-shadow] ${
-                    active
-                      ? 'bg-ink text-white'
-                      : 'text-slate shadow-[inset_0_0_0_1px_var(--color-hair)] hover:text-ink hover:shadow-[inset_0_0_0_1px_var(--color-slate-2)]'
-                  }`}
-                >
-                  {c.label}
-                </a>
-              )
-            })}
-          </nav>
-
-          {posts.length === 0 ? (
-            <p className="py-10 text-[15px] text-slate">
-              У цій рубриці поки немає матеріалів.{' '}
-              <a href={`${prefix}/blog`} className="text-accent-ink underline underline-offset-2">
-                Показати всі
-              </a>
-              .
-            </p>
-          ) : (
-            <ul className={POST_GRID}>
-              {posts.map((a) => (
-                <li key={a.slug}>
-                  <PostCard
-                    post={a}
-                    href={clickable ? `${prefix}/blog/${a.slug}` : undefined}
-                    withMedia={withMedia}
-                    headingLevel="h2"
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {!clickable && posts.length > 0 && (
-            <p className="mt-5 text-[13px] leading-relaxed text-slate-2">
-              Це анонси-заглушки. Повні тексти зʼявляться, щойно статті буде додано в Sanity —
-              див. <code className="font-mono text-ink">/sanity-check</code>.
-            </p>
-          )}
-        </div>
-      </section>
-
-      <section id="contact" className="bg-paper-2 py-[clamp(44px,6vw,88px)]">
-        <div className="shell inner">
-          <div className="flex flex-wrap items-end justify-between gap-8">
-            <div>
-              <h2 className="max-w-[22ch] text-[clamp(22px,3.6vw,34px)] leading-[1.14]">
-                Питання стосується вашої ситуації?
-              </h2>
-              <p className="mt-4 max-w-[46ch] text-[15px] text-slate">
-                Загальний розбір у статті й відповідь по конкретній справі — різні речі. Перша
-                консультація без оплати.
-              </p>
-            </div>
-            <ButtonLink href={`${prefix}/#contact`} arrow>
-              Поставити питання
-            </ButtonLink>
+        <section id="feed" aria-label="Статті" className="pb-[clamp(56px,8vw,112px)] pt-[clamp(32px,4vw,56px)]">
+          <div className="shell inner">
+            {posts.length === 0 ? (
+              <div className="rounded-[26px] bg-white px-[clamp(24px,4vw,48px)] py-[clamp(36px,5vw,56px)] shadow-[inset_0_0_0_1px_var(--color-hair)]">
+                <p className="m-0 font-serif text-[clamp(24px,2.6vw,32px)] leading-[1.18] text-ink">Тут поки немає статей.</p>
+                <p className="m-0 mt-2.5 max-w-[56ch] text-[15.5px] leading-[1.65] text-slate">
+                  Поки їх немає, поставте питання юристу напряму — форма нижче.
+                </p>
+              </div>
+            ) : (
+              <BlogFeed
+                items={items}
+                featured={
+                  first && {
+                    slug: first.slug,
+                    node: <FeaturedCard post={first} href={href(first)} author={author(first)} />,
+                  }
+                }
+                cats={cats}
+                initialCat={cat}
+                stubNote={!clickable}
+              />
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      </BlogFilterProvider>
     </PageShell>
   )
 }

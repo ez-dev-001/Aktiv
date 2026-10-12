@@ -6,7 +6,7 @@ import { Icon } from '@/components/site/Icon'
 import { APPLY_EVENT } from './events'
 
 /**
- * Список вакансий.
+ * Список вакансий — старий формат (картки, що розгортаються), стиль головної.
  *
  * Свёрнутая вакансия — строка: посада и три метки (досвід, формат,
  * зайнятість). Этого хватает, чтобы за пять секунд понять «моё или
@@ -38,8 +38,8 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
 
   if (vacancies.length === 0) {
     return (
-      <div className="rounded-[18px] bg-white p-[clamp(22px,3vw,34px)] shadow-[inset_0_0_0_1px_var(--color-hair)]">
-        <p className="m-0 font-serif text-[clamp(19px,2.4vw,23px)] font-semibold leading-snug text-ink">
+      <div className="rounded-[20px] bg-white p-[clamp(22px,3vw,34px)] shadow-[inset_0_0_0_1px_var(--color-hair)]">
+        <p className="m-0 font-serif text-[clamp(21px,2.6vw,26px)] font-normal leading-snug text-ink">
           Зараз відкритих вакансій немає
         </p>
         <p className="m-0 mt-2 max-w-[56ch] text-[15px] leading-relaxed text-slate">
@@ -91,11 +91,11 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
           ].filter((c) => c.items.length)
           return (
             <li key={v.slug}>
-              <details className="vacancy group rounded-[16px] bg-white shadow-[inset_0_0_0_1px_var(--color-hair)] transition-shadow open:shadow-[0_1px_2px_rgb(20_11_51/0.05),0_18px_40px_-26px_rgb(20_11_51/0.3)]">
+              <details className="vacancy group rounded-[20px] bg-white shadow-[inset_0_0_0_1px_var(--color-hair)] transition-shadow open:shadow-[0_1px_2px_rgb(20_11_51/0.05),0_18px_40px_-26px_rgb(20_11_51/0.3)]">
                 <summary className="flex cursor-pointer list-none items-center gap-4 p-[clamp(18px,2.4vw,26px)] [&::-webkit-details-marker]:hidden">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <h3 className="m-0 font-serif text-[clamp(18px,2.2vw,22px)] font-semibold leading-tight text-ink">{v.title}</h3>
+                      <h3 className="m-0 font-serif text-[clamp(20px,2.4vw,26px)] font-normal leading-[1.15] text-ink">{v.title}</h3>
                       {v.example && (
                         <span className="rounded-full bg-[#fbf3e3] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#8a5a0b]">
                           приклад
@@ -115,7 +115,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
                   </div>
                   <span
                     aria-hidden="true"
-                    className="grid size-10 shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-accent group-open:text-white group-open:shadow-none"
+                    className="grid size-10 shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-accent-btn group-open:text-white group-open:shadow-none"
                   >
                     <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                       <path d="M12 5v14M5 12h14" />
@@ -129,7 +129,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
                     <div className={`mt-6 grid gap-6 ${cols.length === 3 ? 'min-[860px]:grid-cols-3' : cols.length === 2 ? 'min-[700px]:grid-cols-2' : ''}`}>
                       {cols.map((c) => (
                         <div key={c.t}>
-                          <p className="m-0 mb-3 font-mono text-[10px] uppercase tracking-[0.13em] text-slate-2">{c.t}</p>
+                          <p className="m-0 mb-3 font-mono text-[10px] uppercase tracking-[0.13em] text-accent-ink">{c.t}</p>
                           <ul className="m-0 grid list-none gap-2.5 p-0">
                             {c.items.map((it) => (
                               <li key={it} className="grid grid-cols-[14px_1fr] gap-2 text-[14.5px] leading-snug text-slate">

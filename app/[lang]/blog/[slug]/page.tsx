@@ -3,12 +3,17 @@ import { Cover } from '@/components/site/Cover'
 import { hasImage, imageUrl } from '@/lib/sanity/image'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
-import { getPost, getPostSlugs } from '@/lib/sanity/content'
-import { Icon } from '@/components/site/Icon'
+import { BLOG_CATEGORIES, getBlog, getPost, getPostSlugs, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
+import { SITE_URL } from '@/lib/site'
 import { PageShell } from '@/components/site/PageShell'
-import { Prose } from '@/components/site/Prose'
+import { HeroChips, PageHero } from '@/components/site/PageHero'
+import { RingAvatar, SEC } from '@/components/site/Blocks'
+import { needsMedia } from '@/components/site/PostCard'
 import { ArrowLink, ButtonLink } from '@/components/ui/Button'
-import { Reveal } from '@/components/ui/Reveal'
+import { ArticleBody } from '@/components/blog/ArticleBody'
+import { Share, Toc } from '@/components/blog/ArticleAside'
+import { BlogCard, fmtDate, type CardAuthor } from '@/components/blog/BlogCard'
+import { readingMinutes, splitByH2 } from '@/components/blog/text'
 
 /**
  * Страница статьи.
@@ -51,8 +56,7 @@ export async function generateMetadata({
   }
 }
 
-const fmtDate = (iso?: string) =>
-  iso ? new Date(iso).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+const SIDE_LABEL = 'm-0 mb-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate'
 
 export default async function PostPage({
   params,
@@ -64,123 +68,217 @@ export default async function PostPage({
   if (!post) notFound()
 
   const prefix = lang === 'ua' ? '' : `/${lang}`
-  const stations = [
-    { id: 'head', label: 'Стаття' },
-    { id: 'body', label: 'Текст' },
-    { id: 'contact', label: 'Питання' },
-  ]
+  const url = `${SITE_URL}${prefix}/blog/${post.slug}`
+
+  /* «Читайте також»: свіжі статті, спершу тієї ж рубрики. Окремого
+     поля «повʼязані» в схемі немає — беремо стрічку. */
+  const [{ data: feed, source }, { data: team }] = await Promise.all([getBlog(lang, '', 12), getTeam(lang)])
+  const related =
+    source === 'sanity'
+      ? feed
+          .filter((p) => p.slug !== post.slug)
+          .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
+          .slice(0, 3)
+      : []
+
+  /* Автор у статті — імʼя й роль; фото — з картки в команді. */
+  const member = (name?: string) => (name ? team.find((t) => t.name === name) : undefined)
+  const cardAuthor = (p: Post): CardAuthor | undefined =>
+    p.author ? { name: p.author, photo: teamPhoto(member(p.author)?.photoUrl, 120) } : undefined
+  const m = member(post.author)
+  const author = post.author
+    ? { name: post.author, role: post.authorRole || m?.role, photo: teamPhoto(m?.photoUrl, 200) }
+    : undefined
+
+  const minutes = readingMinutes(post.body)
+  const date = fmtDate(post.publishedAt)
+  const toc = splitByH2(post.body).flatMap((s) => (s.heading ? [s.heading] : []))
+  const catId = BLOG_CATEGORIES.find((c) => c.label === post.category)?.id
+  /* Одна повʼязана практика — форма одразу обере її напрям. Кілька —
+     вгадувати не беремося. */
+  const consult = post.practices?.length === 1 ? `?practice=${post.practices[0]?.slug}#contact` : '#contact'
+
+  /* ── Структуровані дані (schema.org Article) ──
+     Ті самі дані, що на сторінці; видавець — фірма з головної (#firm). */
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title.slice(0, 110),
+    ...(post.excerpt ? { description: post.excerpt } : {}),
+    ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+    ...(hasImage(post.cover) ? { image: imageUrl(post.cover, 1200, 630) } : {}),
+    ...(author ? { author: { '@type': 'Person', name: author.name, ...(author.role ? { jobTitle: author.role } : {}) } } : {}),
+    publisher: { '@type': 'LegalService', '@id': `${SITE_URL}/#firm`, name: 'Юридична компанія «АКТИВ»' },
+    mainEntityOfPage: url,
+    inLanguage: lang === 'en' ? 'en' : 'uk',
+  }
+
+  const callout = (
+    <aside
+      aria-label="Консультація"
+      className="my-[34px] grid max-w-[68ch] gap-4 rounded-[22px] bg-accent-wash p-[26px] shadow-[inset_0_0_0_1px_#f6d4de] min-[700px]:grid-cols-[minmax(0,1fr)_auto] min-[700px]:items-center"
+    >
+      <div>
+        <p className="m-0 font-serif text-[21px] font-semibold leading-[1.25] text-ink">Схожа ситуація?</p>
+        <p className="m-0 mt-1 text-[14.5px] leading-[1.55] text-slate">
+          Юрист оцінить перспективу. Перша консультація — безкоштовно.
+        </p>
+      </div>
+      <ButtonLink href={consult} size="sm" arrow className="justify-self-start">
+        Отримати консультацію
+      </ButtonLink>
+    </aside>
+  )
+
+  const share = <Share url={url} title={post.title} />
 
   return (
-    <PageShell lang={lang} stations={stations}>
+    <PageShell lang={lang} overDark>
+      <script
+        type="application/ld+json"
+        /* < екранується, щоб текст із Sanity не міг закрити тег script. */
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
       <article>
-        {/* ── ШАПКА ── */}
-        <section id="head" className="py-[clamp(40px,6vw,80px)]">
-          <div className="shell inner">
-            <nav aria-label="Хлібні крихти" className="mb-6 flex flex-wrap items-center gap-2 font-mono text-[11px] text-slate-2">
-              <a href={`${prefix}/blog`} className="hover:text-accent-ink">
-                Блог
-              </a>
-              {post.category && (
+        <PageHero
+          compact
+          small
+          crumbs={[
+            { label: 'Головна', href: `${prefix}/` },
+            { label: 'Блог', href: `${prefix}/blog` },
+            { label: post.category || 'Стаття', href: catId ? `${prefix}/blog?cat=${catId}` : undefined },
+          ]}
+          title={post.title}
+          lede={post.excerpt && post.excerpt.trim() !== post.title.trim() ? post.excerpt : undefined}
+        >
+          <HeroChips
+            items={[post.category, date, minutes ? `${minutes} хв читання` : null].filter(
+              (x): x is string => !!x,
+            )}
+          />
+          {author && (
+            <div className="mt-[26px] flex items-center gap-3.5">
+              <RingAvatar src={author.photo} name={author.name} className="size-[64px]" />
+              <span>
+                <b className="block font-serif text-[18px] font-semibold leading-[1.25] text-white">{author.name}</b>
+                {author.role && <small className="mt-0.5 block text-[13.5px] text-accent-soft">{author.role}</small>}
+              </span>
+            </div>
+          )}
+        </PageHero>
+
+        <section id="body" className="py-[clamp(40px,6vw,88px)]">
+          <div className="shell inner grid items-start gap-[clamp(28px,4vw,64px)] min-[960px]:grid-cols-[240px_minmax(0,1fr)]">
+            {/* компʼютер: липка колонка зліва */}
+            <aside className="sticky top-[calc(var(--hdr)+24px)] grid gap-[26px] max-[959px]:hidden">
+              {toc.length > 0 && <Toc items={toc} />}
+              {share}
+            </aside>
+
+            <div className="min-w-0">
+              {/* телефон: зміст згорнутий над текстом */}
+              {toc.length > 0 && (
+                <details className="group mb-7 rounded-[18px] bg-white px-5 shadow-[inset_0_0_0_1px_var(--color-hair)] min-[960px]:hidden">
+                  <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ink [&::-webkit-details-marker]:hidden">
+                    Зміст · {toc.length}
+                    <span aria-hidden="true" className="text-[18px] leading-none text-accent-ink transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <div className="pb-3">
+                    <Toc items={toc} />
+                  </div>
+                </details>
+              )}
+
+              {/* Обкладинка — лише справжня; без неї текст починається одразу. */}
+              <Cover
+                image={post.cover}
+                alt={post.title}
+                ratio={16 / 9}
+                widths={[640, 960, 1280, 1600]}
+                sizes="(min-width: 1260px) 820px, (min-width: 960px) 62vw, 92vw"
+                priority
+                className="mb-[clamp(28px,4vw,44px)] rounded-[24px]"
+              />
+
+              {post.body ? (
+                <ArticleBody body={post.body} middle={callout} />
+              ) : (
                 <>
-                  <span aria-hidden="true">/</span>
-                  <span className="text-accent-ink">{post.category}</span>
+                  <p className="m-0 max-w-[60ch] text-[16px] leading-relaxed text-slate-2">Текст статті ще не заповнено в Sanity.</p>
+                  {callout}
                 </>
               )}
-            </nav>
 
-            <Reveal as="h1" className="max-w-[24ch] text-[clamp(26px,4.6vw,46px)] leading-[1.09]">
-              {post.title}
-            </Reveal>
-
-            {post.excerpt && <p className="lede mt-5 max-w-[56ch] text-slate">{post.excerpt}</p>}
-
-            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-hair pt-5 font-mono text-[11px] uppercase tracking-[0.09em] text-slate-2">
-              {fmtDate(post.publishedAt) && <span>{fmtDate(post.publishedAt)}</span>}
-              {post.author && (
-                <span className="text-ink">
-                  {post.author}
-                  {post.authorRole && <span className="ml-2 normal-case tracking-normal text-slate-2">{post.authorRole}</span>}
-                </span>
+              {/* ── Стосується практик ── */}
+              {post.practices && post.practices.length > 0 && (
+                <div className="mt-10">
+                  <p className={SIDE_LABEL}>Стосується практик</p>
+                  <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                    {post.practices.map((pr) => (
+                      <li key={pr.slug}>
+                        <a
+                          href={`${prefix}/practices/${pr.category}/${pr.slug}`}
+                          className="inline-flex min-h-10 items-center rounded-full px-4 text-[14px] font-medium text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[color,box-shadow] hover:text-accent-ink hover:shadow-[inset_0_0_0_1px_var(--color-slate-2)]"
+                        >
+                          {pr.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-            </div>
 
-            {/* Обложка на первом экране статьи: грузится сразу, а не лениво,
-                иначе она стала бы самым медленным элементом страницы. */}
-            <Cover
-              image={post.cover}
-              alt={post.title}
-              ratio={16 / 9}
-              widths={[640, 960, 1280, 1600, 2000]}
-              sizes="(min-width: 1260px) 1100px, 92vw"
-              priority
-              className="mt-[clamp(26px,3.6vw,40px)] rounded-[6px]"
-            />
-          </div>
-        </section>
+              {/* ── Автор ── */}
+              {author && (
+                <div className="mt-10 grid gap-[18px] rounded-[22px] bg-paper-2 p-[26px] min-[700px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[700px]:items-center">
+                  <RingAvatar src={author.photo} name={author.name} className="size-[72px]" />
+                  <div>
+                    <p className="m-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate-2">Автор</p>
+                    <p className="m-0 mt-1 font-serif text-[18px] font-semibold leading-[1.25] text-ink">{author.name}</p>
+                    {author.role && <p className="m-0 mt-0.5 text-[13.5px] text-accent-ink">{author.role}</p>}
+                  </div>
+                  <ButtonLink href={consult} size="sm" arrow className="justify-self-start">
+                    Записатися на консультацію
+                  </ButtonLink>
+                </div>
+              )}
 
-        {/* ── ТЕКСТ ── */}
-        <section id="body" className="pb-[clamp(48px,7vw,96px)]">
-          <div className="shell inner">
-            {post.body ? (
-              <Prose value={post.body} />
-            ) : (
-              <p className="max-w-[60ch] text-[16px] leading-relaxed text-slate-2">
-                Текст статті ще не заповнено в Sanity.
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* ── СВЯЗАННЫЕ ПРАКТИКИ ── */}
-        {post.practices && post.practices.length > 0 && (
-          <section className="bg-paper-2 py-[clamp(40px,6vw,80px)]">
-            <div className="shell inner">
-              <p className="eyebrow">Стосується практик</p>
-              <ul className="grid list-none gap-px border border-hair bg-hair p-0 min-[700px]:grid-cols-2">
-                {post.practices.map((pr) => (
-                  <li key={pr.slug} className="bg-white">
-                    <a
-                      href={`${prefix}/practices/${pr.category}/${pr.slug}`}
-                      className="group flex items-center justify-between gap-4 p-[clamp(16px,2.2vw,24px)] transition-colors hover:bg-paper"
-                    >
-                      <span className="font-serif text-[16.5px] font-semibold leading-snug text-ink transition-colors group-hover:text-accent-ink">
-                        {pr.title}
-                      </span>
-                      <Icon
-                        name="arrow"
-                        className="size-4 shrink-0 text-slate-2 transition-[transform,color] duration-[240ms] group-hover:translate-x-1 group-hover:text-accent"
-                      />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {/* ── CTA ── */}
-        <section id="contact" className="py-[clamp(48px,7vw,96px)]">
-          <div className="shell inner">
-            <div className="flex flex-wrap items-end justify-between gap-8 border-t-2 border-ink pt-8">
-              <div>
-                <h2 className="max-w-[24ch] text-[clamp(22px,3.6vw,34px)] leading-[1.14]">
-                  Стаття — це загальний розбір. Ваша справа — ні.
-                </h2>
-                <p className="mt-4 max-w-[46ch] text-[15px] text-slate">
-                  Опишіть ситуацію, і ми скажемо, чи застосовна ця позиція саме у вас. Перша
-                  консультація без оплати.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-5">
-                <ButtonLink href={`${prefix}/#contact`} arrow>
-                  Поставити питання
-                </ButtonLink>
-                <ArrowLink href={`${prefix}/blog`}>Усі матеріали</ArrowLink>
-              </div>
+              {/* телефон: «Поділитися» — після тексту, коли вже прочитали */}
+              <div className="mt-9 min-[960px]:hidden">{share}</div>
             </div>
           </div>
         </section>
       </article>
+
+      {/* ── Читайте також ── */}
+      {related.length > 0 && (
+        <section aria-labelledby="more" className={`bg-paper-2 ${SEC}`}>
+          <div className="shell inner">
+            <div className="mb-[30px] flex flex-wrap items-end justify-between gap-4">
+              <h2 id="more" className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink">
+                Читайте також
+              </h2>
+              <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
+                Усі статті
+              </ArrowLink>
+            </div>
+            <ul className="m-0 grid list-none gap-[18px] p-0 min-[640px]:grid-cols-2 min-[1000px]:grid-cols-3">
+              {related.map((p) => (
+                <li key={p.slug}>
+                  <BlogCard
+                    post={p}
+                    href={`${prefix}/blog/${p.slug}`}
+                    withMedia={needsMedia(related)}
+                    author={cardAuthor(p)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
     </PageShell>
   )
 }

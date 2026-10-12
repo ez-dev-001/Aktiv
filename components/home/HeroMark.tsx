@@ -57,13 +57,16 @@ const DOTS = [
   [87.5, 2.5],
 ] as const
 
-export function HeroMark() {
+/** still — знак без анімації і паралаксу, одразу в останньому кадрі.
+    Так на внутрішніх сторінках: анімація «збирання» лого — лише на
+    головній, далі знак уже «завантажений» і просто стоїть. */
+export function HeroMark({ still = false }: { still?: boolean }) {
   const root = useRef<HTMLDivElement>(null)
 
   /* Легкий паралакс при прокрутці. Анімації входу від JS не залежать. */
   useEffect(() => {
     const el = root.current
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (still || !el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let raf = 0
     const paint = () => {
       raf = 0
@@ -78,10 +81,10 @@ export function HeroMark() {
       window.removeEventListener('scroll', onScroll)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [])
+  }, [still])
 
   return (
-    <div ref={root} className="relative -mx-[10%] -my-[7.4%] w-[120%]" aria-hidden="true">
+    <div ref={root} className={`relative -mx-[10%] -my-[7.4%] w-[120%] ${still ? 'hm-still' : ''}`} aria-hidden="true">
       <div className="hero-mark-media hm relative aspect-[300/220] w-full">
         {/* Світіння за знаком — коло радіуса 128 з центром (105.5, 90.5). */}
         <span className="hm-glow absolute left-[1.33%] top-[-8.18%] h-[116.36%] w-[85.33%] rounded-full" />

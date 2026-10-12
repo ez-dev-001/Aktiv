@@ -2,24 +2,26 @@ import type { Metadata } from 'next'
 import { LOCALES } from '@/lib/i18n'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories } from '@/lib/content'
-import { getPractice } from '@/lib/sanity/content'
-import { Icon } from '@/components/site/Icon'
-import { PageShell, SectionHead } from '@/components/site/PageShell'
+import { getCategories, getPractice } from '@/lib/sanity/content'
+import { PageShell } from '@/components/site/PageShell'
+import { HeroChips, PageHero } from '@/components/site/PageHero'
+import { Faq, Kicker, NumRows, SEC, SecHead } from '@/components/site/Blocks'
 import { Prose } from '@/components/site/Prose'
-import { ArrowLink, ButtonLink, Eyebrow } from '@/components/ui/Button'
-import { Reveal } from '@/components/ui/Reveal'
+import { POST_GRID, PostCard } from '@/components/site/PostCard'
+import { ArrowLink, ButtonLink } from '@/components/ui/Button'
+import { getPracticePeople, postLabel, type PracticePerson } from '@/components/practice/data'
+import { CheckList, MarkGlyph, MiniLabel, OtherServices, PersonLine, plural, splitDash } from '@/components/practice/Parts'
 
 /**
- * Страница одного направления.
+ * Сторінка послуги — у форматі головної (armada.law).
  *
- * На старом сайте это был шаблон блог-поста: заголовок, простыня текста,
- * карточка автора «Сергій Шайко» под всеми 37 практиками и «Схожі статті».
- * Ни цены, ни состава работ, ни сроков, ни FAQ.
+ * Перший екран з «квитком» (факти лише з полів послуги) → текст і липка
+ * картка «хто веде справу» → варіанти послуги → що входить / етапи (якщо
+ * заповнені) → FAQ → статті за темою → інші послуги напряму → форма.
  *
- * Здесь страница услуги: цена на первом экране, что входит, этапы со
- * сроками, вопросы-ответы и профильный адвокат. Каждый блок рисуется
- * только если для него есть данные — пока Sanity не наполнен, страница
- * выглядит скромно, но не сломанно.
+ * Кожен блок рисується лише коли для нього є дані: поки Sanity не
+ * наповнений, сторінка скромна, але не зламана. Цін на сайті немає —
+ * вартість називають після консультації.
  */
 
 export function generateStaticParams() {
@@ -52,7 +54,25 @@ export default async function PracticePage({
   const p = await getPractice(slug, lang)
   if (!p) notFound()
 
+  const [{ data: cats }, linked] = await Promise.all([getCategories(lang), getPracticePeople(p.slug, lang)])
+
   const prefix = lang === 'ua' ? '' : `/${lang}`
+  const catSlug = p.category?.slug ?? category
+  const cat = cats.find((c) => c.slug === catSlug)
+  const catTitle = p.category?.title ?? cat?.title ?? category
+  const catHref = `${prefix}/practices/${catSlug}`
+  /* Відносне посилання: форма на цій же сторінці, напрям уже обраний. */
+  const consult = `?practice=${encodeURIComponent(p.slug)}#contact`
+
+  /* Хто веде: з фото — з «Команди» (привʼязка з обох боків); без Sanity —
+     те, що прийшло в самій практиці (lawyers), якщо щось є. */
+  const people: PracticePerson[] =
+    linked.length > 0
+      ? linked
+      : (p.lawyers ?? [])
+          .filter((l) => l?.name)
+          .map((l) => ({ name: l.name, role: l.role ?? '', practices: [p.slug], cats: [catSlug] }))
+
   /* Вариант могли добавить, заполнив только название — списки
      «Кому підходить» и «Що входить» тогда приходят null. Раньше на
      этом падал рендер всей страницы. */
@@ -63,195 +83,296 @@ export default async function PracticePage({
       audience: (pk.audience ?? []).filter(Boolean),
       includes: (pk.includes ?? []).filter(Boolean),
     }))
-
-  /* Заголовок блока раньше был зашит под ликвидацию («Два способи
-     пройти процедуру») и стоял на любой практике с любым числом пакетов. */
   const n = packages.length
-  const packagesHead =
-    n === 2 && category === 'likvidatsiya-bankrutstvo'
-      ? {
-          title: 'Два способи пройти процедуру',
-          lede: 'Вибір залежить не від бюджету, а від історії підприємства: чим складніша, тим далі має відійти власник.',
-        }
-      : n === 1
-        ? { title: 'Що входить у послугу', lede: undefined }
-        : {
-            title: n === 2 ? 'Два варіанти послуги' : `${n} ${n < 5 ? 'варіанти' : 'варіантів'} послуги`,
-            lede: 'Оберіть варіант, що відповідає вашій ситуації, — або опишіть її, і ми підкажемо.',
-          }
 
-  const stations = [
-    { id: 'head', label: 'Послуга' },
-    ...(packages.length ? [{ id: 'packages', label: 'Варіанти' }] : []),
-    ...(p.includes?.length ? [{ id: 'includes', label: 'Що входить' }] : []),
-    ...(p.stages?.length ? [{ id: 'stages', label: 'Етапи' }] : []),
-    ...(p.faq?.length ? [{ id: 'faq', label: 'Питання' }] : []),
-    { id: 'contact', label: 'Консультація' },
+  /* Заголовок блока раньше был зашит под ликвидацию и стоял на любой
+     практике с любым числом пакетов. Тексты — без фактов о фирме. */
+  const packagesHead =
+    n === 1
+      ? packages[0]!.audience.length + packages[0]!.includes.length > 0
+        ? { title: 'Що входить', accent: 'у послугу', lede: undefined }
+        : { title: 'Варіант', accent: 'послуги', lede: undefined }
+      : {
+          title: n === 2 ? 'Два варіанти' : `${n} ${plural(n, ['варіант', 'варіанти', 'варіантів'])}`,
+          accent: '— оберіть свій',
+          lede:
+            n === 2 && catSlug === 'likvidatsiya-bankrutstvo'
+              ? 'Вибір залежить не від бюджету, а від історії підприємства: чим складніша, тим далі має відійти власник.'
+              : 'Оберіть варіант, що відповідає вашій ситуації, — або опишіть її, і ми підкажемо.',
+        }
+
+  const [title, accent] = splitDash(p.title)
+  const faq = (p.faq ?? []).filter((f) => f?.q && f?.a)
+  const includes = (p.includes ?? []).filter(Boolean)
+  const stages = (p.stages ?? []).filter((s) => s?.title)
+  const related = (p.related ?? []).filter((a) => a?.slug && a?.title)
+  const hasBody = !!p.body || (p.bodyText?.length ?? 0) > 0
+  const others = (cat?.practices ?? []).filter((x) => x.slug !== p.slug)
+
+  /* Фон розділів чергується (білий / paper-2) за фактично показаними
+     блоками: інакше два сусідні розділи одного кольору зливаються в
+     одну смугу з подвійним відступом. Варіанти завжди на paper-2. */
+  let prevTint = false
+  const tint = (show: boolean, force?: boolean) => {
+    if (!show) return ''
+    prevTint = force ?? !prevTint
+    return prevTint ? 'bg-paper-2' : ''
+  }
+  const bg = {
+    packages: tint(n > 0, true),
+    includes: tint(includes.length > 0),
+    stages: tint(stages.length > 0),
+    faq: tint(faq.length > 0),
+    posts: tint(related.length > 0),
+  }
+
+  /* «Квиток» — тільки факти з полів. Строку окремим полем немає, тому
+     його тут і немає. Перша консультація безкоштовна — публічна умова
+     фірми (так написано у формі заявки). */
+  const facts: { k: string; v: string }[] = [
+    ...(n > 0 ? [{ k: n === 1 ? 'Варіант' : 'Варіанти', v: packages.map((pk) => pk.name).join(' · ') }] : []),
+    /* Без тексту послуги немає картки «хто веде» — імʼя переїжджає сюди. */
+    ...(!hasBody && people.length > 0 ? [{ k: 'Веде справу', v: people.map((m) => m.name).join(', ') }] : []),
+    { k: 'Перша консультація', v: 'Безкоштовно' },
   ]
 
   return (
-    <PageShell lang={lang} stations={stations}>
-      {/* ── ШАПКА ── */}
-      <section id="head" className="py-[clamp(40px,6vw,88px)]">
-        <div className="shell inner">
-          <nav aria-label="Хлібні крихти" className="mb-6 flex flex-wrap items-center gap-2 font-mono text-[11px] text-slate-2">
-            <a href={`${prefix}/#practices`} className="hover:text-accent-ink">
-              Практики
-            </a>
-            <span aria-hidden="true">/</span>
-            <a href={`${prefix}/practices/${p.category?.slug ?? category}`} className="hover:text-accent-ink">
-              {p.category?.title ?? category}
-            </a>
-          </nav>
-
-          <div className="grid items-start gap-[clamp(28px,4vw,56px)] min-[900px]:grid-cols-[1.25fr_0.75fr]">
-            <div>
-              <Reveal as="h1" className="max-w-[20ch] text-[clamp(27px,5vw,50px)] leading-[1.07]">
-                {p.title}
-              </Reveal>
-              {p.excerpt && <p className="lede mt-5 max-w-[52ch] text-slate">{p.excerpt}</p>}
-            </div>
-
-            <div className="grid gap-4 border-t-2 border-ink pt-[22px]">
-              <div className="grid gap-[3px]">
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">Перша консультація</span>
-                <span className="font-serif text-[clamp(20px,2.8vw,27px)] font-semibold leading-tight text-accent-ink">
-                  Без оплати
-                </span>
-                <span className="mt-0.5 text-[12.5px] text-slate-2">Оцінюємо перспективу й кажемо, чи бачимо шлях.</span>
-              </div>
-
-              {p.lawyers && p.lawyers.length > 0 && (
-                <div className="grid gap-[3px] border-t border-hair pt-4">
-                  <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">
-                    Веде справу
-                  </span>
-                  {p.lawyers.map((l) => (
-                    <span key={l.name} className="font-serif text-[16.5px] font-semibold leading-tight text-ink">
-                      {l.name}
-                      <span className="mt-0.5 block font-sans text-[12.5px] font-light text-slate">{l.role}</span>
-                    </span>
-                  ))}
+    <PageShell lang={lang} overDark>
+      <PageHero
+        small
+        crumbs={[
+          { label: 'Головна', href: prefix || '/' },
+          { label: 'Практики', href: `${prefix}/#practices` },
+          { label: catTitle, href: catHref },
+          { label: title },
+        ]}
+        /* тире тримається за попереднє слово, а не відкриває рядок акценту */
+        title={accent ? `${title}\u00a0—` : title}
+        accent={accent}
+        lede={p.excerpt}
+        aside={
+          <div className="grid overflow-hidden rounded-[22px] bg-white/[0.05] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] min-[900px]:ml-auto min-[900px]:max-w-[420px]">
+            <dl className="m-0">
+              {facts.map((f) => (
+                <div key={f.k} className="flex justify-between gap-4 border-b border-on-dark-hair px-[22px] py-[17px]">
+                  <dt className="shrink-0 pt-1 font-mono text-[10px] uppercase tracking-[0.13em] text-on-dark-2">{f.k}</dt>
+                  <dd className="m-0 text-right font-serif text-[17px] font-semibold leading-[1.3] text-white">{f.v}</dd>
                 </div>
-              )}
-
-              <ButtonLink href="#contact" arrow className="justify-self-start">
-                Консультація
-              </ButtonLink>
-            </div>
+              ))}
+            </dl>
+            <ButtonLink href={consult} arrow className="mx-[22px] mb-[22px] mt-[22px]">
+              Отримати консультацію
+            </ButtonLink>
           </div>
-        </div>
-      </section>
+        }
+      >
+        {n > 1 && <HeroChips items={[`${n} ${plural(n, ['варіант', 'варіанти', 'варіантів'])}`]} />}
+      </PageHero>
 
-      {/* ── ТЕКСТ ──
+      {/* ── ТЕКСТ + «ХТО ВЕДЕ» ──
           Из Sanity приходит PortableText, из статики — обычные абзацы,
-          перенесённые со старого сайта дословно. Второе существует
-          ровно для того, чтобы страница услуги не стояла пустой,
-          пока Sanity не наполнен. */}
-      {p.body ? (
-        <section className="pb-[clamp(40px,6vw,80px)]">
-          <div className="shell inner">
-            <Prose value={p.body} />
-          </div>
-        </section>
-      ) : p.bodyText && p.bodyText.length > 0 ? (
-        <section className="pb-[clamp(40px,6vw,80px)]">
-          <div className="shell inner">
-            {p.bodyText.map((t) => (
-              <p key={t.slice(0, 40)} className="mb-5 max-w-[68ch] text-[16.5px] leading-[1.68] text-slate">
-                {t}
-              </p>
-            ))}
-          </div>
-        </section>
-      ) : null}
+          перенесённые со старого сайта дословно. */}
+      {hasBody && (
+        <section className={SEC}>
+          <div className="shell inner grid items-start gap-[clamp(30px,4vw,64px)] min-[900px]:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="min-w-0 [&>p:first-child]:text-[clamp(17.5px,1.6vw,19.5px)] [&>p:first-child]:leading-[1.6] [&>p:first-child]:text-ink">
+              {p.body ? (
+                <Prose value={p.body} />
+              ) : (
+                p.bodyText!.map((t) => (
+                  <p key={t.slice(0, 40)} className="mb-5 max-w-[68ch] text-[16.5px] leading-[1.68] text-slate">
+                    {t}
+                  </p>
+                ))
+              )}
+            </div>
 
-      {/* ── ВАРІАНТИ ПОСЛУГИ ──
-          Услуга с двумя вариантами: «кому підходить» и «що входить».
-          Цен на сайте нет — стоимость называют после консультации. */}
-      {packages.length > 0 && (
-        <section id="packages" className="bg-paper-2 py-[clamp(48px,7vw,96px)]">
+            <aside className="min-[900px]:sticky min-[900px]:top-[calc(var(--hdr)+20px)]">
+              <div className="rounded-[22px] bg-white p-6 shadow-[inset_0_0_0_1px_var(--color-hair)]">
+                {people.length > 0 ? (
+                  <>
+                    <h2 className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">
+                      Хто веде справу
+                    </h2>
+                    <ul className="m-0 grid list-none gap-4 p-0">
+                      {people.map((m) => (
+                        <li key={m.slug ?? m.name}>
+                          <PersonLine m={m} />
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">
+                      Поставити питання
+                    </h2>
+                    <p className="m-0 font-serif text-[20px] leading-[1.3] text-ink">
+                      Опишіть ситуацію — юрист оцінить перспективу.
+                    </p>
+                    <p className="m-0 mt-3 text-[14.5px] leading-[1.6] text-slate">Перша консультація — безкоштовно.</p>
+                  </>
+                )}
+                <ButtonLink href={consult} arrow className="mt-[18px] w-full">
+                  Поставити питання
+                </ButtonLink>
+              </div>
+            </aside>
+          </div>
+        </section>
+      )}
+
+      {/* ── ВАРІАНТИ ПОСЛУГИ ── перша картка біла, остання темна */}
+      {n > 0 && (
+        <section id="packages" className={`scroll-mt-[var(--hdr)] ${bg.packages} ${SEC}`}>
           <div className="shell inner">
-            <SectionHead eyebrow="Варіанти" title={packagesHead.title} lede={packagesHead.lede} />
+            <SecHead eyebrow="Варіанти" title={packagesHead.title} accent={packagesHead.accent} lede={packagesHead.lede} row />
             <div
-              className={`grid gap-[clamp(12px,1.6vw,18px)] ${
-                n === 1
-                  ? 'max-w-[640px]'
-                  : n === 2
-                    ? 'min-[820px]:grid-cols-2'
-                    : 'min-[820px]:grid-cols-2 min-[1060px]:grid-cols-3'
+              className={`grid gap-3.5 ${
+                n === 1 ? 'max-w-[640px]' : n === 2 ? 'min-[860px]:grid-cols-2' : 'min-[860px]:grid-cols-2 min-[1100px]:grid-cols-3'
               }`}
             >
-              {packages.map((pk, i) => (
-                <article
-                  key={`${i}-${pk.name}`}
-                  className="flex flex-col gap-5 rounded-[18px] bg-white p-[clamp(22px,3vw,32px)] shadow-[0_1px_2px_rgb(20_11_51/0.045),0_14px_34px_-20px_rgb(20_11_51/0.13)]"
-                >
-                  <div className="border-b border-hair pb-4">
-                    <h3 className="text-[clamp(19px,2.6vw,24px)] leading-tight">{pk.name}</h3>
-                  </div>
-
-                  {pk.audience.length > 0 && (
-                  <div>
-                    <p className="m-0 mb-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">
-                      Кому підходить
-                    </p>
-                    <ul className="m-0 grid list-none gap-2 p-0">
-                      {pk.audience.map((a) => (
-                        <li key={a} className="grid grid-cols-[16px_1fr] gap-2.5 text-[14.5px] leading-snug text-slate">
-                          <span className="mt-[0.6em] size-[5px] rounded-full bg-slate-2" />
-                          <span>{a}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  )}
-
-                  {pk.includes.length > 0 && (
-                  <div className="mt-auto">
-                    <p className="m-0 mb-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">
-                      Що входить
-                    </p>
-                    <ul className="m-0 grid list-none gap-2 p-0">
-                      {pk.includes.map((a) => (
-                        <li key={a} className="grid grid-cols-[16px_1fr] gap-2.5 text-[14.5px] leading-snug text-ink">
-                          <Icon name="arrow" className="mt-[3px] size-4 shrink-0 text-accent" />
-                          <span>{a}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  )}
-
-                  {pk.note && <p className="m-0 text-[13px] leading-snug text-slate-2">{pk.note}</p>}
-
-                  {/* Ведёт в форму на главной сразу заявкой на услугу, с этой
-                      услугой и этим пакетом — человек уже выбрал, переспрашивать
-                      его в форме незачем. */}
-                  <ButtonLink
-                    href={`${prefix}/?practice=${encodeURIComponent(p.slug)}&package=${encodeURIComponent(pk.name)}#contact`}
-                    arrow
-                    className="self-start"
+              {packages.map((pk, i) => {
+                const dark = n > 1 && i === n - 1
+                return (
+                  <article
+                    key={`${i}-${pk.name}`}
+                    className={`relative isolate flex flex-col gap-5 overflow-hidden rounded-[26px] p-[clamp(26px,3.4vw,40px)] ${
+                      dark ? 'on-dark bg-ink text-white' : 'bg-white shadow-[inset_0_0_0_1px_var(--color-hair)]'
+                    }`}
                   >
-                    Обрати цей варіант
-                  </ButtonLink>
-                </article>
-              ))}
+                    {dark && (
+                      <MarkGlyph className="pointer-events-none absolute -bottom-10 -right-[60px] -z-[1] w-[260px] opacity-[0.13]" />
+                    )}
+                    <h3
+                      className={`m-0 font-serif text-[clamp(28px,3vw,36px)] font-normal leading-[1.1] ${dark ? 'text-white' : 'text-ink'}`}
+                    >
+                      {pk.name}
+                    </h3>
+                    {pk.audience.length > 0 && (
+                      <div>
+                        <MiniLabel dark={dark}>Кому підходить</MiniLabel>
+                        <CheckList items={pk.audience} dark={dark} />
+                      </div>
+                    )}
+                    {pk.includes.length > 0 && (
+                      <div>
+                        <MiniLabel dark={dark}>Що входить</MiniLabel>
+                        <CheckList items={pk.includes} dark={dark} />
+                      </div>
+                    )}
+                    {pk.note && (
+                      <p className={`m-0 text-[13.5px] leading-snug ${dark ? 'text-on-dark-2' : 'text-slate-2'}`}>{pk.note}</p>
+                    )}
+                    {/* Сразу заявкой на эту услугу и этот вариант: человек
+                        уже выбрал, переспрашивать его в форме незачем. */}
+                    <ButtonLink
+                      href={`?practice=${encodeURIComponent(p.slug)}&package=${encodeURIComponent(pk.name)}#contact`}
+                      arrow
+                      className="mt-auto self-start"
+                    >
+                      Обрати «{pk.name}»
+                    </ButtonLink>
+                  </article>
+                )
+              })}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── ЩО ВХОДИТЬ ── */}
-      {p.includes && p.includes.length > 0 && (
-        <section id="includes" className="bg-paper-2 py-[clamp(48px,7vw,96px)]">
+      {/* ── ЩО ВХОДИТЬ ── (коли пакета немає, а склад робіт заповнений) */}
+      {includes.length > 0 && (
+        <section id="includes" className={`scroll-mt-[var(--hdr)] ${bg.includes} ${SEC}`}>
           <div className="shell inner">
-            <SectionHead eyebrow="Що входить" title="Склад роботи" />
-            <ul className="grid list-none gap-px border border-hair bg-hair p-0 min-[700px]:grid-cols-2">
-              {p.includes.map((item) => (
-                <li key={item} className="flex items-start gap-3 bg-white p-[clamp(16px,2.2vw,24px)]">
-                  <Icon name="arrow" className="mt-[3px] size-4 shrink-0 text-accent" />
-                  <span className="text-[15px] leading-snug text-ink">{item}</span>
+            <SecHead eyebrow="Що входить" title="Склад" accent="роботи" />
+            <div className="rounded-[26px] bg-white p-[clamp(26px,3.4vw,40px)] shadow-[inset_0_0_0_1px_var(--color-hair)] [&_ul]:min-[760px]:grid-cols-2 [&_ul]:min-[760px]:gap-x-10">
+              <CheckList items={includes} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── ЕТАПИ ── */}
+      {stages.length > 0 && (
+        <section id="stages" className={`scroll-mt-[var(--hdr)] ${bg.stages} ${SEC}`}>
+          <div className="shell inner">
+            <SecHead
+              eyebrow="Етапи роботи"
+              title="Що відбувається"
+              accent="і в якому порядку"
+              lede={
+                stages.some((s) => s.duration)
+                  ? 'Строки орієнтовні: вони залежать від завантаженості реєстраторів і суду.'
+                  : undefined
+              }
+              row
+            />
+            <NumRows
+              items={stages.map((s) => ({
+                title: s.title,
+                text:
+                  s.duration || s.text ? (
+                    <>
+                      {s.duration && (
+                        <span className="mb-1 block font-mono text-[11px] uppercase tracking-[0.12em] text-accent-ink">
+                          {s.duration}
+                        </span>
+                      )}
+                      {s.text}
+                    </>
+                  ) : undefined,
+              }))}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ── FAQ ── */}
+      {faq.length > 0 && (
+        <section id="faq" className={`scroll-mt-[var(--hdr)] ${bg.faq} ${SEC}`}>
+          <div className="shell inner grid gap-[clamp(24px,4vw,64px)] min-[900px]:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+            <div>
+              <Kicker>Питання</Kicker>
+              <h2 className="m-0 mt-3.5 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink">
+                Часті <em className="text-accent-ink">питання</em>
+              </h2>
+              <p className="m-0 mt-[18px] max-w-[40ch] text-[15.5px] leading-[1.65] text-slate">
+                Не знайшли відповіді — запитайте юриста на безкоштовній консультації.
+              </p>
+              <ArrowLink href={consult} className="mt-[22px] text-[15px] font-semibold">
+                Поставити питання
+              </ArrowLink>
+            </div>
+            <Faq items={faq.map((f) => ({ q: f.q, a: f.a }))} />
+          </div>
+        </section>
+      )}
+
+      {/* ── СТАТТІ ЗА ТЕМОЮ ── пости, де ця практика в «Повʼязаних» */}
+      {related.length > 0 && (
+        <section aria-labelledby="posts-h" className={`${bg.posts} ${SEC}`}>
+          <div className="shell inner">
+            <div className="mb-[clamp(28px,3vw,36px)] flex flex-wrap items-end justify-between gap-4">
+              <h2
+                id="posts-h"
+                className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink"
+              >
+                Статті за темою
+              </h2>
+              <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
+                Усі статті
+              </ArrowLink>
+            </div>
+            <ul className={POST_GRID}>
+              {related.map((a) => (
+                <li key={a.slug}>
+                  <PostCard
+                    post={{ ...a, excerpt: '', category: postLabel(a.category) }}
+                    href={`${prefix}/blog/${a.slug}`}
+                    withMedia={false}
+                    hideExcerpt
+                  />
                 </li>
               ))}
             </ul>
@@ -259,106 +380,16 @@ export default async function PracticePage({
         </section>
       )}
 
-      {/* ── ЕТАПИ ── */}
-      {p.stages && p.stages.length > 0 && (
-        <section id="stages" className="py-[clamp(48px,7vw,96px)]">
-          <div className="shell inner">
-            <SectionHead
-              eyebrow="Етапи роботи"
-              title="Що відбувається і в якому порядку"
-              lede="Строки орієнтовні: вони залежать від завантаженості реєстраторів і суду."
-            />
-            <div className="grid min-[900px]:grid-cols-4 min-[900px]:border-t min-[900px]:border-hair">
-              {p.stages.map((s, i) => (
-                <div
-                  key={s.title}
-                  className="relative border-t border-hair pb-[26px] pr-[22px] pt-[26px] min-[900px]:border-t-0 min-[900px]:pt-[30px]"
-                >
-                  <span className="absolute -top-[5px] left-0 size-[9px] rounded-full bg-accent min-[900px]:-top-[4.5px]" />
-                  <span className="mb-2.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-2">
-                    Етап {String(i + 1).padStart(2, '0')}
-                    {s.duration ? ` · ${s.duration}` : ''}
-                  </span>
-                  <h3 className="mb-2 text-[17.5px] leading-snug">{s.title}</h3>
-                  {s.text && <p className="m-0 max-w-[32ch] text-[14.5px] leading-snug text-slate">{s.text}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      {/* ── ІНШІ ПОСЛУГИ НАПРЯМУ ── */}
+      {others.length > 0 && (
+        <OtherServices
+          title={catTitle}
+          count={cat?.practices.length ?? others.length + 1}
+          href={catHref}
+          items={others.map((x) => ({ href: `${catHref}/${x.slug}`, label: splitDash(x.title)[0] }))}
+          afterHero={!hasBody && !n && !includes.length && !stages.length && !faq.length && !related.length}
+        />
       )}
-
-      {/* ── FAQ ── */}
-      {p.faq && p.faq.length > 0 && (
-        <section id="faq" className="py-[clamp(48px,7vw,96px)]">
-          <div className="shell inner">
-            <SectionHead eyebrow="Питання та відповіді" title="Що питають найчастіше" />
-            <div className="border-t border-hair">
-              {p.faq.map((f) => (
-                <details key={f.q} className="group border-b border-hair-soft py-1">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden">
-                    <span className="max-w-[54ch] font-serif text-[17px] font-semibold leading-snug text-ink">
-                      {f.q}
-                    </span>
-                    <Icon
-                      name="caret"
-                      className="mt-1.5 size-3.5 shrink-0 text-accent transition-transform duration-[260ms] group-open:rotate-180"
-                    />
-                  </summary>
-                  <p className="m-0 max-w-[62ch] pb-5 text-[15px] leading-relaxed text-slate">{f.a}</p>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── СВЯЗАННЫЕ СТАТЬИ ── */}
-      {p.related && p.related.length > 0 && (
-        <section className="bg-paper-2 py-[clamp(44px,6vw,84px)]">
-          <div className="shell inner">
-            <Eyebrow>Про це в блозі</Eyebrow>
-            <div className="grid gap-px border border-hair bg-hair min-[820px]:grid-cols-3">
-              {p.related.map((a) => (
-                <a key={a.slug} href={`${prefix}/blog/${a.slug}`} className="flex flex-col gap-3 bg-white p-6 hover:bg-paper">
-                  <span className="font-mono text-[10.5px] uppercase tracking-[0.11em] text-slate-2">
-                    {a.category}
-                  </span>
-                  <span className="font-serif text-[17px] font-semibold leading-snug text-ink">{a.title}</span>
-                  <span className="mt-auto inline-flex items-center gap-2 text-[14px] font-medium text-accent-ink">
-                    Читати <Icon name="arrow" className="size-[14px]" />
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── CTA ── */}
-      <section id="contact" className="py-[clamp(48px,7vw,96px)]">
-        <div className="shell inner">
-          <div className="flex flex-wrap items-end justify-between gap-8 border-t-2 border-ink pt-8">
-            <div>
-              <h2 className="max-w-[24ch] text-[clamp(22px,3.6vw,34px)] leading-[1.14]">
-                Опишіть ситуацію — скажемо, чи бачимо шлях
-              </h2>
-              <p className="mt-4 max-w-[46ch] text-[15px] text-slate">
-                Перша консультація без оплати. Немає перспективи — скажемо одразу, а не після
-                підписання договору.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-5">
-              <ButtonLink href={`${prefix}/?practice=${encodeURIComponent(p.slug)}#contact`} arrow>
-                Отримати консультацію
-              </ButtonLink>
-              <ArrowLink href={`${prefix}/practices/${p.category?.slug ?? category}`}>
-                Усі напрями категорії
-              </ArrowLink>
-            </div>
-          </div>
-        </div>
-      </section>
     </PageShell>
   )
 }

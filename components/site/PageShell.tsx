@@ -4,6 +4,8 @@ import { getCategories, getContacts } from '@/lib/sanity/content'
 import { toMenu } from '@/lib/menu'
 import { ScrollProgress } from './CaseLine'
 import { FloatingActions } from './FloatingActions'
+import { MobileDock } from './MobileDock'
+import { LeadSection } from '@/components/home/LeadSection'
 import { Header } from './Header'
 import { Photo } from './Photo'
 import { Footer } from '@/components/home/Sections'
@@ -28,12 +30,16 @@ export interface Station {
 export async function PageShell({
   lang,
   overDark = false,
+  form = true,
   children,
 }: {
   lang: string
-  stations: Station[]
+  stations?: Station[]
   /** у страницы тёмный первый экран — шапка стартует прозрачной */
   overDark?: boolean
+  /** форма заявки внизу страницы (як на головній). Без неї — карʼєра,
+      політика, «Дякуємо»: там своя форма або її щойно надіслали. */
+  form?: boolean
   children: ReactNode
 }) {
   /* Контакты читаются здесь, а не в каждой странице: шапка, футер и
@@ -47,9 +53,16 @@ export async function PageShell({
       <Header lang={lang} overDark={overDark} contacts={contacts} categories={toMenu(cats)} />
       <main id="top" className="relative">
         {children}
+        {/* Форма — та сама, що на головній, без змін. Кнопки «Отримати
+            консультацію» на сторінці ведуть сюди (#contact), а
+            ?practice=… у посиланні заздалегідь обирає напрям. */}
+        {form && <LeadSection contacts={contacts} categories={cats} />}
       </main>
       <Footer contacts={contacts} categories={cats} />
-      <FloatingActions contacts={contacts} />
+      {/* З формою: на телефоні — липка панель «консультація + дзвінок»,
+          кругла кнопка лишається лише на компʼютері (як на головній). */}
+      <FloatingActions contacts={contacts} desktopOnly={form} />
+      {form && <MobileDock contacts={contacts} />}
     </>
   )
 }

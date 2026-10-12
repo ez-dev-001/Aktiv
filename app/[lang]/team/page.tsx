@@ -1,10 +1,13 @@
 import type { Metadata } from 'next'
-import { getTeam, getTeamPage, teamPhoto } from '@/lib/sanity/content'
-import { PageHead, PageShell, SectionHead } from '@/components/site/PageShell'
+import { getCategories, getTeam, getTeamPage, type TeamMember } from '@/lib/sanity/content'
+import { PageShell } from '@/components/site/PageShell'
+import { DownLink, HeroActions, PageHero } from '@/components/site/PageHero'
+import { Band, SEC, SecHead } from '@/components/site/Blocks'
 import { ButtonLink } from '@/components/ui/Button'
 import { Bold } from '@/components/ui/Bold'
 import { Icon } from '@/components/site/Icon'
-import { PracticeNote } from '@/components/site/PracticeNote'
+import { ExecutorSpot } from '@/components/team/ExecutorSpot'
+import { PeopleGrid, type Group } from '@/components/team/PeopleGrid'
 
 export const metadata: Metadata = {
   title: 'Команда',
@@ -12,38 +15,28 @@ export const metadata: Metadata = {
     'Фахівці ЮК «АКТИВ»: партнери, адвокати, військовий юрист і приватний виконавець у штаті. Справу веде конкретна людина, а не відділ.',
 }
 
-/**
- * Станции линии дела.
- *
- * Порядок — как блоки идут на странице: выделенный сотрудник стоит выше
- * «Фахівців». Линия строит путь по документу и переживёт ошибку в этом
- * массиве, но подписи станций читаются сверху вниз именно отсюда.
- *
- * Подпись станции выделенного сотрудника — его должность из карточки,
- * а не слово «Виконавець» из кода. Блок теперь может быть о ком угодно,
- * и станция «Виконавець» рядом с управляющим партнёром врала бы.
- * Нет выделенного — нет и станции: блока на странице тогда тоже нет.
- */
-function stations(featuredRole?: string) {
-  return [
-    { id: 'head', label: 'Команда' },
-    ...(featuredRole ? [{ id: 'executor', label: featuredRole }] : []),
-    { id: 'people', label: 'Фахівці' },
-    { id: 'contact', label: 'Консультація' },
-  ]
+/** Група для фільтра: з kind у Sanity; у статиці kind немає — з тексту ролі. */
+function groupOf(m: TeamMember): Group {
+  switch (m.kind) {
+    case 'managing':
+    case 'partner':
+      return 'partner'
+    case 'military':
+      return 'mil'
+    case 'executor':
+      return 'exec'
+    case 'advocate':
+      return 'adv'
+  }
+  const r = m.role.toLowerCase()
+  return r.includes('партнер') ? 'partner' : r.includes('військ') ? 'mil' : r.includes('виконав') ? 'exec' : 'adv'
 }
-
-const initials = (n: string) =>
-  n
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
 
 export default async function TeamPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
-  /* Sanity, если в нём есть люди; иначе статика — форма данных одна. */
-  const { data: team } = await getTeam(lang)
+  /* Sanity, если в нём есть люди; иначе статика — форма данных одна.
+     Категорії — щоб напрями виділеного юриста вели на сторінки практик. */
+  const [{ data: team }, { data: cats }] = await Promise.all([getTeam(lang), getCategories(lang)])
   /* Обрамление страницы грузится ПОСЛЕ команды и получает её на вход:
      в заголовках есть подстановки {n}, {name} и {role}, которые
      раскрываются по живым данным. Ходить за командой второй раз изнутри
@@ -59,127 +52,89 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
      ни в блоке, ни в списке. */
   const executor = team.find((m) => m.highlight)
   const rest = team.filter((m) => m !== executor)
+  const home = lang === 'ua' ? '/' : `/${lang}`
+  const career = lang === 'ua' ? '/career' : `/${lang}/career`
 
   return (
-    <PageShell lang={lang} stations={stations(executor?.role)} overDark>
-      <PageHead
-        photo="table"
-        eyebrow={t.headEyebrow}
-        title={
-          <>
-            {t.headTitle}{' '}
-            <span className="font-normal italic text-accent-soft">{t.headTitleAccent}</span>
-          </>
-        }
+    <PageShell lang={lang} overDark>
+      <PageHero
+        crumbs={[{ label: 'Головна', href: home }, { label: 'Команда' }]}
+        title={t.headTitle}
+        accent={t.headTitleAccent}
         lede={<Bold text={t.headLede} onDark />}
-      />
+      >
+        <HeroActions>
+          <ButtonLink
+            href="#contact"
+            arrow
+            className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)] max-[640px]:w-full"
+          >
+            {t.ctaPrimary}
+          </ButtonLink>
+          <DownLink href="#people">Фахівці</DownLink>
+        </HeroActions>
+      </PageHero>
 
-      {/* ── ПРИВАТНИЙ ВИКОНАВЕЦЬ ── */}
+      {/* ── ВИДІЛЕНИЙ СПІВРОБІТНИК ── одразу під шапкою, перед сіткою */}
       {executor && (
-        <section id="executor" className="on-dark bg-ink py-[clamp(44px,6vw,80px)] text-on-dark">
+        <ExecutorSpot
+          member={executor}
+          kicker={t.executorKicker}
+          title={t.executorTitle}
+          text={t.executorText}
+          categories={cats}
+          lang={lang}
+        />
+      )}
+
+      {/* ── УСІ ФАХІВЦІ ── */}
+      {rest.length > 0 && (
+        <section id="people" className={`scroll-mt-[var(--hdr)] ${SEC}`}>
           <div className="shell inner">
-            <div className="grid items-center gap-[clamp(24px,4vw,56px)] min-[760px]:grid-cols-[auto_1fr]">
-              {teamPhoto(executor.photoUrl, 600) ? (
-                <div className="size-[clamp(96px,14vw,150px)] shrink-0 overflow-hidden rounded-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={teamPhoto(executor.photoUrl, 600)}
-                    alt={executor.name}
-                    className="size-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="grid size-[clamp(96px,14vw,150px)] shrink-0 place-items-center rounded-sm bg-white/[0.06] font-serif text-[clamp(32px,5vw,46px)] font-semibold text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
-                  {initials(executor.name)}
-                </div>
-              )}
-              <div>
-                <p className="eyebrow">{t.executorKicker}</p>
-                <h2 className="max-w-[24ch] text-[clamp(22px,3.6vw,34px)] leading-[1.14] !text-white">
-                  {t.executorTitle}
-                </h2>
-                <p className="mt-4 max-w-[52ch] text-[15.5px] leading-relaxed text-on-dark">
-                  <Bold text={t.executorText} onDark />
-                </p>
-                {executor.practice && (
-                  <p className="mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
-                    <span aria-hidden="true" className="size-[5px] rotate-45 bg-accent" />
-                    {executor.practice}
-                  </p>
-                )}
-              </div>
-            </div>
+            <SecHead
+              eyebrow={`${t.peopleEyebrow} · ${team.length}`}
+              title={t.peopleTitle}
+              lede={t.peopleLede}
+              row
+            />
+            <PeopleGrid
+              people={rest.map((m) => ({
+                name: m.name,
+                role: m.role,
+                group: groupOf(m),
+                /* портретний кроп 4:5 від верху кадру — голова не йде за край */
+                photo: m.photoUrl ? `${m.photoUrl}?w=480&h=600&fit=crop&crop=top&auto=format&q=75` : undefined,
+              }))}
+            />
+
+            {/* Плашка появляется, только пока фото реально нет. Раньше она
+                стояла всегда и осталась бы висеть даже после фотосессии. */}
+            {t.noPhotoNote && rest.some((m) => !m.photoUrl) && (
+              <p className="m-0 mt-6 flex items-start gap-2.5 text-[13.5px] leading-relaxed text-slate-2">
+                <Icon name="message" className="mt-0.5 size-4 shrink-0 text-accent" />
+                <span>
+                  <Bold text={t.noPhotoNote} />
+                </span>
+              </p>
+            )}
           </div>
         </section>
       )}
 
-      {/* ── УСІ ФАХІВЦІ ── */}
-      <section id="people" className="py-[clamp(52px,7vw,104px)]">
+      {/* ── КАРʼЄРА ── */}
+      <section className={`${SEC} !pt-0`}>
         <div className="shell inner">
-          <SectionHead eyebrow={t.peopleEyebrow} title={t.peopleTitle} lede={t.peopleLede} />
-          <div className="grid gap-[clamp(8px,1.1vw,14px)] grid-cols-2 min-[560px]:grid-cols-3 min-[900px]:grid-cols-4">
-            {rest.map((m) => (
-              <article
-                key={m.name}
-                className="flex flex-col gap-3.5 rounded-[12px] bg-white p-[clamp(12px,1.4vw,18px)] shadow-[inset_0_0_0_1px_var(--color-hair)]"
-              >
-                {teamPhoto(m.photoUrl, 480) ? (
-                  <div className="aspect-square overflow-hidden rounded-[8px] bg-paper-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={teamPhoto(m.photoUrl, 480)}
-                      alt={m.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="grid aspect-square place-items-center rounded-[8px] bg-paper-2 font-serif text-[clamp(24px,3vw,32px)] font-semibold tracking-[0.02em] text-ink">
-                    {initials(m.name)}
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-serif text-[16.5px] font-semibold leading-tight text-ink">{m.name}</h3>
-                  <p className="m-0 mt-1 text-[12.5px] leading-snug text-slate">{m.role}</p>
-                </div>
-                <PracticeNote text={m.practice} />
-              </article>
-            ))}
-          </div>
-
-          {/* Плашка появляется, только пока фото реально нет. Раньше она
-              стояла всегда и осталась бы висеть даже после фотосессии. */}
-          {t.noPhotoNote && rest.some((m) => !m.photoUrl) && (
-            <p className="mt-6 flex items-start gap-2.5 text-[13.5px] leading-relaxed text-slate-2">
-              <Icon name="message" className="mt-0.5 size-4 shrink-0 text-accent" />
-              <span>
-                <Bold text={t.noPhotoNote} />
-              </span>
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section id="contact" className="bg-paper-2 py-[clamp(48px,7vw,96px)]">
-        <div className="shell inner">
-          <div className="flex flex-wrap items-end justify-between gap-8">
-            <div>
-              <h2 className="max-w-[22ch] text-[clamp(22px,3.6vw,34px)] leading-[1.14]">
-                {t.ctaTitle}
-              </h2>
-              <p className="mt-4 max-w-[46ch] text-[15px] text-slate">{t.ctaText}</p>
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              <ButtonLink href={lang === 'ua' ? '/#contact' : `/${lang}/#contact`} arrow>
-                {t.ctaPrimary}
+          <Band
+            kicker="Карʼєра"
+            title="Приєднатися"
+            accent="до команди"
+            text="Шукаємо юристів і адвокатів у команду. Відкриті вакансії та умови — на сторінці «Карʼєра»."
+            actions={
+              <ButtonLink href={career} variant="ghost" arrow>
+                Вакансії
               </ButtonLink>
-              <ButtonLink href={lang === 'ua' ? '/about' : `/${lang}/about`} variant="ghost">
-                {t.ctaSecondary}
-              </ButtonLink>
-            </div>
-          </div>
+            }
+          />
         </div>
       </section>
     </PageShell>
