@@ -6,6 +6,8 @@ import { notifyNewLead } from '@/lib/leads/notify'
 import { leadStore, type StoredFile } from '@/lib/leads/store'
 import type { FieldErrors, Lead, LeadSource, LeadType, SubmitResult } from '@/lib/leads/types'
 import { validateLead } from '@/lib/leads/validate'
+import { asLocale } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 
 /**
  * Приём обращений с сайта: заявка клиента и резюме кандидата.
@@ -46,13 +48,17 @@ const HONEYPOT: SubmitResult = { ok: true, id: 'hp', receipt: { firstName: '', a
 /** Общая часть обеих форм: ловушка, частота, контакты, источник. */
 async function intake(fd: FormData, formLocation: string) {
   const h = await headers()
+  /* Мова сторінки, з якої прийшла форма: тексти помилок — нею. У CRM і
+     Telegram усе лишається українським — це робочі інструменти фірми. */
+  const lang = asLocale(str(fd.get('lang'), 8))
+  const t = ui(lang).validation
   const ip = (h.get('x-nf-client-connection-ip') ?? h.get('x-forwarded-for') ?? 'local').split(',')[0]!.trim()
 
   /* Ловушка: поле невидимо человеку. Боту отвечаем «успехом», чтобы он
      не подбирал обход, — но ничего не сохраняем. */
   if (str(fd.get('company_url'))) return { early: HONEYPOT }
   if (tooMany(ip)) {
-    return { early: { ok: false, message: 'Забагато звернень поспіль. Зателефонуйте нам, будь ласка, — так буде швидше.' } as SubmitResult }
+    return { early: { ok: false, message: t.tooMany } as SubmitResult }
   }
 
   const input = {
@@ -61,7 +67,7 @@ async function intake(fd: FormData, formLocation: string) {
     email: str(fd.get('email'), 200),
     message: str(fd.get('message'), 4000),
   }
-  const { errors, phone } = validateLead(input)
+  const { errors, phone } = validateLead(input, lang)
 
   const attr = parseJson(str(fd.get('attribution'), 2000)) as Partial<LeadSource> | null
   const source: LeadSource = {
@@ -72,7 +78,7 @@ async function intake(fd: FormData, formLocation: string) {
     ...(attr?.utm && typeof attr.utm === 'object' ? { utm: attr.utm } : {}),
   }
 
-  return { input, errors, phone, source }
+  return { input, errors, phone, source, lang }
 }
 
 function baseLead(type: LeadType, input: { name: string; email: string; message: string }, phone: string, source: LeadSource, eventId: string): Lead {
@@ -96,12 +102,14 @@ function baseLead(type: LeadType, input: { name: string; email: string; message:
   }
 }
 
-async function save(lead: Lead, file?: StoredFile): Promise<SubmitResult> {
+/** `receiptPractice` — назва напряму для сторінки «Дякуємо» мовою відвідувача
+    (у CRM — українська, lead.practiceTitle). */
+async function save(lead: Lead, lang: string, file?: StoredFile, receiptPractice?: string): Promise<SubmitResult> {
   const store = leadStore()
   try {
     await store.create(lead, file)
   } catch {
-    return { ok: false, message: 'Не вдалося надіслати. Зателефонуйте нам — ми на звʼязку.' }
+    return { ok: false, message: ui(lang).validation.saveFailed }
   }
   if (!store.persistsSubmissions) {
     /* Демо на Netlify: обращение проверено и «принято», но нигде не
@@ -112,7 +120,11 @@ async function save(lead: Lead, file?: StoredFile): Promise<SubmitResult> {
   return {
     ok: true,
     id: lead.id,
-    receipt: { firstName: lead.name.split(/\s+/)[0] ?? lead.name, ...(lead.practiceTitle ? { practiceTitle: lead.practiceTitle } : {}), at: lead.createdAt },
+    receipt: {
+      firstName: lead.name.split(/\s+/)[0] ?? lead.name,
+      ...((receiptPractice ?? lead.practiceTitle) ? { practiceTitle: receiptPractice ?? lead.practiceTitle } : {}),
+      at: lead.createdAt,
+    },
   }
 }
 
@@ -121,7 +133,7 @@ async function save(lead: Lead, file?: StoredFile): Promise<SubmitResult> {
 export async function submitLead(fd: FormData): Promise<SubmitResult> {
   const r = await intake(fd, 'contact_section')
   if ('early' in r) return r.early!
-  const { input, errors, phone, source } = r
+  const { input, errors, phone, source, lang } = r
   if (Object.keys(errors).length || !phone) return { ok: false, errors }
 
   /* Направление: название берём с сервера по ключу, а не из формы. */
@@ -142,6 +154,18 @@ export async function submitLead(fd: FormData): Promise<SubmitResult> {
   }
   const packageName = str(fd.get('package'), 80).trim()
 
+  /* Назва напряму для квитанції — мовою відвідувача. Ключ той самий
+     (slug), назва — з Sanity цією мовою. «Ще не знаю» в квитанцію не йде. */
+  let receiptPractice: string | undefined
+  if (lang !== 'ua' && practiceKey && practiceKey !== 'unknown') {
+    const { data: local } = await getCategories(lang)
+    for (const c of local) {
+      if (practiceKey === `cat:${c.slug}`) receiptPractice = ui(lang).lead.tbdTitle(c.title)
+      const p = c.practices.find((x) => x.slug === practiceKey)
+      if (p) receiptPractice = p.title
+    }
+  }
+
   const lead: Lead = {
     ...baseLead('client', input, phone, source, str(fd.get('event_id'), 80)),
     ...(practiceKey && practiceKey !== 'unknown' ? { practiceKey } : {}),
@@ -149,7 +173,7 @@ export async function submitLead(fd: FormData): Promise<SubmitResult> {
     ...(categoryTitle ? { categoryTitle } : {}),
     ...(packageName ? { packageName } : {}),
   }
-  return save(lead)
+  return save(lead, lang, undefined, receiptPractice)
 }
 
 /* ═══════════ РЕЗЮМЕ ═══════════ */
@@ -160,23 +184,24 @@ const CV_TYPES = /\.(pdf|docx?|rtf|odt)$/i
 export async function submitCv(fd: FormData): Promise<SubmitResult> {
   const r = await intake(fd, 'career')
   if ('early' in r) return r.early!
-  const { input, errors, phone, source } = r
+  const { input, errors, phone, source, lang } = r
+  const t = ui(lang).validation
   const all: FieldErrors = { ...errors }
 
   const position = str(fd.get('position'), 120).trim()
-  if (!position) all.position = 'Оберіть позицію — або «Інша»'
+  if (!position) all.position = t.position
 
   /* Резюме — файлом или ссылкой (LinkedIn, Google Диск, work.ua). */
   const raw = fd.get('cv')
   const file = raw instanceof File && raw.size > 0 ? raw : null
   const link = str(fd.get('cv_link'), 300).trim()
   if (file) {
-    if (file.size > CV_MAX) all.cv = 'Файл більший за 4 МБ — стисніть або додайте посилання'
-    else if (!CV_TYPES.test(file.name)) all.cv = 'Потрібен PDF або Word'
+    if (file.size > CV_MAX) all.cv = t.cvTooBig
+    else if (!CV_TYPES.test(file.name)) all.cv = t.cvType
   } else if (link) {
-    if (!/^https?:\/\/\S+\.\S+/.test(link)) all.cv = 'Посилання має починатися з https://'
+    if (!/^https?:\/\/\S+\.\S+/.test(link)) all.cv = t.cvLink
   } else {
-    all.cv = 'Додайте файл резюме або посилання на нього'
+    all.cv = t.cvMissing
   }
 
   if (Object.keys(all).length || !phone) return { ok: false, errors: all }
@@ -191,5 +216,5 @@ export async function submitCv(fd: FormData): Promise<SubmitResult> {
     ...(link && !file ? { cvLink: link } : {}),
     ...(stored ? { cvFile: { name: stored.name, type: stored.type, size: stored.data.byteLength } } : {}),
   }
-  return save(lead, stored)
+  return save(lead, lang, stored)
 }

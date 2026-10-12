@@ -1,4 +1,5 @@
 import type { FieldErrors } from './types'
+import { ui } from '../ui'
 
 /**
  * Проверка заявки. Одна и та же на клиенте (подсказка до отправки) и на
@@ -42,20 +43,22 @@ export interface LeadInput {
   message: string
 }
 
-export function validateLead(input: LeadInput): { errors: FieldErrors; phone: string | null } {
+/** `lang` — мова текстів помилок (сторінка, з якої прийшла форма). */
+export function validateLead(input: LeadInput, lang = 'ua'): { errors: FieldErrors; phone: string | null } {
+  const t = ui(lang).validation
   const errors: FieldErrors = {}
   const name = input.name.trim()
-  if (name.length < 2) errors.name = 'Як до вас звертатися?'
-  else if (name.length > LIMITS.name) errors.name = `Не довше ${LIMITS.name} символів`
+  if (name.length < 2) errors.name = t.nameRequired
+  else if (name.length > LIMITS.name) errors.name = t.tooLong(LIMITS.name)
 
   const phone = normalizePhone(input.phone)
-  if (!input.phone.trim()) errors.phone = 'Потрібен номер, щоб ми передзвонили'
-  else if (!phone) errors.phone = 'Перевірте номер: напр. 067 123 45 67'
+  if (!input.phone.trim()) errors.phone = t.phoneRequired
+  else if (!phone) errors.phone = t.phoneInvalid
 
   const email = input.email.trim()
-  if (email && (!EMAIL.test(email) || email.length > LIMITS.email)) errors.email = 'Схоже, в адресі помилка'
+  if (email && (!EMAIL.test(email) || email.length > LIMITS.email)) errors.email = t.emailInvalid
 
-  if (input.message.length > LIMITS.message) errors.message = `Не довше ${LIMITS.message} символів — решту розкажете на консультації`
+  if (input.message.length > LIMITS.message) errors.message = t.messageTooLong(LIMITS.message)
 
   return { errors, phone }
 }

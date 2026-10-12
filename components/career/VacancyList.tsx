@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { DEPARTMENT_LABEL, EMPLOYMENT_LABEL, FORMAT_LABEL, type Vacancy, type VacancyDepartment } from '@/lib/content'
+import type { Vacancy, VacancyDepartment } from '@/lib/content'
+import { useUi } from '@/components/site/LangProvider'
 import { Icon } from '@/components/site/Icon'
 import { APPLY_EVENT } from './events'
 
@@ -21,6 +22,8 @@ import { APPLY_EVENT } from './events'
  * этой же, кнопка подставляет в неё посаду и прокручивает к ней.
  */
 export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
+  const T = useUi()
+  const t = T.career
   const [dept, setDept] = useState<VacancyDepartment | 'all'>('all')
 
   const depts = useMemo(() => {
@@ -40,18 +43,17 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
     return (
       <div className="rounded-[20px] bg-white p-[clamp(22px,3vw,34px)] shadow-[inset_0_0_0_1px_var(--color-hair)]">
         <p className="m-0 font-serif text-[clamp(21px,2.6vw,26px)] font-normal leading-snug text-ink">
-          Зараз відкритих вакансій немає
+          {t.noneNowTitle}
         </p>
         <p className="m-0 mt-2 max-w-[56ch] text-[15px] leading-relaxed text-slate">
-          Але ми завжди раді сильним юристам. Надішліть резюме з позицією «Інша» — збережемо його і напишемо першими, коли
-          зʼявиться відповідна вакансія.
+          {t.noneNowText}
         </p>
         <button
           type="button"
-          onClick={() => apply('Інша позиція')}
+          onClick={() => apply(T.cv.other)}
           className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full border-0 bg-ink px-5 text-[14.5px] text-white"
         >
-          Надіслати резюме <Icon name="arrow" className="size-[15px]" />
+          {T.common.sendCv} <Icon name="arrow" className="size-[15px]" />
         </button>
       </div>
     )
@@ -60,7 +62,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
   return (
     <div className="grid gap-5">
       {depts.length > 1 && (
-        <div role="group" aria-label="Напрям" className="flex flex-wrap gap-2">
+        <div role="group" aria-label={t.deptAria} className="flex flex-wrap gap-2">
           {[['all', vacancies.length] as const, ...depts].map(([d, n]) => {
             const on = dept === d
             return (
@@ -73,7 +75,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
                   on ? 'bg-ink text-white' : 'bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] hover:bg-paper-2'
                 }`}
               >
-                {d === 'all' ? 'Усі' : DEPARTMENT_LABEL[d]}
+                {d === 'all' ? T.common.all : t.departments[d]}
                 <span className={`font-mono text-[11px] tabular-nums ${on ? 'text-white/60' : 'text-slate-2'}`}>{n}</span>
               </button>
             )
@@ -83,11 +85,11 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
 
       <ul className="m-0 grid list-none gap-3 p-0">
         {shown.map((v) => {
-          const meta = [v.experience, v.format && FORMAT_LABEL[v.format], v.employment && EMPLOYMENT_LABEL[v.employment]].filter(Boolean)
+          const meta = [v.experience, v.format && t.formats[v.format], v.employment && t.employment[v.employment]].filter(Boolean)
           const cols = [
-            { t: 'Кого шукаємо', items: v.weSeek },
-            { t: 'Обовʼязки', items: v.duties },
-            { t: 'Що пропонуємо', items: v.weOffer },
+            { t: t.weSeek, items: v.weSeek },
+            { t: t.duties, items: v.duties },
+            { t: t.weOffer, items: v.weOffer },
           ].filter((c) => c.items.length)
           return (
             <li key={v.slug}>
@@ -98,7 +100,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
                       <h3 className="m-0 font-serif text-[clamp(20px,2.4vw,26px)] font-normal leading-[1.15] text-ink">{v.title}</h3>
                       {v.example && (
                         <span className="rounded-full bg-[#fbf3e3] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#8a5a0b]">
-                          приклад
+                          {t.example}
                         </span>
                       )}
                     </div>
@@ -147,7 +149,7 @@ export function VacancyList({ vacancies }: { vacancies: Vacancy[] }) {
                     onClick={() => apply(v.title)}
                     className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border-0 bg-accent-btn px-5 text-[14.5px] font-medium text-white transition-colors hover:bg-accent-btn-hover"
                   >
-                    Відгукнутися на вакансію
+                    {t.apply}
                     <Icon name="arrow" className="size-[15px]" />
                   </button>
                 </div>

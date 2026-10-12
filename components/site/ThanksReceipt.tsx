@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { readReceipt } from '@/lib/leads/client'
 import type { LeadReceipt } from '@/lib/leads/types'
+import { useLang } from '@/components/site/LangProvider'
+import { formatDateTime, ui } from '@/lib/ui'
 
 /**
  * Персональная часть страницы «Дякуємо»: имя и что именно человек
@@ -22,15 +24,18 @@ function useReceipt() {
 
 export function ThanksTitle() {
   const r = useReceipt()
+  const t = ui(useLang()).thanks
   /* Імʼя — курсивом рожевим, як акцент заголовка на інших сторінках.
      Без квитанції — нейтральне «Дякуємо за звернення». */
   return r?.firstName ? (
     <>
-      Дякуємо, <em className="text-accent-soft">{r.firstName}.</em>
+      {t.titleNamed}
+      <em className="text-accent-soft">{r.firstName}.</em>
     </>
   ) : (
     <>
-      Дякуємо <em className="text-accent-soft">за звернення.</em>
+      {t.titleAnon[0]}
+      <em className="text-accent-soft">{t.titleAnon[1]}</em>
     </>
   )
 }
@@ -42,16 +47,20 @@ export function ThanksTitle() {
  */
 export function ThanksCard({ hours }: { hours: string }) {
   const r = useReceipt()
+  const lang = useLang()
+  const t = ui(lang).thanks
+  /* «Ще не знаю» — службове значення форми (у CRM — українською), не напрям. */
+  const unknown = [ui('ua').select.notSure, ui(lang).select.notSure]
   const rows: [string, string][] = []
   if (r?.firstName) {
-    if (r.practiceTitle && r.practiceTitle !== 'Ще не знаю') rows.push(['Напрям', r.practiceTitle])
-    rows.push(['Надіслано', new Date(r.at).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })])
+    if (r.practiceTitle && !unknown.includes(r.practiceTitle)) rows.push([t.practice, r.practiceTitle])
+    rows.push([t.sent, formatDateTime(lang, r.at, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })])
   }
-  rows.push(['Коли передзвонимо', STEPS[0]!.when])
-  if (!r?.firstName) rows.push(['Графік', hours])
+  rows.push([t.callback, t.steps[0]!.when])
+  if (!r?.firstName) rows.push([t.hours, hours])
   return (
     <div className="thanks-rise rounded-[22px] bg-white/[0.05] p-[26px] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] [animation-delay:240ms]">
-      <p className="m-0 mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-on-dark-2">Ваше звернення</p>
+      <p className="m-0 mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-on-dark-2">{t.card}</p>
       <dl className="m-0 grid gap-3.5">
         {rows.map(([k, v]) => (
           <div key={k}>
@@ -64,28 +73,10 @@ export function ThanksCard({ hours }: { hours: string }) {
   )
 }
 
-/* ── Что дальше ── */
-
-const STEPS = [
-  {
-    when: 'У робочий час — до 30 хвилин',
-    title: 'Передзвонимо',
-    text: 'Юрист уточнить обставини й домовиться про консультацію. Якщо заявка прийшла ввечері чи у вихідні — зранку наступного робочого дня.',
-  },
-  {
-    when: 'Зручний для вас день',
-    title: 'Консультація',
-    text: 'Перша — без оплати, в офісі або онлайн. Візьміть документи, які є: договори, листування, рішення, витяги. Скани теж підійдуть.',
-  },
-  {
-    when: 'Якщо шлях є',
-    title: 'План дій і договір',
-    text: 'Скажемо, що можна зробити, і домовимося про умови до підписання договору. Якщо перспективи немає — скажемо одразу.',
-  },
-]
+/* ── Что дальше ── тексти кроків — lib/ui.ts → thanks.steps */
 
 export function ThanksSteps() {
-  const steps = STEPS
+  const steps = ui(useLang()).thanks.steps
   return (
     <ol className="m-0 mt-[22px] grid list-none gap-3 p-0 min-[860px]:grid-cols-3">
       {steps.map((s, i) => (

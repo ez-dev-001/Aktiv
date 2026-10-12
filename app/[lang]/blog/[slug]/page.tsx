@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { pageMeta } from '@/lib/seo'
 import { Cover } from '@/components/site/Cover'
 import { hasImage, imageUrl } from '@/lib/sanity/image'
-import { LOCALES } from '@/lib/i18n'
+import { HTML_LANG, LOCALES, asLocale, localeHref } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 import { notFound } from 'next/navigation'
-import { BLOG_CATEGORIES, getBlog, getPost, getPostSlugs, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
+import { blogCategoryId, getBlog, getPost, getPostSlugs, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
 import { SITE_URL } from '@/lib/site'
 import { PageShell } from '@/components/site/PageShell'
 import { HeroChips, PageHero } from '@/components/site/PageHero'
@@ -40,7 +41,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang, slug } = await params
   const p = await getPost(slug, lang)
-  if (!p) return { title: 'Стаття' }
+  if (!p) return { title: ui(lang).common.article }
   /* Превью для соцсетей и мессенджеров — из той же обложки, кадром
      1200×630: этот размер Facebook, Telegram, Viber и LinkedIn
      показывают без обрезки. Обрезает CDN по точке фокуса из студии,
@@ -74,6 +75,8 @@ export default async function PostPage({
 
   const prefix = lang === 'ua' ? '' : `/${lang}`
   const url = `${SITE_URL}${prefix}/blog/${post.slug}`
+  const T = ui(lang)
+  const t = T.post
 
   /* «Читайте також»: свіжі статті, спершу тієї ж рубрики. Окремого
      поля «повʼязані» в схемі немає — беремо стрічку. */
@@ -96,9 +99,9 @@ export default async function PostPage({
     : undefined
 
   const minutes = readingMinutes(post.body)
-  const date = fmtDate(post.publishedAt)
+  const date = fmtDate(post.publishedAt, lang)
   const toc = splitByH2(post.body).flatMap((s) => (s.heading ? [s.heading] : []))
-  const catId = BLOG_CATEGORIES.find((c) => c.label === post.category)?.id
+  const catId = blogCategoryId(post.category, lang)
   /* Одна повʼязана практика — форма одразу обере її напрям. Кілька —
      вгадувати не беремося. */
   const consult = post.practices?.length === 1 ? `?practice=${post.practices[0]?.slug}#contact` : '#contact'
@@ -113,24 +116,24 @@ export default async function PostPage({
     ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
     ...(hasImage(post.cover) ? { image: imageUrl(post.cover, 1200, 630) } : {}),
     ...(author ? { author: { '@type': 'Person', name: author.name, ...(author.role ? { jobTitle: author.role } : {}) } } : {}),
-    publisher: { '@type': 'LegalService', '@id': `${SITE_URL}/#firm`, name: 'Юридична компанія «АКТИВ»' },
+    publisher: { '@type': 'LegalService', '@id': `${SITE_URL}/#firm`, name: T.common.firmFull },
     mainEntityOfPage: url,
-    inLanguage: lang === 'en' ? 'en' : 'uk',
+    inLanguage: HTML_LANG[asLocale(lang)],
   }
 
   const callout = (
     <aside
-      aria-label="Консультація"
+      aria-label={t.calloutAria}
       className="my-[34px] grid max-w-[68ch] gap-4 rounded-[22px] bg-accent-wash p-[26px] shadow-[inset_0_0_0_1px_#f6d4de] min-[700px]:grid-cols-[minmax(0,1fr)_auto] min-[700px]:items-center"
     >
       <div>
-        <p className="m-0 font-serif text-[21px] font-semibold leading-[1.25] text-ink">Схожа ситуація?</p>
+        <p className="m-0 font-serif text-[21px] font-semibold leading-[1.25] text-ink">{t.calloutTitle}</p>
         <p className="m-0 mt-1 text-[14.5px] leading-[1.55] text-slate">
-          Юрист оцінить перспективу. Перша консультація — безкоштовно.
+          {t.calloutText}
         </p>
       </div>
       <ButtonLink href={consult} size="sm" arrow className="justify-self-start">
-        Отримати консультацію
+        {T.common.getConsultation}
       </ButtonLink>
     </aside>
   )
@@ -149,15 +152,16 @@ export default async function PostPage({
           compact
           small
           crumbs={[
-            { label: 'Головна', href: `${prefix}/` },
-            { label: 'Блог', href: `${prefix}/blog` },
-            { label: post.category || 'Стаття', href: catId ? `${prefix}/blog?cat=${catId}` : undefined },
+            { label: T.common.home, href: localeHref(lang, '/') },
+            { label: T.common.blog, href: `${prefix}/blog` },
+            { label: post.category || T.common.article, href: catId ? `${prefix}/blog?cat=${catId}` : undefined },
           ]}
+          lang={lang}
           title={post.title}
           lede={post.excerpt && post.excerpt.trim() !== post.title.trim() ? post.excerpt : undefined}
         >
           <HeroChips
-            items={[post.category, date, minutes ? `${minutes} хв читання` : null].filter(
+            items={[post.category, date, minutes ? T.common.minRead(minutes) : null].filter(
               (x): x is string => !!x,
             )}
           />
@@ -185,7 +189,7 @@ export default async function PostPage({
               {toc.length > 0 && (
                 <details className="group mb-7 rounded-[18px] bg-white px-5 shadow-[inset_0_0_0_1px_var(--color-hair)] min-[960px]:hidden">
                   <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ink [&::-webkit-details-marker]:hidden">
-                    Зміст · {toc.length}
+                    {t.toc(toc.length)}
                     <span aria-hidden="true" className="text-[18px] leading-none text-accent-ink transition-transform group-open:rotate-45">
                       +
                     </span>
@@ -211,7 +215,7 @@ export default async function PostPage({
                 <ArticleBody body={post.body} middle={callout} />
               ) : (
                 <>
-                  <p className="m-0 max-w-[60ch] text-[16px] leading-relaxed text-slate-2">Текст статті ще не заповнено в Sanity.</p>
+                  <p className="m-0 max-w-[60ch] text-[16px] leading-relaxed text-slate-2">{t.noBody}</p>
                   {callout}
                 </>
               )}
@@ -219,7 +223,7 @@ export default async function PostPage({
               {/* ── Стосується практик ── */}
               {post.practices && post.practices.length > 0 && (
                 <div className="mt-10">
-                  <p className={SIDE_LABEL}>Стосується практик</p>
+                  <p className={SIDE_LABEL}>{t.relatedPractices}</p>
                   <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
                     {post.practices.map((pr) => (
                       <li key={pr.slug}>
@@ -240,12 +244,12 @@ export default async function PostPage({
                 <div className="mt-10 grid gap-[18px] rounded-[22px] bg-paper-2 p-[26px] min-[700px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[700px]:items-center">
                   <RingAvatar src={author.photo} name={author.name} className="size-[72px]" />
                   <div>
-                    <p className="m-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate-2">Автор</p>
+                    <p className="m-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate-2">{t.author}</p>
                     <p className="m-0 mt-1 font-serif text-[18px] font-semibold leading-[1.25] text-ink">{author.name}</p>
                     {author.role && <p className="m-0 mt-0.5 text-[13.5px] text-accent-ink">{author.role}</p>}
                   </div>
                   <ButtonLink href={consult} size="sm" arrow className="justify-self-start">
-                    Записатися на консультацію
+                    {T.common.bookConsultation}
                   </ButtonLink>
                 </div>
               )}
@@ -263,10 +267,10 @@ export default async function PostPage({
           <div className="shell inner">
             <div className="mb-[30px] flex flex-wrap items-end justify-between gap-4">
               <h2 id="more" className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink">
-                Читайте також
+                {t.readAlso}
               </h2>
               <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
-                Усі статті
+                {T.common.allArticles}
               </ArrowLink>
             </div>
             <ul className="m-0 grid list-none gap-[18px] p-0 min-[640px]:grid-cols-2 min-[1000px]:grid-cols-3">
@@ -277,6 +281,7 @@ export default async function PostPage({
                     href={`${prefix}/blog/${p.slug}`}
                     withMedia={needsMedia(related)}
                     author={cardAuthor(p)}
+                    lang={lang}
                   />
                 </li>
               ))}

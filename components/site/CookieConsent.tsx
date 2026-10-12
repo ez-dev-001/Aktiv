@@ -10,6 +10,9 @@ import {
   type Consent,
   type CookieTexts,
 } from '@/lib/consent'
+import { localeHref } from '@/lib/i18n'
+import { useLang, useUi } from '@/components/site/LangProvider'
+import { ui } from '@/lib/ui'
 
 /**
  * Баннер согласия на cookie.
@@ -42,6 +45,10 @@ import {
 type View = 'hidden' | 'banner' | 'settings'
 
 export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTexts }) {
+  const lang = useLang()
+  const T = ui(lang)
+  /* '/privacy' зі студії чи запасного тексту → '/en/privacy' на англійській */
+  const privacyUrl = texts.privacyUrl ? localeHref(lang, texts.privacyUrl) : ''
   const [view, setView] = useState<View>('hidden')
   const [choice, setChoice] = useState<Consent>({ analytics: false, marketing: false })
   const titleId = useId()
@@ -86,12 +93,12 @@ export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTex
           <p className="m-0 mt-2.5 text-[13.5px] leading-relaxed text-slate">
             <Bold text={texts.text} />
           </p>
-          {texts.privacyUrl && (
+          {privacyUrl && (
             <a
-              href={texts.privacyUrl}
+              href={privacyUrl}
               className="mt-2 inline-block text-[13px] text-accent-ink underline decoration-accent-ink/35 underline-offset-2 hover:decoration-accent-ink"
             >
-              Політика конфіденційності
+              {T.common.privacy}
             </a>
           )}
 
@@ -102,14 +109,14 @@ export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTex
               onClick={() => decide({ analytics: false, marketing: false })}
               className="min-h-11 rounded-[10px] border-0 bg-paper-2 px-3 text-[13.5px] font-medium text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] transition-colors hover:bg-hair-soft"
             >
-              Лише необхідні
+              {T.cookie.necessaryOnly}
             </button>
             <button
               type="button"
               onClick={() => decide({ analytics: true, marketing: true })}
               className="min-h-11 rounded-[10px] border-0 bg-accent-btn px-3 text-[13.5px] font-medium text-white transition-[filter] hover:bg-accent-btn-hover"
             >
-              Прийняти всі
+              {T.cookie.acceptAll}
             </button>
           </div>
           <button
@@ -117,11 +124,11 @@ export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTex
             onClick={() => setView('settings')}
             className="mt-2.5 w-full border-0 bg-transparent p-1 text-[13px] text-slate underline decoration-slate/40 underline-offset-2 hover:text-ink"
           >
-            Налаштувати
+            {T.cookie.customize}
           </button>
         </>
       ) : (
-        <Settings choice={choice} onChange={setChoice} onSave={() => decide(choice)} privacyUrl={texts.privacyUrl} />
+        <Settings choice={choice} onChange={setChoice} onSave={() => decide(choice)} privacyUrl={privacyUrl} />
       )}
     </section>
   )
@@ -138,21 +145,22 @@ function Settings({
   onSave: () => void
   privacyUrl: string
 }) {
+  const T = useUi()
   const rows: { key: keyof Consent | 'necessary'; title: string; note: string }[] = [
     {
       key: 'necessary',
-      title: 'Необхідні',
-      note: 'Щоб сайт працював і памʼятав ваш вибір щодо cookie. Вимкнути не можна.',
+      title: T.cookie.necessary,
+      note: T.cookie.necessaryNote,
     },
     {
       key: 'analytics',
-      title: 'Статистика',
-      note: 'Знеособлено рахуємо відвідування й переходи, щоб розуміти, які сторінки корисні.',
+      title: T.cookie.analytics,
+      note: T.cookie.analyticsNote,
     },
     {
       key: 'marketing',
-      title: 'Реклама',
-      note: 'Показуємо оголошення тим, хто вже був на сайті, і рахуємо, які з них приводять заявки.',
+      title: T.cookie.marketing,
+      note: T.cookie.marketingNote,
     },
   ]
 
@@ -195,7 +203,7 @@ function Settings({
           href={privacyUrl}
           className="mt-1 inline-block text-[13px] text-accent-ink underline decoration-accent-ink/35 underline-offset-2 hover:decoration-accent-ink"
         >
-          Політика конфіденційності
+          {T.common.privacy}
         </a>
       )}
       <button
@@ -203,7 +211,7 @@ function Settings({
         onClick={onSave}
         className="mt-3 min-h-11 w-full rounded-[10px] border-0 bg-ink px-3 text-[13.5px] font-medium text-white transition-[filter] hover:brightness-110"
       >
-        Зберегти вибір
+        {T.cookie.save}
       </button>
     </>
   )
@@ -215,13 +223,14 @@ function Settings({
  * одна кнопка, и ради неё не стоит тащить в браузер весь футер.
  */
 export function CookieSettingsLink({ className = '' }: { className?: string }) {
+  const T = useUi()
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
       className={`border-0 bg-transparent p-0 text-left ${className}`}
     >
-      Налаштування cookie
+      {T.cookie.settings}
     </button>
   )
 }

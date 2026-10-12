@@ -4,6 +4,7 @@ import type { Category } from '@/lib/content'
 import { Chip, Kicker, RingAvatar } from '@/components/site/Blocks'
 import { Bold } from '@/components/ui/Bold'
 import { SpotMore } from './SpotMore'
+import { ui } from '@/lib/ui'
 
 /**
  * Виділений співробітник — темна заокруглена картка одразу під шапкою.
@@ -27,6 +28,7 @@ export function ExecutorSpot({
   categories: Category[]
   lang: string
 }) {
+  const t = ui(lang)
   const areas = splitAreas(member.practice)
   /* Напрям → сторінка категорії, якщо назва збігається з категорією.
      Підпис може бути й власною фразою з «Практика — підпис» — тоді
@@ -89,7 +91,7 @@ export function ExecutorSpot({
             </p>
 
             {linked.length > 0 && (
-              <ul aria-label="Напрями" className="m-0 mt-[22px] flex list-none flex-wrap gap-2 p-0">
+              <ul aria-label={t.team.areas} className="m-0 mt-[22px] flex list-none flex-wrap gap-2 p-0">
                 {linked.map((a) => (
                   <li key={a.label}>
                     <Chip dot dark>
@@ -100,14 +102,14 @@ export function ExecutorSpot({
               </ul>
             )}
 
-            <SpotMore ctaHref={ctaHref} ctaLabel="Обговорити справу" moreLabel="Про юриста">
+            <SpotMore ctaHref={ctaHref} ctaLabel={t.common.discussCase} moreLabel={t.team.aboutLawyer}>
               {hasMore ? (
                 <dl className="m-0 grid gap-5 min-[700px]:grid-cols-2">
-                  <Row label="Посада">
+                  <Row label={t.team.position}>
                     <span className="text-white">{member.role}</span>
                   </Row>
                   {linked.length > 0 && (
-                    <Row label="Напрями">
+                    <Row label={t.team.areas}>
                       <span className="flex flex-col gap-1.5">
                         {linked.map((a) =>
                           a.slug ? (
@@ -128,14 +130,14 @@ export function ExecutorSpot({
                     </Row>
                   )}
                   {phone && (
-                    <Row label="Прямий телефон">
+                    <Row label={t.team.directPhone}>
                       <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="text-white hover:text-accent-soft">
                         {phone}
                       </a>
                     </Row>
                   )}
                   {email && (
-                    <Row label="Пошта">
+                    <Row label={t.common.email}>
                       <a href={`mailto:${email}`} className="break-all text-white hover:text-accent-soft">
                         {email}
                       </a>
@@ -143,7 +145,7 @@ export function ExecutorSpot({
                   )}
                   {bio && (
                     <div className="min-[700px]:col-span-2">
-                      <dt className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-on-dark-2">Про спеціаліста</dt>
+                      <dt className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-on-dark-2">{t.team.aboutSpecialist}</dt>
                       <dd className="m-0 mt-2 max-w-[64ch] whitespace-pre-line text-[15px] leading-[1.65] text-on-dark">{bio}</dd>
                     </div>
                   )}
@@ -166,11 +168,11 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/** «А · Б та ін.» → ['А', 'Б']: підпис practice збирає getTeam. */
+/** «А · Б та ін.» / «A · B etc.» → ['А', 'Б']: підпис practice збирає getTeam. */
 function splitAreas(line?: string): string[] {
   if (!line) return []
   return line
-    .replace(/\s+та ін\.?$/, '')
+    .replace(/\s+(та ін|etc)\.?$/, '')
     .split(' · ')
     .map((s) => s.trim())
     .filter(Boolean)

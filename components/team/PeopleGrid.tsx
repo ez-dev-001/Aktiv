@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Сітка фахівців з фільтром за роллю.
@@ -23,15 +24,12 @@ export interface Person {
 
 export type Group = 'partner' | 'adv' | 'mil' | 'exec'
 
-const LABELS: Record<Group, string> = {
-  partner: 'Партнери',
-  adv: 'Адвокати',
-  mil: 'Військове право',
-  exec: 'Виконавець',
-}
+/* Підписи груп — lib/ui.ts → team.groups */
 const ORDER: Group[] = ['partner', 'adv', 'mil', 'exec']
 
 export function PeopleGrid({ people }: { people: Person[] }) {
+  const T = useUi()
+  const LABELS: Record<Group, string> = T.team.groups
   const [f, setF] = useState<Group | 'all'>('all')
   const groups = ORDER.filter((g) => people.some((p) => p.group === g))
   const showFilter = groups.length > 1
@@ -39,7 +37,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
   return (
     <>
       {showFilter && (
-        <div role="group" aria-label="Фільтр за роллю" className="mb-[22px] flex flex-wrap gap-1.5">
+        <div role="group" aria-label={T.team.filterAria} className="mb-[22px] flex flex-wrap gap-1.5">
           {(['all', ...groups] as const).map((g) => (
             <button
               key={g}
@@ -48,7 +46,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
               onClick={() => setF(g)}
               className="min-h-[38px] cursor-pointer rounded-full px-[15px] font-sans text-[13.5px] font-medium text-ink shadow-[inset_0_0_0_1px_#d9d1d6] transition-colors hover:shadow-[inset_0_0_0_1px_var(--color-ink)] aria-pressed:bg-ink aria-pressed:text-white aria-pressed:shadow-none"
             >
-              {g === 'all' ? 'Усі' : LABELS[g]}
+              {g === 'all' ? T.common.all : LABELS[g]}
             </button>
           ))}
         </div>

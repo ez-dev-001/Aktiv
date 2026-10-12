@@ -9,6 +9,9 @@ import { validateLead } from '@/lib/leads/validate'
 import { Icon } from '@/components/site/Icon'
 import { PracticeSelect } from '@/components/ui/PracticeSelect'
 import { APPLY_EVENT } from './events'
+import { localeHref } from '@/lib/i18n'
+import { useLang } from '@/components/site/LangProvider'
+import { ui, type Dict } from '@/lib/ui'
 
 /**
  * Форма резюме на странице «Карʼєра».
@@ -29,12 +32,18 @@ const FIELD =
   'placeholder:text-on-dark-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent)] focus:outline-none ' +
   'aria-[invalid=true]:shadow-[inset_0_0_0_1.5px_var(--color-accent-soft)]'
 const LABEL = 'font-mono text-[9.5px] uppercase tracking-[0.13em] text-on-dark-2'
-const OTHER = 'Інша позиція'
 const MAX = 4 * 1024 * 1024
 
-const size = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} МБ` : `${Math.max(1, Math.round(n / 1024))} КБ`)
+const size = (n: number, t: Dict['cv']) =>
+  n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} ${t.mb}` : `${Math.max(1, Math.round(n / 1024))} ${t.kb}`
 
 export function CvForm({ positions }: { positions: string[] }) {
+  const lang = useLang()
+  const T = ui(lang)
+  const t = T.cv
+  /* «Інша позиція» — та сама рядком у VacancyList: кнопка «Надіслати
+     резюме» без вакансій шле саме її. */
+  const OTHER = t.other
   const options = [...positions, OTHER]
   const [position, setPosition] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -63,11 +72,11 @@ export function CvForm({ positions }: { positions: string[] }) {
   function pick(f: File | null | undefined) {
     if (!f) return
     if (f.size > MAX) {
-      setErrors((x) => ({ ...x, cv: 'Файл більший за 4 МБ — стисніть або додайте посилання' }))
+      setErrors((x) => ({ ...x, cv: T.validation.cvTooBig }))
       return
     }
     if (!/\.(pdf|docx?|rtf|odt)$/i.test(f.name)) {
-      setErrors((x) => ({ ...x, cv: 'Потрібен PDF або Word' }))
+      setErrors((x) => ({ ...x, cv: T.validation.cvType }))
       return
     }
     setFile(f)
@@ -87,14 +96,17 @@ export function CvForm({ positions }: { positions: string[] }) {
     if (file && !useLink) fd.set('cv', file)
     if (!useLink) fd.delete('cv_link')
 
-    const { errors: local } = validateLead({
-      name: String(fd.get('name') ?? ''),
-      phone: String(fd.get('phone') ?? ''),
-      email: String(fd.get('email') ?? ''),
-      message: String(fd.get('message') ?? ''),
-    })
-    if (!position) local.position = 'Оберіть позицію — або «Інша»'
-    if (!file && !(useLink && String(fd.get('cv_link') ?? '').trim())) local.cv = 'Додайте файл резюме або посилання на нього'
+    const { errors: local } = validateLead(
+      {
+        name: String(fd.get('name') ?? ''),
+        phone: String(fd.get('phone') ?? ''),
+        email: String(fd.get('email') ?? ''),
+        message: String(fd.get('message') ?? ''),
+      },
+      lang,
+    )
+    if (!position) local.position = T.validation.position
+    if (!file && !(useLink && String(fd.get('cv_link') ?? '').trim())) local.cv = T.validation.cvMissing
     if (Object.keys(local).length) {
       setErrors(local)
       return
@@ -103,13 +115,14 @@ export function CvForm({ positions }: { positions: string[] }) {
     fd.set('position', position)
     fd.set('page', window.location.pathname)
     fd.set('attribution', JSON.stringify(readAttribution()))
+    fd.set('lang', lang)
     setFormError(null)
     start(async () => {
       let res
       try {
         res = await submitCv(fd)
       } catch {
-        res = { ok: false as const, message: 'Не вдалося надіслати. Спробуйте ще раз або напишіть нам на пошту.' }
+        res = { ok: false as const, message: t.sendFailed }
       }
       if (!res.ok) {
         setErrors(res.errors ?? {})
@@ -117,11 +130,11 @@ export function CvForm({ positions }: { positions: string[] }) {
         return
       }
       track('cv_submit', { position })
-      setSent(res.receipt.firstName || 'дякуємо')
+      setSent(res.receipt.firstName || '')
     })
   }
 
-  if (sent) {
+  if (sent !== null) {
     return (
       <div role="status" className="grid justify-items-start gap-4 rounded-[18px] bg-white/[0.05] p-[clamp(24px,3.4vw,40px)] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
         <svg viewBox="0 0 56 56" className="thanks-check size-12 text-accent" aria-hidden="true">
@@ -129,11 +142,10 @@ export function CvForm({ positions }: { positions: string[] }) {
           <path d="M17 29l7 7 15-16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" pathLength={1} className="thanks-check-mark" />
         </svg>
         <p className="m-0 font-serif text-[clamp(22px,3vw,30px)] font-semibold leading-tight text-white">
-          Дякуємо{sent !== 'дякуємо' ? `, ${sent}` : ''}! Резюме отримали.
+          {t.thanks(sent)}
         </p>
         <p className="m-0 max-w-[48ch] text-[15px] leading-relaxed text-on-dark">
-          Відповімо до трьох робочих днів — телефоном або на пошту. Якщо зараз не підійде, збережемо резюме й напишемо, коли
-          відкриється відповідна вакансія.
+          {t.thanksText}
         </p>
       </div>
     )
@@ -142,18 +154,18 @@ export function CvForm({ positions }: { positions: string[] }) {
   return (
     <form onSubmit={onSubmit} noValidate aria-busy={pending} className="grid min-w-0 grid-cols-1 gap-3.5">
       <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
-        <Field label="Імʼя" htmlFor="cv-name" error={errors.name} id="name">
-          <input id="cv-name" name="name" autoComplete="name" placeholder="Імʼя та прізвище" className={FIELD} {...a11y('name')} onChange={() => clear('name')} />
+        <Field label={t.name} htmlFor="cv-name" error={errors.name} id="name">
+          <input id="cv-name" name="name" autoComplete="name" placeholder={t.namePh} className={FIELD} {...a11y('name')} onChange={() => clear('name')} />
         </Field>
-        <Field label="Телефон" htmlFor="cv-phone" error={errors.phone} id="phone">
+        <Field label={T.common.phone} htmlFor="cv-phone" error={errors.phone} id="phone">
           <input id="cv-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="067 123 45 67" className={FIELD} {...a11y('phone')} onChange={() => clear('phone')} />
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
-        <Field label="Пошта" htmlFor="cv-email" error={errors.email} id="email">
-          <input id="cv-email" name="email" type="email" autoComplete="email" placeholder="необовʼязково" className={FIELD} {...a11y('email')} onChange={() => clear('email')} />
+        <Field label={T.common.email} htmlFor="cv-email" error={errors.email} id="email">
+          <input id="cv-email" name="email" type="email" autoComplete="email" placeholder={T.common.optional} className={FIELD} {...a11y('email')} onChange={() => clear('email')} />
         </Field>
-        <Field label="Позиція" htmlFor="cv-position" error={errors.position} id="position">
+        <Field label={t.position} htmlFor="cv-position" error={errors.position} id="position">
           <PracticeSelect
             id="cv-position"
             name="position"
@@ -163,8 +175,8 @@ export function CvForm({ positions }: { positions: string[] }) {
               setPosition(v)
               clear('position')
             }}
-            placeholder="Оберіть позицію"
-            listLabel="Позиція"
+            placeholder={t.positionPh}
+            listLabel={t.position}
             invalid={Boolean(errors.position)}
             describedBy={errors.position ? 'cv-position-error' : undefined}
           />
@@ -174,7 +186,7 @@ export function CvForm({ positions }: { positions: string[] }) {
       {/* ── резюме: файл или ссылка ── */}
       <div className="grid gap-[7px]">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className={LABEL}>Резюме</span>
+          <span className={LABEL}>{t.cv}</span>
           <button
             type="button"
             onClick={() => {
@@ -183,7 +195,7 @@ export function CvForm({ positions }: { positions: string[] }) {
             }}
             className="border-0 bg-transparent p-0 text-[12.5px] text-accent-soft underline decoration-accent-soft/40 underline-offset-2 hover:decoration-accent-soft"
           >
-            {useLink ? 'Завантажити файл' : 'Немає файлу? Додати посилання'}
+            {useLink ? t.uploadFile : t.addLink}
           </button>
         </div>
 
@@ -192,7 +204,7 @@ export function CvForm({ positions }: { positions: string[] }) {
             name="cv_link"
             type="url"
             inputMode="url"
-            placeholder="https://linkedin.com/in/… або Google Диск, work.ua"
+            placeholder={t.linkPh}
             className={FIELD}
             {...a11y('cv')}
             onChange={() => clear('cv')}
@@ -204,7 +216,7 @@ export function CvForm({ positions }: { positions: string[] }) {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14.5px] text-white">{file.name}</span>
-              <span className="font-mono text-[11.5px] text-on-dark-2">{size(file.size)}</span>
+              <span className="font-mono text-[11.5px] text-on-dark-2">{size(file.size, t)}</span>
             </span>
             <button
               type="button"
@@ -213,9 +225,9 @@ export function CvForm({ positions }: { positions: string[] }) {
                 if (fileInput.current) fileInput.current.value = ''
               }}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-[12px] text-on-dark-2 hover:text-white"
-              aria-label="Прибрати файл"
+              aria-label={t.removeFile}
             >
-              <Icon name="close" className="size-3" /> прибрати
+              <Icon name="close" className="size-3" /> {T.common.remove}
             </button>
           </div>
         ) : (
@@ -240,9 +252,9 @@ export function CvForm({ positions }: { positions: string[] }) {
               <path d="M14 3v5h5M12 17v-6M9.5 13.5 12 11l2.5 2.5" />
             </svg>
             <span className="text-[14.5px] text-white">
-              Перетягніть файл сюди або <span className="text-accent-soft underline underline-offset-2">оберіть</span>
+              {t.drop}<span className="text-accent-soft underline underline-offset-2">{t.browse}</span>
             </span>
-            <span className="text-[12px] text-on-dark-2">PDF або Word, до 4 МБ</span>
+            <span className="text-[12px] text-on-dark-2">{t.formats}</span>
             <input
               ref={fileInput}
               type="file"
@@ -255,12 +267,12 @@ export function CvForm({ positions }: { positions: string[] }) {
         <FieldErrorLine id="cv" text={errors.cv} />
       </div>
 
-      <Field label="Коротко про себе" htmlFor="cv-message" error={errors.message} id="message">
+      <Field label={t.about} htmlFor="cv-message" error={errors.message} id="message">
         <textarea
           id="cv-message"
           name="message"
           rows={3}
-          placeholder="Необовʼязково: досвід, практики, коли готові почати"
+          placeholder={t.aboutPh}
           className={`${FIELD} min-h-[84px] resize-y`}
           {...a11y('message')}
           onChange={() => clear('message')}
@@ -269,7 +281,7 @@ export function CvForm({ positions }: { positions: string[] }) {
 
       {/* honeypot */}
       <div aria-hidden="true" className="absolute -left-[9999px] size-px overflow-hidden">
-        <label htmlFor="cv-hp">Не заповнювати</label>
+        <label htmlFor="cv-hp">{T.common.honeypot}</label>
         <input id="cv-hp" name="company_url" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
@@ -287,18 +299,18 @@ export function CvForm({ positions }: { positions: string[] }) {
         {pending ? (
           <>
             <span aria-hidden="true" className="size-[15px] animate-spin rounded-full border-2 border-white/35 border-t-white" />
-            Надсилаємо…
+            {T.common.sending}
           </>
         ) : (
           <>
-            Надіслати резюме <Icon name="arrow" className="size-[16px]" />
+            {t.submit} <Icon name="arrow" className="size-[16px]" />
           </>
         )}
       </button>
       <p className="m-0 mt-1 max-w-[46ch] text-[12.5px] leading-relaxed text-on-dark-2">
-        Надсилаючи форму, ви погоджуєтесь на обробку персональних даних для відбору. Резюме видалимо за вашим запитом.{' '}
-        <a href="/privacy" className="underline decoration-white/30 underline-offset-2 hover:text-white">
-          Політика конфіденційності
+        {t.consent}{' '}
+        <a href={localeHref(lang, '/privacy')} className="underline decoration-white/30 underline-offset-2 hover:text-white">
+          {T.common.privacy}
         </a>
       </p>
     </form>

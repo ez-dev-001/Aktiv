@@ -3,6 +3,7 @@ import { hasImage } from '@/lib/sanity/image'
 import { Cover } from '@/components/site/Cover'
 import { Icon } from '@/components/site/Icon'
 import { RingAvatar } from '@/components/site/Blocks'
+import { formatDate, ui } from '@/lib/ui'
 
 /**
  * Картка статті у форматі макета (armada.law): обкладинка, дата • час
@@ -22,8 +23,7 @@ export interface CardAuthor {
   photo?: string
 }
 
-export const fmtDate = (iso?: string) =>
-  iso ? new Date(iso).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+export const fmtDate = (iso?: string, lang = 'ua') => formatDate(lang, iso)
 
 /**
  * Темна обкладинка для статті без фото: рубрика й назва на тлі
@@ -66,11 +66,11 @@ export function DarkCover({
   )
 }
 
-function Meta({ date, minutes, category }: { date: string | null; minutes?: number | null; category?: string }) {
+function Meta({ date, minutes, category, lang }: { date: string | null; minutes?: number | null; category?: string; lang: string }) {
   const parts = [
     category && <span className="text-accent-ink">{category}</span>,
     date && <span>{date}</span>,
-    minutes ? <span>{minutes} хв читання</span> : null,
+    minutes ? <span>{ui(lang).common.minRead(minutes)}</span> : null,
   ].filter(Boolean)
   if (!parts.length) return null
   return (
@@ -86,7 +86,7 @@ function Meta({ date, minutes, category }: { date: string | null; minutes?: numb
 }
 
 /** Псевдо-кнопка «Читати»: сама картка вже посилання. */
-function ReadPill({ big = false }: { big?: boolean }) {
+function ReadPill({ big = false, lang }: { big?: boolean; lang: string }) {
   return (
     <span
       aria-hidden="true"
@@ -94,7 +94,7 @@ function ReadPill({ big = false }: { big?: boolean }) {
         big ? 'min-h-11 px-5 text-[14px]' : 'min-h-[38px] px-4 text-[13.5px]'
       }`}
     >
-      Читати
+      {ui(lang).common.read}
       <Icon name="arrow" className="size-[14px] transition-transform duration-[240ms] group-hover:translate-x-0.5" />
     </span>
   )
@@ -113,7 +113,9 @@ export function BlogCard({
   author,
   minutes,
   headingLevel = 'h3',
+  lang = 'ua',
 }: {
+  lang?: string
   post: Post
   /** Немає адреси — картка не посилання (статика без повного тексту). */
   href?: string
@@ -124,7 +126,7 @@ export function BlogCard({
   headingLevel?: 'h2' | 'h3'
 }) {
   const H = headingLevel
-  const date = fmtDate(post.publishedAt)
+  const date = fmtDate(post.publishedAt, lang)
   const img = hasImage(post.cover)
   /* Рубрику видно на темній обкладинці; на фото чи без обкладинки —
      у рядку дати, щоб вона не зникала з картки. */
@@ -146,7 +148,7 @@ export function BlogCard({
           <DarkCover category={post.category} title={post.title} className="aspect-[16/10]" />
         ))}
       <div className="flex flex-1 flex-col gap-2.5 px-5 pb-5 pt-[18px]">
-        <Meta date={date} minutes={minutes} category={catInMeta ? post.category : undefined} />
+        <Meta date={date} minutes={minutes} category={catInMeta ? post.category : undefined} lang={lang} />
         <H className="m-0 font-serif text-[18px] font-semibold leading-[1.3] text-ink">
           {href ? (
             <a href={href} className={STRETCH}>
@@ -165,7 +167,7 @@ export function BlogCard({
             {author.name}
           </p>
         )}
-        {href && <ReadPill />}
+        {href && <ReadPill lang={lang} />}
       </div>
     </article>
   )
@@ -177,13 +179,15 @@ export function FeaturedCard({
   href,
   author,
   minutes,
+  lang = 'ua',
 }: {
   post: Post
   href?: string
   author?: CardAuthor
   minutes?: number | null
+  lang?: string
 }) {
-  const date = fmtDate(post.publishedAt)
+  const date = fmtDate(post.publishedAt, lang)
   const img = hasImage(post.cover)
   return (
     <article className={`${SHELL} rounded-[26px] min-[900px]:grid min-[900px]:grid-cols-[1.1fr_0.9fr] ${href ? HOVER : ''}`}>
@@ -201,7 +205,7 @@ export function FeaturedCard({
         <DarkCover big category={post.category} title={post.title} className="aspect-[16/10] min-[900px]:aspect-auto min-[900px]:min-h-[320px]" />
       )}
       <div className="flex flex-col gap-3.5 p-[clamp(24px,3vw,40px)]">
-        <Meta date={date} minutes={minutes} category={img ? post.category : undefined} />
+        <Meta date={date} minutes={minutes} category={img ? post.category : undefined} lang={lang} />
         <h2 className="m-0 font-serif text-[clamp(24px,2.6vw,32px)] font-normal leading-[1.18] text-ink">
           {href ? (
             <a href={href} className={STRETCH}>
@@ -223,7 +227,7 @@ export function FeaturedCard({
             </span>
           </p>
         )}
-        {href && <ReadPill big />}
+        {href && <ReadPill big lang={lang} />}
       </div>
     </article>
   )

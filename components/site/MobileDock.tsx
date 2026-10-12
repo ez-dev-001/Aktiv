@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Contacts } from '@/lib/sanity/content'
 import { trackPhone } from '@/lib/analytics'
 import { Icon } from './Icon'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Липка панель дій на телефоні й планшеті (до 1000px).
@@ -19,7 +20,8 @@ import { Icon } from './Icon'
  * На сторінці з панеллю круглу кнопку звʼязку (FloatingActions) на
  * телефоні вимкнено — дві плаваючі кнопки змагалися б за той самий кут.
  */
-export function MobileDock({ contacts, label = 'Отримати консультацію' }: { contacts: Contacts; label?: string }) {
+export function MobileDock({ contacts, label }: { contacts: Contacts; label?: string }) {
+  const t = useUi()
   const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
@@ -52,12 +54,12 @@ export function MobileDock({ contacts, label = 'Отримати консуль�
         href="#contact"
         className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-accent-btn px-4 text-[15px] font-medium text-white transition-colors hover:bg-accent-btn-hover"
       >
-        {label}
+        {label ?? t.common.getConsultation}
       </a>
       <a
         href={contacts.phoneHref}
         onClick={() => trackPhone('dock')}
-        aria-label={`Подзвонити: ${contacts.phone}`}
+        aria-label={t.floating.callAria(contacts.phone)}
         className="grid size-12 shrink-0 place-items-center rounded-full bg-white/[0.06] text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.25)]"
       >
         <Icon name="phone" className="size-5" />

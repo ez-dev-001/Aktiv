@@ -58,7 +58,7 @@ export async function PageShell({
             ?practice=… у посиланні заздалегідь обирає напрям. */}
         {form && <LeadSection contacts={contacts} categories={cats} />}
       </main>
-      <Footer contacts={contacts} categories={cats} />
+      <Footer lang={lang} contacts={contacts} categories={cats} />
       {/* З формою: на телефоні — липка панель «консультація + дзвінок»,
           кругла кнопка лишається лише на компʼютері (як на головній). */}
       <FloatingActions contacts={contacts} desktopOnly={form} />

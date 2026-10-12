@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CONSENT_CHANGED_EVENT, readConsent } from '@/lib/consent'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Карта Google для блока контактов.
@@ -43,6 +44,7 @@ import { CONSENT_CHANGED_EVENT, readConsent } from '@/lib/consent'
  * прятать нельзя.
  */
 export function OfficeMap({ query, title }: { query: string; title: string }) {
+  const t = useUi().map
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -112,14 +114,14 @@ export function OfficeMap({ query, title }: { query: string; title: string }) {
       <button
         type="button"
         onClick={() => setShow(true)}
-        title="Карту показує Google — він може встановити свої cookie"
+        title={t.note}
         className="absolute bottom-3 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border-0 bg-white px-4 text-[13px] font-medium text-ink shadow-[0_8px_20px_-8px_rgb(0_0_0/0.5)] transition-colors hover:bg-paper-2"
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[15px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z" />
           <path d="M9 4v14M15 6v14" />
         </svg>
-        Показати карту
+        {t.show}
       </button>
     </div>
   )

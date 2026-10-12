@@ -1,6 +1,6 @@
 import { groq } from 'next-sanity'
 import { sanityFetch } from '@/lib/sanity/client'
-import { BLOG_CATEGORIES, type Post } from '@/lib/sanity/content'
+import { blogCategoryLabel, type Post } from '@/lib/sanity/content'
 
 /**
  * Данные страниц направления и услуги, которых нет в общих загрузчиках.
@@ -61,9 +61,8 @@ export async function getPracticePeople(slug: string, lang = 'ua'): Promise<Prac
   return (await getPeople(lang)).filter((m) => m.practices.includes(slug))
 }
 
-const LABEL: Record<string, string> = Object.fromEntries(BLOG_CATEGORIES.map((c) => [c.id, c.label]))
 /** Рубрика поста приходит кодом (news, court…) — на карточке нужна подпись. */
-export const postLabel = (c?: string) => (c ? (LABEL[c] ?? c) : undefined)
+export const postLabel = (c?: string, lang = 'ua') => (c ? blogCategoryLabel(c, lang) : undefined)
 
 /* Статья «по темі» — та, у которой в «Повʼязані практики» стоит хоть
    одна практика этого направления (см. схему post.practices). */
@@ -82,5 +81,5 @@ export async function getCategoryPosts(cat: string, lang = 'ua', limit = 3): Pro
   const rows = await sanityFetch<Post[]>(CATEGORY_POSTS_QUERY, { cat, lang, limit }, ['post', 'practice'])
   return (rows ?? [])
     .filter((p) => p?.slug && typeof p.title === 'string')
-    .map((p) => ({ ...p, excerpt: typeof p.excerpt === 'string' ? p.excerpt : '', category: postLabel(p.category) }))
+    .map((p) => ({ ...p, excerpt: typeof p.excerpt === 'string' ? p.excerpt : '', category: postLabel(p.category, lang) }))
 }

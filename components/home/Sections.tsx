@@ -14,6 +14,8 @@ import { preload } from 'react-dom'
 import { PHOTOS, photoUrl } from '@/lib/photos'
 import { PracticeTabs } from './PracticeTabs'
 import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
+import { localeHref } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 
 /* ═══════════════════════ ПЕРШИЙ ЕКРАН ═══════════════════════
    Формат — як у armada.law (затверджено клієнтом за макетом):
@@ -28,13 +30,14 @@ import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
 
    Висота в svh, а не vh: на телефоні динамічна панель браузера
    інакше зрізає кнопки. */
-export function Hero({ home = staticHome }: { home?: HomeContent }) {
+export function Hero({ lang = 'ua', home = staticHome }: { lang?: string; home?: HomeContent }) {
+  const t = ui(lang).home
   /* Кадр усередині знака — найважливіша картинка першого екрана:
      браузер тягне її одразу з HTML, і коли ірис відкривається, кадр уже є. */
   preload(photoUrl(PHOTOS.tower, 900), { as: 'image', fetchPriority: 'high' })
   /* У студії могло лишитися старе «Обрати напрям» — підпис капсули,
      якої більше немає. Тут це посилання до «Команди». */
-  const more = /напрям/i.test(home.heroCtaSecondary) ? 'Ознайомитись' : home.heroCtaSecondary
+  const more = t.staleCta.test(home.heroCtaSecondary) ? t.more : home.heroCtaSecondary
 
   return (
     /* Відʼємний відступ на висоту шапки: шапка липка й стоїть у потоці,
@@ -63,7 +66,7 @@ export function Hero({ home = staticHome }: { home?: HomeContent }) {
           <HeroMark />
         </div>
         <p className="col-start-2 row-start-1 m-0 font-mono text-[10px] uppercase leading-[1.5] tracking-[0.14em] text-accent-soft min-[1000px]:hidden">
-          Київ · з 2007 року
+          {t.cityLine}
         </p>
 
         <div className="relative z-[2] col-span-2 row-start-2 flex min-w-0 max-w-[640px] flex-col self-stretch pt-[22px] min-[1000px]:col-span-1 min-[1000px]:col-start-1 min-[1000px]:row-start-1 min-[1000px]:self-center min-[1000px]:pt-0">
@@ -113,6 +116,7 @@ export function TeamIntro({
   author?: HomePerson
 }) {
   const quote = home.teamQuote.trim()
+  const t = ui(lang)
   const href = lang === 'ua' ? '/team' : `/${lang}/team`
   /* Портретний кроп 4:5 від верху кадру: голова не йде за край. */
   const portrait = author?.photoUrl ? `${author.photoUrl}?w=760&h=950&fit=crop&crop=top&auto=format&q=80` : undefined
@@ -121,7 +125,7 @@ export function TeamIntro({
   const faces = members.filter((m) => m.photoUrl && m.name !== author?.name).slice(0, 5)
 
   return (
-    <section id="team" aria-label="Команда" className="scroll-mt-[var(--hdr)] bg-paper py-[clamp(56px,8vw,112px)]">
+    <section id="team" aria-label={t.common.team} className="scroll-mt-[var(--hdr)] bg-paper py-[clamp(56px,8vw,112px)]">
       <div className={`shell inner grid items-center gap-[clamp(28px,5vw,80px)] ${portrait ? 'min-[860px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]' : 'min-[860px]:grid-cols-1'}`}>
         {/* Великий портрет — лише на десктопі. На телефоні й планшеті
             його заміняє кружок поруч з іменем (нижче), щоб фото не
@@ -166,13 +170,13 @@ export function TeamIntro({
               </div>
             </div>
           )}
-          <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">Команда</Reveal>
+          <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">{t.common.team}</Reveal>
           <p className="m-0 mt-[18px] max-w-[56ch] text-[15.5px] leading-[1.65] text-slate">
             {home.teamText.replaceAll('{n}', String(members.length))}
           </p>
           <div className="mt-[22px] flex flex-wrap items-center gap-5">
             <ArrowLink href={href} className="text-[15px] font-semibold">
-              Уся команда
+              {t.home.allTeam}
             </ArrowLink>
             {faces.length > 0 && (
               <span className="flex -space-x-2.5" aria-hidden="true">
@@ -239,14 +243,15 @@ export function Figures({ figures = staticFigures }: { figures?: Figure[] }) {
    центру на тлі контурного водяного знака. У нас це слоган фірми —
    Sanity → Головна → «Слоган». id="credo" лишився від колишнього
    блоку «Місія»: на нього ведуть посилання з «Про компанію». */
-export function Claim({ home = staticHome }: { home?: HomeContent }) {
+export function Claim({ lang = 'ua', home = staticHome }: { lang?: string; home?: HomeContent }) {
+  const t = ui(lang).home
   return (
-    <section id="credo" aria-label="Наш принцип" className="relative isolate overflow-hidden bg-paper py-[clamp(72px,10vw,140px)] text-center">
+    <section id="credo" aria-label={t.credoAria} className="relative isolate overflow-hidden bg-paper py-[clamp(72px,10vw,140px)] text-center">
       <span
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-1/2 -z-[1] -translate-y-1/2 select-none whitespace-nowrap font-serif text-[clamp(90px,19vw,250px)] font-bold leading-[0.86] tracking-[-0.02em] text-transparent [-webkit-text-stroke:1.2px_#ece6e8]"
       >
-        АКТИВ
+        {t.watermark}
       </span>
       <div className="shell inner">
         <p className="m-0 mx-auto max-w-[20ch] font-serif text-[clamp(30px,4.6vw,58px)] font-normal leading-[1.12] tracking-[-0.015em] text-ink [text-wrap:balance]">
@@ -278,20 +283,21 @@ export function Practices({
     practices: c.practices.map((p) => ({ slug: p.slug, title: p.title })),
   }))
   const total = categories.reduce((n, c) => n + c.practices.length, 0)
+  const t = ui(lang).home
   const href = lang === 'ua' ? '/practices' : `/${lang}/practices`
 
   return (
-    <section id="practices" aria-label="Наша практика" className="grid scroll-mt-[var(--hdr)] [container-type:inline-size] min-[900px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+    <section id="practices" aria-label={t.practicesAria} className="grid scroll-mt-[var(--hdr)] [container-type:inline-size] min-[900px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
       <div className="on-dark bg-ink px-[var(--gut)] py-[clamp(48px,7vw,96px)] text-on-dark min-[900px]:pl-[max(var(--gut),calc((100cqw-var(--shell))/2+var(--gut)))]">
         <div className="max-w-[440px]">
           <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] !text-white">
-            Наша <em className="text-accent-soft">практика</em>
+            {t.practicesTitle[0]} <em className="text-accent-soft">{t.practicesTitle[1]}</em>
           </Reveal>
           <p className="m-0 mt-[18px] text-[15.5px] leading-[1.65] text-on-dark">
             {text}
           </p>
           <ArrowLink href={href} className="mt-[22px] text-[15px] font-semibold !text-accent-soft">
-            Усі {total} послуг
+            {t.allServices(total)}
           </ArrowLink>
         </div>
       </div>
@@ -431,12 +437,13 @@ export function Journal({
   clickable?: boolean
 }) {
   const prefix = lang === 'ua' ? '' : `/${lang}`
+  const t = ui(lang)
   const withMedia = needsMedia(posts)
   return (
     <section id="journal" className="py-[clamp(56px,8vw,112px)]">
       <div className="shell inner">
         <div className="mb-[clamp(28px,4vw,44px)]">
-          <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">Блог</Reveal>
+          <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">{t.common.blog}</Reveal>
         </div>
       </div>
       <div className="shell inner">
@@ -451,13 +458,14 @@ export function Journal({
                 href={clickable ? `${prefix}/blog/${a.slug}` : `${prefix}/blog`}
                 withMedia={withMedia}
                 hideExcerpt
+                lang={lang}
               />
             </li>
           ))}
         </ul>
         {/* Як «Читати всі новини» в Армади — під картками. */}
         <ArrowLink href={`${prefix}/blog`} className="mt-6 text-[15px] font-semibold">
-          Читати всі статті
+          {t.home.readAll}
         </ArrowLink>
       </div>
     </section>
@@ -469,14 +477,24 @@ export function Journal({
    «Контакти», «Месенджери», знизу — дрібний рядок із політикою,
    cookie і «Вгору». Практики — по дві перші послуги кожного напряму
    плюс сам напрям: живі посилання, а не перелік назв. */
-export function Footer({ contacts = staticContacts, categories = staticCategories }: { contacts?: Contacts; categories?: Category[] }) {
+export function Footer({
+  lang = 'ua',
+  contacts = staticContacts,
+  categories = staticCategories,
+}: {
+  lang?: string
+  contacts?: Contacts
+  categories?: Category[]
+}) {
+  const t = ui(lang)
+  const to = (href: string) => localeHref(lang, href)
   const links = categories.flatMap((c) => [
-    { href: `/practices/${c.slug}`, label: c.title },
+    { href: to(`/practices/${c.slug}`), label: c.title },
     /* дві перші короткі назви — довгі в дві колонки ламаються на 3 рядки */
     ...c.practices
       .filter((p) => p.title.length <= 30)
       .slice(0, 2)
-      .map((p) => ({ href: `/practices/${c.slug}/${p.slug}`, label: p.title })),
+      .map((p) => ({ href: to(`/practices/${c.slug}/${p.slug}`), label: p.title })),
   ])
   const H = 'm-0 mb-3.5 font-serif text-[17px] font-semibold text-white'
   const A = 'inline-flex min-h-11 items-center leading-snug transition-colors hover:text-white min-[760px]:min-h-0 min-[760px]:py-[5px]'
@@ -484,12 +502,12 @@ export function Footer({ contacts = staticContacts, categories = staticCategorie
   return (
     <footer className="bg-ink-3 pb-7 pt-[clamp(44px,6vw,72px)] text-[14px] text-on-dark">
       <div className="shell inner">
-        <a href="/" aria-label="АКТИВ, на головну" className="mb-8 inline-flex min-h-11 items-center">
+        <a href={to('/')} aria-label={t.common.homeAria} className="mb-8 inline-flex min-h-11 items-center">
           <Logo onDark />
         </a>
         <div className="grid gap-[30px] min-[760px]:grid-cols-2 min-[1000px]:grid-cols-[1.6fr_1fr_1fr_0.8fr]">
           <div>
-            <h2 className={H}>Практики</h2>
+            <h2 className={H}>{t.common.practices}</h2>
             <ul className="m-0 list-none columns-1 gap-6 p-0 min-[480px]:columns-2">
               {links.map((l) => (
                 <li key={l.href} className="break-inside-avoid">
@@ -501,16 +519,16 @@ export function Footer({ contacts = staticContacts, categories = staticCategorie
             </ul>
           </div>
           <div>
-            <h2 className={H}>Компанія</h2>
+            <h2 className={H}>{t.footer.company}</h2>
             <ul className="m-0 grid list-none p-0">
               {[
-                { h: '/about', l: 'Про компанію' },
-                { h: '/team', l: 'Команда' },
-                { h: '/career', l: 'Карʼєра' },
-                { h: '/blog', l: 'Блог' },
+                { h: '/about', l: t.common.about },
+                { h: '/team', l: t.common.team },
+                { h: '/career', l: t.common.career },
+                { h: '/blog', l: t.common.blog },
               ].map((x) => (
                 <li key={x.h}>
-                  <a href={x.h} className={A}>
+                  <a href={to(x.h)} className={A}>
                     {x.l}
                   </a>
                 </li>
@@ -518,7 +536,7 @@ export function Footer({ contacts = staticContacts, categories = staticCategorie
             </ul>
           </div>
           <div>
-            <h2 className={H}>Контакти</h2>
+            <h2 className={H}>{t.common.contacts}</h2>
             <ul className="m-0 grid list-none p-0">
               <li>
                 <a href={contacts.phoneHref} className={A}>
@@ -535,7 +553,7 @@ export function Footer({ contacts = staticContacts, categories = staticCategorie
           </div>
           {contacts.messengers.length > 0 && (
             <div>
-              <h2 className={H}>Месенджери</h2>
+              <h2 className={H}>{t.common.messengers}</h2>
               <ul className="m-0 grid list-none p-0">
                 {contacts.messengers.map((m) => (
                   <li key={m.href}>
@@ -550,14 +568,14 @@ export function Footer({ contacts = staticContacts, categories = staticCategorie
         </div>
         {/* Нижній рядок: усе на одній базовій лінії. */}
         <div className="mt-[clamp(34px,4vw,52px)] flex flex-wrap items-center gap-x-[26px] gap-y-1 border-t border-on-dark-hair pt-[14px] font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-dark-2 [&>*]:inline-flex [&>*]:min-h-11 [&>*]:items-center">
-          <span>© {new Date().getFullYear()} ЮК «АКТИВ»</span>
-          <a href="/privacy" className="text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white">
-            Політика конфіденційності
+          <span>© {new Date().getFullYear()} {t.common.firmShort}</span>
+          <a href={to('/privacy')} className="text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white">
+            {t.common.privacy}
           </a>
           {/* Відкликати згоду так само легко, як дати: банер відкривається знову звідси. */}
           <CookieSettingsLink className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white" />
           <a href="#top" className="group gap-2 text-on-dark-2 transition-colors hover:text-white min-[760px]:ml-auto">
-            Вгору
+            {t.footer.toTop}
             <Icon name="arrow" className="size-[13px] -rotate-90 transition-transform duration-200 group-hover:-translate-y-0.5" />
           </a>
         </div>

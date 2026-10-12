@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { HeroMark } from '@/components/home/HeroMark'
 import { PHOTOS, photoUrl } from '@/lib/photos'
 import { absUrl } from '@/lib/seo'
+import { ui } from '@/lib/ui'
 
 /**
  * Перший екран внутрішньої сторінки — у форматі головної (armada.law).
@@ -36,7 +37,10 @@ export function PageHero({
   compact = false,
   small = false,
   above,
+  lang = 'ua',
 }: {
+  /** мова сторінки — для підпису крихт */
+  lang?: string
   crumbs?: Crumb[]
   /** основна частина заголовка */
   title: ReactNode
@@ -85,7 +89,7 @@ export function PageHero({
         } ${two ? 'min-[900px]:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]' : ''}`}
       >
         <div className="min-w-0 max-w-[680px]">
-          {crumbs && crumbs.length > 0 && <Crumbs items={crumbs} />}
+          {crumbs && crumbs.length > 0 && <Crumbs items={crumbs} lang={lang} />}
           {above}
           <h1
             className={`m-0 font-serif font-normal leading-[1.04] tracking-[-0.022em] text-white [text-wrap:balance] ${
@@ -122,7 +126,7 @@ export function PageHero({
   )
 }
 
-export function Crumbs({ items }: { items: Crumb[] }) {
+export function Crumbs({ items, lang = 'ua' }: { items: Crumb[]; lang?: string }) {
   /* BreadcrumbList для Google: у видачі замість адреси показується
      «АКТИВ › Практики › Ліквідація…». Останній пункт — поточна сторінка,
      для неї адреса не обовʼязкова. */
@@ -137,7 +141,7 @@ export function Crumbs({ items }: { items: Crumb[] }) {
     })),
   }
   return (
-    <nav aria-label="Ви тут" className="mb-[22px]">
+    <nav aria-label={ui(lang).hero.crumbs} className="mb-[22px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
       <ol className="m-0 flex list-none flex-wrap gap-x-2.5 gap-y-1.5 p-0 font-mono text-[10.5px] uppercase leading-[1.4] tracking-[0.13em] text-on-dark-2">
         {items.map((c, i) => {

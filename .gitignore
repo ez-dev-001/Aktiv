@@ -3,6 +3,8 @@ node_modules/
 .next/
 out/
 build/
+# збірка Sanity Studio (npx sanity build / deploy)
+dist/
 
 # ── Секреты ──
 # .env.local держит SANITY_API_WRITE_TOKEN — токен НА ЗАПИСЬ.

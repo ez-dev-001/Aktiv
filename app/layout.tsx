@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CONSENT_BOOTSTRAP } from '@/lib/consent'
 import { SITE_URL, isIndexable } from '@/lib/site'
+import { HTML_LANG_BOOTSTRAP } from '@/lib/i18n'
 
 /**
  * Корневой лейаут. Локаль подставляет app/[lang]/layout.tsx,
@@ -40,7 +41,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk">
+    /* lang="uk" — основна мова. Для /en атрибут до першого кадру
+       виправляє HTML_LANG_BOOTSTRAP у <head> (чому не з сервера — lib/i18n.ts);
+       suppressHydrationWarning — щоб React не сварився на цю різницю. */
+    <html lang="uk" suppressHydrationWarning>
       <head>
         {/* Consent Mode v2 — ПЕРВЫМ в <head>, до любых скриптов. Ставит
             аналитику и рекламу в denied по умолчанию и сразу применяет
@@ -48,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             next/script: next/script откладывает выполнение, а сигнал
             согласия обязан прийти раньше GTM. Подробно — lib/consent.ts. */}
         <script dangerouslySetInnerHTML={{ __html: CONSENT_BOOTSTRAP }} />
+        <script dangerouslySetInnerHTML={{ __html: HTML_LANG_BOOTSTRAP }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

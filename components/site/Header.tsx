@@ -8,7 +8,8 @@ import { trackPhone } from '@/lib/analytics'
 import { Icon } from './Icon'
 import { ButtonLink } from '@/components/ui/Button'
 import { Logo } from './Logo'
-import { LOCALES, LOCALE_LABEL, localeHome } from '@/lib/i18n'
+import { HTML_LANG, LOCALES, LOCALE_LABEL, localeHome, localeHref, swapLocale } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 
 /**
  * Навигация в два слоя.
@@ -40,17 +41,22 @@ import { LOCALES, LOCALE_LABEL, localeHome } from '@/lib/i18n'
 /* Якорные ссылки работают только на главной, поэтому разделы,
    у которых есть своя страница, ведут на страницу. */
 const NAV = [
-  { href: '/about', label: 'Про компанію' },
-  { href: '/team', label: 'Команда' },
-  { href: '/career', label: 'Карʼєра' },
-  { href: '/blog', label: 'Блог' },
-  { href: '/#contact', label: 'Контакти' },
-]
+  { href: '/about', key: 'about' },
+  { href: '/team', key: 'team' },
+  { href: '/career', key: 'career' },
+  { href: '/blog', key: 'blog' },
+  { href: '/#contact', key: 'contacts' },
+] as const
 
 /* Переключатель строится из общего списка языков (lib/i18n.ts), а
    не записан руками: русская версия убрана в одном месте, и здесь она
-   исчезла сама. Ссылка на /ru из шапки вела бы теперь на редирект. */
-const LANGS = LOCALES.map((id) => ({ id, label: LOCALE_LABEL[id], href: localeHome(id) }))
+   исчезла сама. Ссылка на /ru из шапки вела бы теперь на редирект.
+
+   Ведёт на ту же страницу другим языком (/en/team ⇄ /team). Адрес
+   читается после монтирования: сервер страницы не знает адресной
+   строки (украинский путь переписан proxy на /ua/…), и до гидратации
+   ссылки ведут на главную языка — запасной вариант, а не ошибка. */
+const LANGS = LOCALES.map((id) => ({ id, label: LOCALE_LABEL[id] }))
 
 const STATIC_MENU = toMenu(staticCategories)
 
@@ -87,6 +93,14 @@ export function Header({
   const [stuck, setStuck] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
   const burgerRef = useRef<HTMLButtonElement>(null)
+  const t = ui(lang)
+  /** Внутрішнє посилання в мові сторінки: '/team' → '/en/team'. */
+  const to = (href: string) => localeHref(lang, href)
+  const nav = NAV.map((n) => ({ href: to(n.href), label: t.common[n.key] }))
+  /* Поточний шлях — для перемикача мови (див. LANGS). */
+  const [path, setPath] = useState<string | null>(null)
+  useEffect(() => setPath(window.location.pathname), [])
+  const langHref = (id: string) => (path ? swapLocale(path, id) : localeHome(id))
 
   /* Белое на прозрачном: поверх фотографии или поверх открытой панели.
      При открытом мега-меню — нет: панель меню светлая, и прозрачная
@@ -200,7 +214,7 @@ export function Header({
         href="#practices"
         className="absolute -left-[9999px] top-0 z-[99] bg-ink px-4 py-3 text-sm text-white focus:left-0"
       >
-        Перейти до практик
+        {t.header.skip}
       </a>
 
       <header
@@ -233,14 +247,14 @@ export function Header({
               способа вернуться домой, поэтому это была не мелочь. */}
           <a
             href={home}
-            aria-label="АКТИВ, на головну"
+            aria-label={t.common.homeAria}
             className="mr-auto flex min-h-11 shrink-0 items-center"
           >
             <Logo onDark={light} />
           </a>
 
           <nav
-            aria-label="Головне меню"
+            aria-label={t.header.mainMenu}
             className={`hidden items-center gap-[clamp(14px,1.9vw,28px)] transition-colors duration-[420ms] min-[980px]:flex ${
               light ? 'text-white' : 'text-ink'
             }`}
@@ -252,7 +266,7 @@ export function Header({
               onClick={() => setMega((v) => !v)}
               className="group relative inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap border-0 bg-transparent py-2 text-[15px] text-inherit"
             >
-              Практики
+              {t.common.practices}
               <Icon
                 name="caret"
                 className={`size-[9px] transition-transform duration-[260ms] ${mega ? 'rotate-180' : ''}`}
@@ -263,7 +277,7 @@ export function Header({
                 }`}
               />
             </button>
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <a key={n.href} href={n.href} className="group relative inline-flex min-h-11 items-center whitespace-nowrap py-2 text-[15px] text-inherit">
                 {n.label}
                 <span className="absolute inset-x-0 bottom-0.5 h-px origin-left scale-x-0 bg-accent transition-transform duration-[260ms] ease-[cubic-bezier(.5,0,.2,1)] group-hover:scale-x-100" />
@@ -274,13 +288,14 @@ export function Header({
           <div className="hidden shrink-0 items-center gap-3 min-[980px]:flex min-[1240px]:gap-[18px]">
             <div
               role="group"
-              aria-label="Мова"
+              aria-label={t.header.language}
               className="hidden gap-0.5 font-mono text-[11px] tracking-[0.06em] min-[1100px]:flex"
             >
               {LANGS.map((l) => (
                 <a
                   key={l.id}
-                  href={l.href}
+                  href={langHref(l.id)}
+                  hrefLang={HTML_LANG[l.id]}
                   aria-current={l.id === lang ? 'true' : undefined}
                   className={
                     l.id === lang
@@ -321,7 +336,7 @@ export function Header({
             type="button"
             aria-expanded={drawer}
             aria-controls="drawer"
-            aria-label={drawer ? 'Закрити меню' : 'Меню'}
+            aria-label={drawer ? t.header.closeMenu : t.header.menu}
             onClick={(e) => (drawer ? closeDrawer(e) : setDrawer(true))}
             className="relative ml-auto inline-flex size-11 items-center justify-end border-0 bg-transparent min-[980px]:hidden"
           >
@@ -371,7 +386,7 @@ export function Header({
                   {c.practices.map((p) => (
                     <a
                       key={p.slug}
-                      href={`/practices/${c.slug}/${p.slug}`}
+                      href={to(`/practices/${c.slug}/${p.slug}`)}
                       onClick={() => setMega(false)}
                       className="block py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
                     >
@@ -379,11 +394,11 @@ export function Header({
                     </a>
                   ))}
                   <a
-                    href={`/practices/${c.slug}`}
+                    href={to(`/practices/${c.slug}`)}
                     onClick={() => setMega(false)}
                     className="mt-3 block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
                   >
-                    Усі {c.practices.length} напрямів →
+                    {t.header.allInCategory(c.practices.length)}
                   </a>
                 </div>
               ))}
@@ -401,7 +416,7 @@ export function Header({
                   return (
                     <li key={c.slug}>
                       <a
-                        href={`/practices/${c.slug}`}
+                        href={to(`/practices/${c.slug}`)}
                         onMouseEnter={() => setActive(i)}
                         onFocus={() => setActive(i)}
                         onClick={() => setMega(false)}
@@ -435,7 +450,7 @@ export function Header({
                         {c.practices.map((p) => (
                           <a
                             key={p.slug}
-                            href={`/practices/${c.slug}/${p.slug}`}
+                            href={to(`/practices/${c.slug}/${p.slug}`)}
                             tabIndex={on ? undefined : -1}
                             onClick={() => setMega(false)}
                             className="block break-inside-avoid py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
@@ -445,12 +460,12 @@ export function Header({
                         ))}
                       </div>
                       <a
-                        href={`/practices/${c.slug}`}
+                        href={to(`/practices/${c.slug}`)}
                         tabIndex={on ? undefined : -1}
                         onClick={() => setMega(false)}
                         className="mt-3 inline-block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
                       >
-                        Усі {c.practices.length} напрямів →
+                        {t.header.allInCategory(c.practices.length)}
                       </a>
                     </div>
                   )
@@ -501,7 +516,7 @@ export function Header({
                     {c.practices.map((p) => (
                       <a
                         key={p.slug}
-                        href={`/practices/${c.slug}/${p.slug}`}
+                        href={to(`/practices/${c.slug}/${p.slug}`)}
                         tabIndex={drawer && acc === c.slug ? 0 : -1}
                         onClick={closeDrawer}
                         className="block py-[7px] text-[15px] font-light text-on-dark transition-colors hover:text-accent-soft"
@@ -515,7 +530,7 @@ export function Header({
             </div>
           ))}
 
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <a
               key={n.href}
               href={n.href}
@@ -555,7 +570,8 @@ export function Header({
               {LANGS.map((l) => (
                 <a
                   key={l.id}
-                  href={l.href}
+                  href={langHref(l.id)}
+                  hrefLang={HTML_LANG[l.id]}
                   tabIndex={drawer ? 0 : -1}
                   aria-current={l.id === lang ? 'true' : undefined}
                   className={
@@ -575,7 +591,7 @@ export function Header({
               arrow
               className="self-start"
             >
-              Отримати консультацію
+              {t.common.getConsultation}
             </ButtonLink>
           </div>
         </div>

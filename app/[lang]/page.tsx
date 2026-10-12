@@ -4,7 +4,9 @@ import { MobileDock } from '@/components/site/MobileDock'
 import { Header } from '@/components/site/Header'
 import { toMenu } from '@/lib/menu'
 import type { Metadata } from 'next'
-import { openingHours, pageMeta } from '@/lib/seo'
+import { localePath, openingHours, pageMeta } from '@/lib/seo'
+import { HREFLANG, asLocale } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 import { Claim, Footer, Hero, Journal, Practices, TeamIntro } from '@/components/home/Sections'
 import { SITE_URL } from '@/lib/site'
 import { LeadSection } from '@/components/home/LeadSection'
@@ -24,16 +26,17 @@ import { TrustedBy } from '@/components/home/TrustedBy'
    кореневого layout не дописав назву вдруге. */
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = ui(lang).meta
   return {
     ...pageMeta(lang, ''),
-    title: { absolute: 'Юридична компанія в Києві — ліквідація, банкрутство, суди' },
-    description:
-      'Юридичні послуги в Києві з 2007 року: ліквідація та банкрутство, судові спори, нерухомість і військове право. Перша консультація безкоштовно.',
+    title: { absolute: t.homeTitle },
+    description: t.homeDescription,
   }
 }
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
+  const t = ui(lang)
   /* Sanity, если настроен и заполнен; иначе статика из lib/content.ts.
      Компонентам всё равно — форма данных одна. */
   const [cats, posts, crew, contacts, home] = await Promise.all([
@@ -46,7 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
   /* Керуючий партнер — автор цитаты в блоке «Команда», если автора
      не выбрали в студии отдельно. Его портрет и есть акцент блока. */
-  const partner = crew.data.find((m) => /керуюч/i.test(m.role))
+  const partner = crew.data.find((m) => t.home.managingRole.test(m.role))
   const asPerson = (m?: { name: string; role: string; photoUrl?: string }) =>
     m ? { name: m.name, role: m.role, ...(m.photoUrl ? { photoUrl: m.photoUrl } : {}) } : undefined
   const quoteAuthor = home.data.teamQuoteAuthor ?? asPerson(partner)
@@ -64,8 +67,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     '@context': 'https://schema.org',
     '@type': 'LegalService',
     '@id': `${SITE_URL}/#firm`,
-    name: 'Юридична компанія «АКТИВ»',
-    alternateName: 'AKTIV Law Firm',
+    name: t.common.firmFull,
+    alternateName: t.common.firmAlt,
     url: SITE_URL,
     logo: `${SITE_URL}/icon.svg`,
     telephone: c.phone,
@@ -74,20 +77,20 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     address: {
       '@type': 'PostalAddress',
       streetAddress: [c.office.street, c.office.unit].filter(Boolean).join(', '),
-      addressLocality: c.office.city || 'Київ',
+      addressLocality: c.office.city || t.common.city,
       addressCountry: 'UA',
     },
     image: `${SITE_URL}/icon.svg`,
     ...(hours ? { openingHoursSpecification: [hours] } : {}),
     ...(sameAs.length ? { sameAs } : {}),
-    areaServed: { '@type': 'Country', name: 'Україна' },
+    areaServed: { '@type': 'Country', name: t.common.country },
     knowsAbout: cats.data.map((x) => x.title),
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
-      name: 'Напрями практики',
+      name: t.home.practiceAreas,
       itemListElement: cats.data.map((x) => ({
         '@type': 'Offer',
-        itemOffered: { '@type': 'Service', name: x.title, url: `${SITE_URL}/practices/${x.slug}` },
+        itemOffered: { '@type': 'Service', name: x.title, url: `${SITE_URL}${localePath(lang, `/practices/${x.slug}`)}` },
       })),
     },
   }
@@ -98,10 +101,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     '@id': `${SITE_URL}/#website`,
-    name: 'ЮК «АКТИВ»',
-    alternateName: 'Юридична компанія «АКТИВ»',
+    name: t.common.firmShort,
+    alternateName: lang === 'ua' ? t.common.firmFull : t.common.firmAlt,
     url: SITE_URL,
-    inLanguage: 'uk-UA',
+    inLanguage: HREFLANG[asLocale(lang)],
     publisher: { '@id': `${SITE_URL}/#firm` },
   }
 
@@ -125,10 +128,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             5. нам довіряють — логотипи клієнтів;
             6. блог (від двох статей);
             7. форма — без змін. */}
-        <Hero home={home.data} />
+        <Hero lang={lang} home={home.data} />
         <TeamIntro lang={lang} home={home.data} members={crew.data} author={quoteAuthor} />
         <Practices categories={cats.data} lang={lang} text={home.data.practicesText} />
-        <Claim home={home.data} />
+        <Claim lang={lang} home={home.data} />
         <TrustedBy lang={lang} />
         {/* Блог — лише коли є з чого обирати: одна картка під великим
             заголовком виглядає як порожня полиця. */}
@@ -136,7 +139,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <LeadSection contacts={contacts.data} categories={cats.data} />
       </main>
 
-      <Footer contacts={contacts.data} categories={cats.data} />
+      <Footer lang={lang} contacts={contacts.data} categories={cats.data} />
       {/* Телефон і планшет: липка панель «консультація + дзвінок» замість кружка. */}
       <FloatingActions contacts={contacts.data} desktopOnly />
       <MobileDock contacts={contacts.data} label={home.data.heroCtaPrimary} />

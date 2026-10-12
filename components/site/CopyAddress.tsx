@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * «Скопіювати адресу» — для таксі, навігатора, листа колезі.
@@ -9,6 +10,8 @@ import { useState } from 'react'
  * браузер, http) — кнопка просто не показывается.
  */
 export function CopyAddress({ text, dark = false }: { text: string; dark?: boolean }) {
+  const T = useUi()
+  const t = T.map
   const [done, setDone] = useState(false)
   const [broken, setBroken] = useState(false)
   if (broken) return null
@@ -32,7 +35,7 @@ export function CopyAddress({ text, dark = false }: { text: string; dark?: boole
           : 'inline-flex min-h-9 items-center gap-1.5 rounded-full border-0 bg-transparent px-0 text-[13px] text-slate transition-colors hover:text-accent-ink'
       }
       aria-live="polite"
-      title={dark ? 'Скопіювати адресу' : undefined}
+      title={dark ? t.copy : undefined}
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[15px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         {done ? (
@@ -44,7 +47,7 @@ export function CopyAddress({ text, dark = false }: { text: string; dark?: boole
           </>
         )}
       </svg>
-      {done ? 'Скопійовано' : dark ? <span className="sr-only">Скопіювати адресу</span> : 'Скопіювати адресу'}
+      {done ? T.common.copied : dark ? <span className="sr-only">{t.copy}</span> : t.copy}
     </button>
   )
 }

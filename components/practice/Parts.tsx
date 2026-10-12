@@ -4,6 +4,7 @@ import { Kicker, RingAvatar, SEC } from '@/components/site/Blocks'
 import { ArrowLink, ButtonLink } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
 import type { PracticePerson } from './data'
+import { ui } from '@/lib/ui'
 
 /**
  * Блоки страниц направления и услуги (формат armada.law, как главная).
@@ -12,9 +13,10 @@ import type { PracticePerson } from './data'
 
 /* ── текст ── */
 
-/** «Ліквідація та банкрутство» → ['Ліквідація', 'та банкрутство']: акцент — от союза. */
-export function splitConj(title: string): [string, string | undefined] {
-  const m = title.match(/^(.+?)\s((?:та|і)\s.+)$/)
+/** «Ліквідація та банкрутство» → ['Ліквідація', 'та банкрутство']: акцент — от союза.
+    Англійською — від «&» / «and»: «Liquidation & Bankruptcy». */
+export function splitConj(title: string, lang = 'ua'): [string, string | undefined] {
+  const m = title.match(ui(lang).category.conj)
   return m?.[1] && m[2] ? [m[1], m[2]] : [title, undefined]
 }
 
@@ -53,11 +55,13 @@ export function PersonLine({ m, size = 'size-[60px]', dark = false }: { m: Pract
    Та сама композиція, що TeamIntro на головній: великий портрет 4:5 з
    малиновим кутом на десктопі, кружок з кільцем на телефоні. Портрет —
    у першого привʼязаного (порядок з «Команди»), решта — рядом аватарів. */
-export function LeadTeam({ people, contactHref }: { people: PracticePerson[]; contactHref: string }) {
+export function LeadTeam({ people, contactHref, lang = 'ua' }: { people: PracticePerson[]; contactHref: string; lang?: string }) {
+  const T = ui(lang)
+  const t = T.category
   const lead = people.find((m) => m.photoUrl)
   const rest = lead ? people.filter((m) => m !== lead) : people
   /* «адвокат» — лише якщо це правда для всіх: приватний виконавець адвокатом не є. */
-  const allAdvocates = people.every((m) => /адвокат/i.test(m.role))
+  const allAdvocates = people.every((m) => t.attorneyRole.test(m.role))
 
   return (
     <section aria-labelledby="lead-team-h" className={`bg-paper ${SEC}`}>
@@ -104,15 +108,15 @@ export function LeadTeam({ people, contactHref }: { people: PracticePerson[]; co
             </div>
           )}
 
-          <Kicker>Хто веде напрям</Kicker>
+          <Kicker>{t.leadKicker}</Kicker>
           <h2
             id="lead-team-h"
             className="m-0 mt-3.5 font-serif text-[clamp(30px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink [text-wrap:balance]"
           >
-            Справу веде <em className="text-accent-ink">{allAdvocates ? 'профільний адвокат' : 'профільний фахівець'}</em>
+            {t.leadTitle} <em className="text-accent-ink">{allAdvocates ? t.leadAttorney : t.leadExpert}</em>
           </h2>
           <p className="m-0 mt-[18px] max-w-[56ch] text-[15.5px] leading-[1.65] text-slate">
-            Ви одразу знаєте, хто відповідає за справу, і маєте його прямий контакт.
+            {t.leadText}
           </p>
 
           {rest.length > 0 && (
@@ -126,7 +130,7 @@ export function LeadTeam({ people, contactHref }: { people: PracticePerson[]; co
           )}
 
           <ButtonLink href={contactHref} arrow className="mt-[clamp(26px,3vw,34px)]">
-            Обговорити справу
+            {T.common.discussCase}
           </ButtonLink>
         </div>
       </div>
@@ -180,7 +184,9 @@ export function OtherServices({
   href,
   items,
   afterHero = false,
+  lang = 'ua',
 }: {
+  lang?: string
   title: string
   count: number
   href: string
@@ -188,9 +194,11 @@ export function OtherServices({
   /** одразу під темним першим екраном — тонка лінія, щоб темне не злилося */
   afterHero?: boolean
 }) {
+  const T = ui(lang)
+  const t = T.category
   return (
     <section
-      aria-label="Інші послуги напряму"
+      aria-label={t.otherAria}
       className={`grid [container-type:inline-size] min-[900px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] ${
         afterHero ? 'border-t border-on-dark-hair' : ''
       }`}
@@ -198,13 +206,13 @@ export function OtherServices({
       <div className="on-dark bg-ink px-[var(--gut)] py-[clamp(48px,7vw,96px)] text-on-dark min-[900px]:pl-[max(var(--gut),calc((100cqw-var(--shell))/2+var(--gut)))]">
         <div className="max-w-[440px]">
           <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] !text-white">
-            Інші послуги <em className="text-accent-soft">напряму</em>
+            {t.otherTitle[0]} <em className="text-accent-soft">{t.otherTitle[1]}</em>
           </Reveal>
           <p className="m-0 mt-[18px] text-[15.5px] leading-[1.65] text-on-dark">
-            {title} — {count} {plural(count, ['послуга', 'послуги', 'послуг'])}.
+            {title} — {T.common.services(count)}.
           </p>
           <ArrowLink href={href} className="mt-[22px] text-[15px] font-semibold !text-accent-soft">
-            Усі послуги напряму
+            {t.allInArea}
           </ArrowLink>
         </div>
       </div>

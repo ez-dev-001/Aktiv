@@ -24,7 +24,8 @@ import {
 } from '@/lib/content'
 import { sanityFetch } from './client'
 import type { SanityImage } from './image'
-import { staticCookieTexts, type CookieTexts } from '@/lib/consent'
+import { cookieTextsFor, type CookieTexts } from '@/lib/consent'
+import { ui } from '@/lib/ui'
 import {
   ABOUT_QUERY,
   BLOG_QUERY,
@@ -119,18 +120,18 @@ export interface Post {
   cover?: SanityImage | null
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  news: 'Новини законодавства',
-  court: 'Позиції судів',
-  case: 'Кейс-рев\u2019ю',
-  guide: 'Розбір для бізнесу',
-}
+/** Рубрика статті: у Sanity — кодом (news, court…), на сторінці — підписом
+    мовою сторінки (lib/ui.ts → blog.categories). Невідомий код — як є. */
+export const blogCategoryLabel = (id: string | undefined, lang = 'ua') => (id ? (ui(lang).blog.categories[id] ?? id) : id)
+/** Підпис рубрики → її код для ?cat= (зворотне до blogCategoryLabel). */
+export const blogCategoryId = (label: string | undefined, lang = 'ua') =>
+  Object.entries(ui(lang).blog.categories).find(([, l]) => l === label)?.[0]
 
 export async function getPosts(lang = 'ua', limit = 3): Promise<Sourced<Post[]>> {
   const rows = await sanityFetch<Post[]>(POSTS_QUERY, { lang, limit }, ['post'])
   if (rows && rows.length > 0) {
     return {
-      data: safe(rows, lang).map((p) => ({ ...p, category: CATEGORY_LABEL[p.category ?? ''] ?? p.category })),
+      data: safe(rows, lang).map((p) => ({ ...p, category: blogCategoryLabel(p.category, lang) })),
       source: 'sanity',
     }
   }
@@ -278,11 +279,11 @@ type RawTeamMember = TeamMember & { practiceNote?: string; areas?: (string | nul
  * Своя фраза из студии важнее; иначе — категории его практик через точку.
  * Больше двух категорий не пишем: «веде все» читается как «не веде ничего».
  */
-function practiceLine(m: RawTeamMember): string | undefined {
+function practiceLine(m: RawTeamMember, lang = 'ua'): string | undefined {
   if (m.practiceNote?.trim()) return m.practiceNote.trim()
   const areas = [...new Set((m.areas ?? []).filter((a): a is string => Boolean(a)))]
   if (!areas.length) return undefined
-  return areas.length <= 2 ? areas.join(' · ') : `${areas.slice(0, 2).join(' · ')} та ін.`
+  return areas.length <= 2 ? areas.join(' · ') : `${areas.slice(0, 2).join(' · ')}${ui(lang).team.etc}`
 }
 
 /**
@@ -304,7 +305,7 @@ export async function getTeam(lang = 'ua'): Promise<Sourced<TeamMember[]>> {
       data: safe(rows, lang)
         .filter((m) => m?.name)
         .map(({ practiceNote: _n, areas: _a, ...m }) => {
-          const practice = practiceLine({ ...m, practiceNote: _n, areas: _a })
+          const practice = practiceLine({ ...m, practiceNote: _n, areas: _a }, lang)
           return practice ? { ...m, practice } : m
         }),
       source: 'sanity',
@@ -481,6 +482,7 @@ export async function getPractice(slug: string, lang = 'ua'): Promise<PracticeDe
 
 /* ═══════════════ БЛОГ ═══════════════ */
 
+/** Рубрики українською (для мови — blogCategoryLabel / blogCategoryId). */
 export const BLOG_CATEGORIES = [
   { id: '', label: 'Усі' },
   { id: 'news', label: 'Новини законодавства' },
@@ -493,7 +495,7 @@ export async function getBlog(lang = 'ua', cat = '', limit = 30): Promise<Source
   const rows = await sanityFetch<Post[]>(BLOG_QUERY, { lang, cat, limit }, ['post'])
   if (rows && rows.length > 0) {
     return {
-      data: safe(rows, lang).map((p) => ({ ...p, category: CATEGORY_LABEL[p.category ?? ''] ?? p.category })),
+      data: safe(rows, lang).map((p) => ({ ...p, category: blogCategoryLabel(p.category, lang) })),
       source: 'sanity',
     }
   }
@@ -523,7 +525,7 @@ export async function getPost(slug: string, lang = 'ua'): Promise<PostDetail | n
   const author = clean.author as unknown as { name?: string; role?: string } | string | undefined
   return {
     ...clean,
-    category: CATEGORY_LABEL[clean.category ?? ''] ?? clean.category,
+    category: blogCategoryLabel(clean.category, lang),
     author: typeof author === 'string' ? author : author?.name,
     authorRole: typeof author === 'string' ? undefined : author?.role,
   }
@@ -826,10 +828,11 @@ export async function getCookieTexts(lang = 'ua'): Promise<CookieTexts> {
   const row = await sanityFetch<Partial<CookieTexts>>(COOKIE_QUERY, { lang }, ['siteSettings'])
   const r = row ? safe(row, lang) : {}
   const S = (v: unknown, fb: string) => (typeof v === 'string' && v.trim() ? v.trim() : fb)
+  const fb = cookieTextsFor(lang)
   return {
-    title: S(r.title, staticCookieTexts.title),
-    text: S(r.text, staticCookieTexts.text),
-    privacyUrl: S(r.privacyUrl, staticCookieTexts.privacyUrl),
+    title: S(r.title, fb.title),
+    text: S(r.text, fb.text),
+    privacyUrl: S(r.privacyUrl, fb.privacyUrl),
   }
 }
 

@@ -523,3 +523,109 @@
     }
   }
 }
+
+/* ── ValueIcon («Про компанію» → цінності) ──
+   Кільце й лінії іконки «малюються», коли картка вʼїжджає в кадр:
+   scroll-driven animation, без JS. Базовий стан — готовий знак, тож
+   без підтримки animation-timeline і при «зменшеному русі» він просто
+   стоїть. При наведенні на картку кільце трохи повертається. */
+.vi-ring, .vi-ico path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.vi-ring { transform-origin: 32px 32px; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.group:hover .vi-ring { transform: rotate(-28deg); }
+@keyframes vi-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .vi-ring { animation: vi-draw linear both; animation-timeline: view(); animation-range: entry 5% cover 30%; }
+    .vi-ico path { animation: vi-draw linear both; animation-timeline: view(); animation-range: entry 15% cover 38%; }
+  }
+}
+
+/* Відтворення «малювання» за командою (ValueIcon play): при монтуванні.
+   Повний шорткат animation скидає й animation-timeline, тож scroll-driven
+   варіант вище тут не заважає. */
+@keyframes vi-pop { from { transform: scale(0.6); opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .vi-play .vi-bg { transform-origin: 32px 32px; animation: vi-pop 0.7s cubic-bezier(0.2, 1.3, 0.4, 1) both; animation-timeline: auto; }
+  .vi-play .vi-ring { animation: vi-draw 1s cubic-bezier(0.6, 0, 0.2, 1) both; animation-timeline: auto; }
+  .vi-play .vi-ico path { animation: vi-draw 1.15s cubic-bezier(0.6, 0, 0.2, 1) 0.2s both; animation-timeline: auto; }
+}
+
+/* ── ValuesIndex («Про компанію» → цінності, варіант D) ── */
+@keyframes vx-in { from { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: no-preference) {
+  .vx-panel { animation: vx-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+/* телефон: колонка іконки 0 → 46px, коли пункт розкрито */
+.vx-head {
+  display: grid; grid-template-columns: 0px minmax(0, 1fr) 34px; align-items: center; column-gap: 0;
+  transition: grid-template-columns 0.55s cubic-bezier(0.16, 1, 0.3, 1), column-gap 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.vx-acc.is-open .vx-head { grid-template-columns: 46px minmax(0, 1fr) 34px; column-gap: 14px; }
+.vx-ic { display: block; width: 46px; height: 46px; overflow: visible; }
+.vx-ic .vi { transform-origin: 50% 50%; }
+@keyframes vx-screw { from { opacity: 0; transform: scale(0.5) rotate(-40deg); } }
+@media (prefers-reduced-motion: no-preference) {
+  .vx-acc.is-open .vx-ic .vi { animation: vx-screw 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) 0.08s both; }
+}
+.vx-acc.is-open .vi-ring { transform: rotate(-28deg); }
+.vx-t { transition: color 0.3s, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.vx-acc.is-open .vx-t { color: var(--color-accent-ink); transform: translateX(2px); }
+.vx-pm {
+  position: relative; width: 34px; height: 34px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--color-hair);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s, box-shadow 0.3s;
+}
+.vx-pm::before, .vx-pm::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 1.5px; background: var(--color-ink);
+  transform: translate(-50%, -50%); transition: background-color 0.3s;
+}
+.vx-pm::after { transform: translate(-50%, -50%) rotate(90deg); }
+.vx-acc.is-open .vx-pm { transform: rotate(135deg); background: var(--color-accent-btn); box-shadow: none; }
+.vx-acc.is-open .vx-pm::before, .vx-acc.is-open .vx-pm::after { background: #fff; }
+/* розкриття тексту: висота 0fr → 1fr, текст — прозорість, зсув і легке розмиття */
+.vx-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+.vx-acc.is-open .vx-body { grid-template-rows: 1fr; }
+.vx-text {
+  margin: 0 0 22px 60px; opacity: 0; transform: translateY(-8px); filter: blur(2px);
+  transition: opacity 0.35s, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s;
+}
+.vx-acc.is-open .vx-text { opacity: 1; transform: none; filter: none; transition-delay: 0.12s; }
+.vx-text::before {
+  content: ""; display: block; width: 28px; height: 2px; margin-bottom: 12px; background: var(--color-accent);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+.vx-acc.is-open .vx-text::before { transform: scaleX(1); }
+@media (max-width: 420px) { .vx-text { margin-left: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .vx-head, .vx-body, .vx-text, .vx-text::before, .vx-pm, .vx-t { transition: none; }
+}
+
+/* ── SpotMore («Команда» → «Про юриста») ──
+   Висота 0fr → 1fr через grid-template-rows (без JS-вимірів), лінія
+   над панеллю протягується зліва направо, рядки зʼявляються по черзі:
+   прозорість, зсув угору й легке розмиття. Закриття — у зворотному
+   порядку, швидше. */
+.sm-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.sm-panel.is-open { grid-template-rows: 1fr; }
+.sm-clip { overflow: hidden; min-height: 0; }
+.sm-in { position: relative; }
+.sm-in::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--color-on-dark-hair);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sm-panel.is-open .sm-in::before { transform: scaleX(1); }
+.sm-in dl > * {
+  opacity: 0; transform: translateY(14px); filter: blur(3px);
+  transition: opacity 0.3s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s;
+}
+.sm-panel.is-open .sm-in dl > * {
+  opacity: 1; transform: none; filter: none;
+  transition: opacity 0.5s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s;
+}
+.sm-panel.is-open .sm-in dl > *:nth-child(1) { transition-delay: 0.12s; }
+.sm-panel.is-open .sm-in dl > *:nth-child(2) { transition-delay: 0.2s; }
+.sm-panel.is-open .sm-in dl > *:nth-child(3) { transition-delay: 0.28s; }
+.sm-panel.is-open .sm-in dl > *:nth-child(4) { transition-delay: 0.36s; }
+.sm-panel.is-open .sm-in dl > *:nth-child(n + 5) { transition-delay: 0.44s; }
+@media (prefers-reduced-motion: reduce) {
+  .sm-panel, .sm-in::before, .sm-in dl > * { transition: none !important; }
+}

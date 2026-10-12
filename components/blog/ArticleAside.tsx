@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { Heading } from './text'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Ліва колонка статті: зміст і «Поділитися».
@@ -13,6 +14,7 @@ import type { Heading } from './text'
 const H4 = 'm-0 mb-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate'
 
 export function Toc({ items }: { items: Heading[] }) {
+  const t = useUi().post
   const [on, setOn] = useState(items[0]?.id)
 
   useEffect(() => {
@@ -42,8 +44,8 @@ export function Toc({ items }: { items: Heading[] }) {
   }, [items])
 
   return (
-    <nav aria-label="Зміст статті">
-      <p className={H4}>Зміст</p>
+    <nav aria-label={t.tocAria}>
+      <p className={H4}>{t.tocTitle}</p>
       <ol className="m-0 grid list-none gap-0.5 p-0">
         {items.map((h, i) => {
           const active = h.id === on
@@ -73,12 +75,14 @@ const ROUND =
   'grid size-10 place-items-center rounded-full font-mono text-[11px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[background-color,color,box-shadow] hover:bg-ink hover:text-white hover:shadow-none'
 
 export function Share({ url, title }: { url: string; title: string }) {
+  const T = useUi()
+  const t = T.post
   const [copied, setCopied] = useState(false)
   const u = encodeURIComponent(url)
   const links = [
-    { k: 'TG', label: 'Поділитися в Telegram', href: `https://t.me/share/url?url=${u}&text=${encodeURIComponent(title)}` },
-    { k: 'FB', label: 'Поділитися у Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
-    { k: 'IN', label: 'Поділитися в LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+    { k: 'TG', label: t.shareTelegram, href: `https://t.me/share/url?url=${u}&text=${encodeURIComponent(title)}` },
+    { k: 'FB', label: t.shareFacebook, href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { k: 'IN', label: t.shareLinkedIn, href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
   ]
 
   const copy = async () => {
@@ -99,14 +103,14 @@ export function Share({ url, title }: { url: string; title: string }) {
 
   return (
     <div>
-      <p className={H4}>Поділитися</p>
+      <p className={H4}>{t.share}</p>
       <div className="flex flex-wrap items-center gap-2">
         {links.map((l) => (
           <a key={l.k} href={l.href} target="_blank" rel="noopener noreferrer" aria-label={l.label} className={ROUND}>
             {l.k}
           </a>
         ))}
-        <button type="button" onClick={copy} aria-label="Копіювати посилання" className={`${ROUND} cursor-pointer`}>
+        <button type="button" onClick={copy} aria-label={t.copyLink} className={`${ROUND} cursor-pointer`}>
           {copied ? (
             <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m5 12.5 4.5 4.5L19 7.5" />
@@ -119,7 +123,7 @@ export function Share({ url, title }: { url: string; title: string }) {
           )}
         </button>
         <span aria-live="polite" className={`text-[12.5px] text-accent-ink ${copied ? '' : 'sr-only'}`}>
-          {copied ? 'Скопійовано' : ''}
+          {copied ? T.common.copied : ''}
         </span>
       </div>
     </div>

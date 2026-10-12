@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { pageMeta } from '@/lib/seo'
 import { needsMedia } from '@/components/site/PostCard'
-import { BLOG_CATEGORIES, getBlog, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
+import { blogCategoryId, getBlog, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
+import { localeHref } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 import { PageShell } from '@/components/site/PageShell'
 import { PageHero } from '@/components/site/PageHero'
 import { BlogCard, FeaturedCard, type CardAuthor } from '@/components/blog/BlogCard'
@@ -24,11 +26,11 @@ import { BlogFeed, BlogFilterProvider, BlogSearch, type FeedItem } from '@/compo
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = ui(lang).meta
   return {
     ...pageMeta(lang, '/blog'),
-    title: 'Блог: судова практика й зміни законодавства',
-    description:
-      'Розбори рішень судів, зміни законодавства та кейси ЮК «АКТИВ». Пишемо про те, що впливає на бізнес і власність клієнтів.',
+    title: t.blogTitle,
+    description: t.blogDescription,
   }
 }
 
@@ -45,6 +47,7 @@ export default async function BlogPage({
 }) {
   const { lang } = await params
   const prefix = lang === 'ua' ? '' : `/${lang}`
+  const T = ui(lang)
   const [{ data: posts, source }, { data: team }] = await Promise.all([getBlog(lang, '', LIMIT), getTeam(lang)])
 
   /* Без Sanity статьи открывать нечего: в статике есть только анонсы.
@@ -64,7 +67,7 @@ export default async function BlogPage({
 
   /* Рубрика → ключ для ?cat=: id з BLOG_CATEGORIES, якщо назва відома,
      інакше сама назва (рубрику могли додати в студії пізніше). */
-  const catKey = (label?: string) => BLOG_CATEGORIES.find((c) => c.label === label)?.id || label || ''
+  const catKey = (label?: string) => blogCategoryId(label, lang) || label || ''
   const cats = [...new Set(posts.map((p) => p.category).filter((c): c is string => !!c))].map((label) => ({
     id: catKey(label),
     label,
@@ -75,7 +78,7 @@ export default async function BlogPage({
     slug: p.slug,
     cat: catKey(p.category),
     hay: `${p.title} ${p.excerpt ?? ''}`,
-    node: <BlogCard post={p} href={href(p)} withMedia={withMedia} author={author(p)} headingLevel="h2" />,
+    node: <BlogCard post={p} href={href(p)} withMedia={withMedia} author={author(p)} headingLevel="h2" lang={lang} />,
   }))
 
   return (
@@ -83,21 +86,22 @@ export default async function BlogPage({
       <BlogFilterProvider>
         <PageHero
           compact
-          crumbs={[{ label: 'Головна', href: `${prefix}/` }, { label: 'Блог' }]}
-          title="Розбираємо рішення судів, поки вони ще"
-          accent="мають значення."
-          lede="Зміни законодавства, позиції Верховного Суду та кейси з нашої практики — без переказу новин, з висновком для бізнесу."
+          crumbs={[{ label: T.common.home, href: localeHref(lang, '/') }, { label: T.common.blog }]}
+          lang={lang}
+          title={T.blog.heroTitle}
+          accent={T.blog.heroAccent}
+          lede={T.blog.heroLede}
         >
           {posts.length >= SEARCH_FROM && <BlogSearch />}
         </PageHero>
 
-        <section id="feed" aria-label="Статті" className="pb-[clamp(56px,8vw,112px)] pt-[clamp(32px,4vw,56px)]">
+        <section id="feed" aria-label={T.blog.feedAria} className="pb-[clamp(56px,8vw,112px)] pt-[clamp(32px,4vw,56px)]">
           <div className="shell inner">
             {posts.length === 0 ? (
               <div className="rounded-[26px] bg-white px-[clamp(24px,4vw,48px)] py-[clamp(36px,5vw,56px)] shadow-[inset_0_0_0_1px_var(--color-hair)]">
-                <p className="m-0 font-serif text-[clamp(24px,2.6vw,32px)] leading-[1.18] text-ink">Тут поки немає статей.</p>
+                <p className="m-0 font-serif text-[clamp(24px,2.6vw,32px)] leading-[1.18] text-ink">{T.blog.emptyTitle}</p>
                 <p className="m-0 mt-2.5 max-w-[56ch] text-[15.5px] leading-[1.65] text-slate">
-                  Поки їх немає, поставте питання юристу напряму — форма нижче.
+                  {T.blog.emptyText}
                 </p>
               </div>
             ) : (
@@ -106,7 +110,7 @@ export default async function BlogPage({
                 featured={
                   first && {
                     slug: first.slug,
-                    node: <FeaturedCard post={first} href={href(first)} author={author(first)} />,
+                    node: <FeaturedCard post={first} href={href(first)} author={author(first)} lang={lang} />,
                   }
                 }
                 cats={cats}

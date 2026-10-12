@@ -152,3 +152,15 @@ export const staticCookieTexts: CookieTexts = {
      працює і тоді, коли поле в Sanity порожнє. */
   privacyUrl: '/privacy',
 }
+
+/* Англійський запасний текст — для /en, коли поле в Sanity порожнє.
+   Тут, а не в lib/ui.ts: цей модуль без імпортів, його читає й
+   scripts/seed.mjs. Посилання '/privacy' банер сам веде на /en/privacy. */
+const staticCookieTextsEn: CookieTexts = {
+  title: 'We use cookies',
+  text: 'Necessary cookies keep the site working. With your permission, we also count visits to understand which pages are useful, and show ads to people who have already visited the site. **Without your consent, neither will happen.**',
+  privacyUrl: '/privacy',
+}
+
+/** Запасні тексти банера для мови сторінки. */
+export const cookieTextsFor = (lang: string): CookieTexts => (lang === 'en' ? staticCookieTextsEn : staticCookieTexts)

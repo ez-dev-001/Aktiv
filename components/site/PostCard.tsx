@@ -2,6 +2,7 @@ import type { Post } from '@/lib/sanity/content'
 import { hasImage } from '@/lib/sanity/image'
 import { Cover } from './Cover'
 import { Icon } from './Icon'
+import { formatDate, ui } from '@/lib/ui'
 
 /**
  * Карточка статьи — одна на блог и на главную.
@@ -27,8 +28,6 @@ import { Icon } from './Icon'
 
 export const needsMedia = (posts: Post[]) => posts.some((p) => hasImage(p.cover))
 
-const fmtDate = (iso?: string) =>
-  iso ? new Date(iso).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : null
 
 const RATIO = 3 / 2
 
@@ -38,7 +37,10 @@ export function PostCard({
   withMedia,
   headingLevel = 'h3',
   hideExcerpt = false,
+  lang = 'ua',
 }: {
+  /** мова сторінки — дата й «Читати» */
+  lang?: string
   post: Post
   /** Нет адреса — карточка не ссылка (статика без полного текста). */
   href?: string
@@ -48,7 +50,7 @@ export function PostCard({
   hideExcerpt?: boolean
 }) {
   const H = headingLevel
-  const date = fmtDate(post.publishedAt)
+  const date = formatDate(lang, post.publishedAt)
 
   const body = (
     <>
@@ -85,7 +87,7 @@ export function PostCard({
         )}
         {href && (
           <span className="mt-auto inline-flex items-center gap-2 pt-1 text-[14px] font-medium text-accent-ink">
-            Читати{' '}
+            {ui(lang).common.read}{' '}
             <Icon name="arrow" className="size-[14px] transition-transform duration-[240ms] group-hover:translate-x-1" />
           </span>
         )}

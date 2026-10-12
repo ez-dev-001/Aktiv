@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { absUrl, pageMeta, withCity } from '@/lib/seo'
-import { LOCALES } from '@/lib/i18n'
+import { absUrl, localePath, pageMeta, withCity } from '@/lib/seo'
+import { LOCALES, localeHref } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories } from '@/lib/content'
 import { getCategories, getPractice } from '@/lib/sanity/content'
@@ -11,7 +12,7 @@ import { Prose } from '@/components/site/Prose'
 import { POST_GRID, PostCard } from '@/components/site/PostCard'
 import { ArrowLink, ButtonLink } from '@/components/ui/Button'
 import { getPracticePeople, postLabel, type PracticePerson } from '@/components/practice/data'
-import { CheckList, MarkGlyph, MiniLabel, OtherServices, PersonLine, plural, splitDash } from '@/components/practice/Parts'
+import { CheckList, MarkGlyph, MiniLabel, OtherServices, PersonLine, splitDash } from '@/components/practice/Parts'
 
 /**
  * Сторінка послуги — у форматі головної (armada.law).
@@ -38,11 +39,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang, category, slug } = await params
   const p = await getPractice(slug, lang)
-  if (!p) return { title: 'Практика' }
+  if (!p) return { title: ui(lang).common.practice }
   /* SEO-поля зі студії мають пріоритет; порожні — назва й короткий опис. */
   return {
     ...pageMeta(lang, `/practices/${p.category?.slug ?? category}/${p.slug}`),
-    title: p.seoTitle || withCity(p.title),
+    title: p.seoTitle || withCity(p.title, lang),
     description: (p.seoDescription || p.excerpt)?.slice(0, 180),
   }
 }
@@ -59,6 +60,8 @@ export default async function PracticePage({
   const [{ data: cats }, linked] = await Promise.all([getCategories(lang), getPracticePeople(p.slug, lang)])
 
   const prefix = lang === 'ua' ? '' : `/${lang}`
+  const T = ui(lang)
+  const t = T.service
   const catSlug = p.category?.slug ?? category
   const cat = cats.find((c) => c.slug === catSlug)
   const catTitle = p.category?.title ?? cat?.title ?? category
@@ -92,15 +95,12 @@ export default async function PracticePage({
   const packagesHead =
     n === 1
       ? packages[0]!.audience.length + packages[0]!.includes.length > 0
-        ? { title: 'Що входить', accent: 'у послугу', lede: undefined }
-        : { title: 'Варіант', accent: 'послуги', lede: undefined }
+        ? { title: t.includedTitle, accent: t.includedAccent, lede: undefined }
+        : { title: t.optionTitle, accent: t.optionAccent, lede: undefined }
       : {
-          title: n === 2 ? 'Два варіанти' : `${n} ${plural(n, ['варіант', 'варіанти', 'варіантів'])}`,
-          accent: '— оберіть свій',
-          lede:
-            n === 2 && catSlug === 'likvidatsiya-bankrutstvo'
-              ? 'Вибір залежить не від бюджету, а від історії підприємства: чим складніша, тим далі має відійти власник.'
-              : 'Оберіть варіант, що відповідає вашій ситуації, — або опишіть її, і ми підкажемо.',
+          title: n === 2 ? t.twoOptions : t.options(n),
+          accent: t.chooseYours,
+          lede: n === 2 && catSlug === 'likvidatsiya-bankrutstvo' ? t.liquidationLede : t.optionsLede,
         }
 
   const [title, accent] = splitDash(p.title)
@@ -132,10 +132,10 @@ export default async function PracticePage({
      його тут і немає. Перша консультація безкоштовна — публічна умова
      фірми (так написано у формі заявки). */
   const facts: { k: string; v: string }[] = [
-    ...(n > 0 ? [{ k: n === 1 ? 'Варіант' : 'Варіанти', v: packages.map((pk) => pk.name).join(' · ') }] : []),
+    ...(n > 0 ? [{ k: n === 1 ? t.factOption : t.factOptions, v: packages.map((pk) => pk.name).join(' · ') }] : []),
     /* Без тексту послуги немає картки «хто веде» — імʼя переїжджає сюди. */
-    ...(!hasBody && people.length > 0 ? [{ k: 'Веде справу', v: people.map((m) => m.name).join(', ') }] : []),
-    { k: 'Перша консультація', v: 'Безкоштовно' },
+    ...(!hasBody && people.length > 0 ? [{ k: t.factLead, v: people.map((m) => m.name).join(', ') }] : []),
+    { k: t.factFirst, v: t.factFree },
   ]
 
   /* Розмітка для пошуку: послуга (Service від фірми з головної) і,
@@ -148,8 +148,8 @@ export default async function PracticePage({
       name: p.title,
       ...(p.excerpt ? { description: p.excerpt } : {}),
       serviceType: catTitle,
-      url: absUrl(`/practices/${catSlug}/${p.slug}`),
-      areaServed: { '@type': 'Country', name: 'Україна' },
+      url: absUrl(localePath(lang, `/practices/${catSlug}/${p.slug}`)),
+      areaServed: { '@type': 'Country', name: T.common.country },
       provider: { '@id': absUrl('/#firm') },
     },
     ...(faq.length > 0
@@ -169,11 +169,12 @@ export default async function PracticePage({
       <PageHero
         small
         crumbs={[
-          { label: 'Головна', href: prefix || '/' },
-          { label: 'Практики', href: `${prefix}/#practices` },
+          { label: T.common.home, href: localeHref(lang, '/') },
+          { label: T.common.practices, href: localeHref(lang, '/practices') },
           { label: catTitle, href: catHref },
           { label: title },
         ]}
+        lang={lang}
         /* тире тримається за попереднє слово, а не відкриває рядок акценту */
         title={accent ? `${title}\u00a0—` : title}
         accent={accent}
@@ -189,12 +190,12 @@ export default async function PracticePage({
               ))}
             </dl>
             <ButtonLink href={consult} arrow className="mx-[22px] mb-[22px] mt-[22px]">
-              Отримати консультацію
+              {T.common.getConsultation}
             </ButtonLink>
           </div>
         }
       >
-        {n > 1 && <HeroChips items={[`${n} ${plural(n, ['варіант', 'варіанти', 'варіантів'])}`]} />}
+        {n > 1 && <HeroChips items={[t.options(n)]} />}
       </PageHero>
 
       {/* ── ТЕКСТ + «ХТО ВЕДЕ» ──
@@ -220,7 +221,7 @@ export default async function PracticePage({
                 {people.length > 0 ? (
                   <>
                     <h2 className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">
-                      Хто веде справу
+                      {t.whoHandles}
                     </h2>
                     <ul className="m-0 grid list-none gap-4 p-0">
                       {people.map((m) => (
@@ -233,16 +234,16 @@ export default async function PracticePage({
                 ) : (
                   <>
                     <h2 className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">
-                      Поставити питання
+                      {T.common.askQuestion}
                     </h2>
                     <p className="m-0 font-serif text-[20px] leading-[1.3] text-ink">
-                      Опишіть ситуацію — юрист оцінить перспективу.
+                      {t.describe}
                     </p>
-                    <p className="m-0 mt-3 text-[14.5px] leading-[1.6] text-slate">Перша консультація — безкоштовно.</p>
+                    <p className="m-0 mt-3 text-[14.5px] leading-[1.6] text-slate">{T.common.firstConsultFree}</p>
                   </>
                 )}
                 <ButtonLink href={consult} arrow className="mt-[18px] w-full">
-                  Поставити питання
+                  {T.common.askQuestion}
                 </ButtonLink>
               </div>
             </aside>
@@ -254,7 +255,7 @@ export default async function PracticePage({
       {n > 0 && (
         <section id="packages" className={`scroll-mt-[var(--hdr)] ${bg.packages} ${SEC}`}>
           <div className="shell inner">
-            <SecHead eyebrow="Варіанти" title={packagesHead.title} accent={packagesHead.accent} lede={packagesHead.lede} row />
+            <SecHead eyebrow={t.optionsEyebrow} title={packagesHead.title} accent={packagesHead.accent} lede={packagesHead.lede} row />
             <div
               className={`grid gap-3.5 ${
                 n === 1 ? 'max-w-[640px]' : n === 2 ? 'min-[860px]:grid-cols-2' : 'min-[860px]:grid-cols-2 min-[1100px]:grid-cols-3'
@@ -279,13 +280,13 @@ export default async function PracticePage({
                     </h3>
                     {pk.audience.length > 0 && (
                       <div>
-                        <MiniLabel dark={dark}>Кому підходить</MiniLabel>
+                        <MiniLabel dark={dark}>{t.suits}</MiniLabel>
                         <CheckList items={pk.audience} dark={dark} />
                       </div>
                     )}
                     {pk.includes.length > 0 && (
                       <div>
-                        <MiniLabel dark={dark}>Що входить</MiniLabel>
+                        <MiniLabel dark={dark}>{t.included}</MiniLabel>
                         <CheckList items={pk.includes} dark={dark} />
                       </div>
                     )}
@@ -299,7 +300,7 @@ export default async function PracticePage({
                       arrow
                       className="mt-auto self-start"
                     >
-                      Обрати «{pk.name}»
+                      {t.choose(pk.name)}
                     </ButtonLink>
                   </article>
                 )
@@ -313,7 +314,7 @@ export default async function PracticePage({
       {includes.length > 0 && (
         <section id="includes" className={`scroll-mt-[var(--hdr)] ${bg.includes} ${SEC}`}>
           <div className="shell inner">
-            <SecHead eyebrow="Що входить" title="Склад" accent="роботи" />
+            <SecHead eyebrow={t.included} title={t.scopeTitle} accent={t.scopeAccent} />
             <div className="rounded-[26px] bg-white p-[clamp(26px,3.4vw,40px)] shadow-[inset_0_0_0_1px_var(--color-hair)] [&_ul]:min-[760px]:grid-cols-2 [&_ul]:min-[760px]:gap-x-10">
               <CheckList items={includes} />
             </div>
@@ -326,14 +327,10 @@ export default async function PracticePage({
         <section id="stages" className={`scroll-mt-[var(--hdr)] ${bg.stages} ${SEC}`}>
           <div className="shell inner">
             <SecHead
-              eyebrow="Етапи роботи"
-              title="Що відбувається"
-              accent="і в якому порядку"
-              lede={
-                stages.some((s) => s.duration)
-                  ? 'Строки орієнтовні: вони залежать від завантаженості реєстраторів і суду.'
-                  : undefined
-              }
+              eyebrow={t.stagesEyebrow}
+              title={t.stagesTitle}
+              accent={t.stagesAccent}
+              lede={stages.some((s) => s.duration) ? t.stagesLede : undefined}
               row
             />
             <NumRows
@@ -361,15 +358,15 @@ export default async function PracticePage({
         <section id="faq" className={`scroll-mt-[var(--hdr)] ${bg.faq} ${SEC}`}>
           <div className="shell inner grid gap-[clamp(24px,4vw,64px)] min-[900px]:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
             <div>
-              <Kicker>Питання</Kicker>
+              <Kicker>{T.common.questions}</Kicker>
               <h2 className="m-0 mt-3.5 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink">
-                Часті <em className="text-accent-ink">питання</em>
+                {t.faqTitle} <em className="text-accent-ink">{t.faqAccent}</em>
               </h2>
               <p className="m-0 mt-[18px] max-w-[40ch] text-[15.5px] leading-[1.65] text-slate">
-                Не знайшли відповіді — запитайте юриста на безкоштовній консультації.
+                {t.faqText}
               </p>
               <ArrowLink href={consult} className="mt-[22px] text-[15px] font-semibold">
-                Поставити питання
+                {T.common.askQuestion}
               </ArrowLink>
             </div>
             <Faq items={faq.map((f) => ({ q: f.q, a: f.a }))} />
@@ -386,20 +383,21 @@ export default async function PracticePage({
                 id="posts-h"
                 className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink"
               >
-                Статті за темою
+                {T.common.relatedArticles}
               </h2>
               <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
-                Усі статті
+                {T.common.allArticles}
               </ArrowLink>
             </div>
             <ul className={POST_GRID}>
               {related.map((a) => (
                 <li key={a.slug}>
                   <PostCard
-                    post={{ ...a, excerpt: '', category: postLabel(a.category) }}
+                    post={{ ...a, excerpt: '', category: postLabel(a.category, lang) }}
                     href={`${prefix}/blog/${a.slug}`}
                     withMedia={false}
                     hideExcerpt
+                    lang={lang}
                   />
                 </li>
               ))}
@@ -416,6 +414,7 @@ export default async function PracticePage({
           href={catHref}
           items={others.map((x) => ({ href: `${catHref}/${x.slug}`, label: splitDash(x.title)[0] }))}
           afterHero={!hasBody && !n && !includes.length && !stages.length && !faq.length && !related.length}
+          lang={lang}
         />
       )}
     </PageShell>

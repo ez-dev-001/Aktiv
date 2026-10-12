@@ -3,6 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Category } from '@/lib/content'
 import { Icon } from '@/components/site/Icon'
+import { useUi } from '@/components/site/LangProvider'
+import { ui } from '@/lib/ui'
 
 /**
  * Выбор практики в форме заявки.
@@ -49,14 +51,15 @@ export type PracticeOption = {
 }
 
 /** Разворачивает дерево направлений в плоский список строк панели. */
-export function buildOptions(categories: Category[]): PracticeOption[] {
+export function buildOptions(categories: Category[], lang = 'ua'): PracticeOption[] {
+  const t = ui(lang).select
   const out: PracticeOption[] = [
-    { value: 'unknown', label: 'Ще не знаю', group: '', soft: true },
+    { value: 'unknown', label: t.notSure, group: '', soft: true },
   ]
   for (const c of categories) {
     out.push({
       value: `cat:${c.slug}`,
-      label: '— напрям уточнимо —',
+      label: t.tbd,
       group: c.title,
       soft: true,
     })
@@ -84,7 +87,7 @@ export function PracticeSelect({
   id,
   placeholder,
   searchable = options.length > 8,
-  listLabel = 'Практика',
+  listLabel,
   invalid = false,
   describedBy,
 }: {
@@ -104,6 +107,7 @@ export function PracticeSelect({
   invalid?: boolean
   describedBy?: string
 }) {
+  const t = useUi().select
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [cursor, setCursor] = useState(0)
@@ -277,8 +281,8 @@ export function PracticeSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKey}
-              placeholder="Пошук напряму…"
-              aria-label="Пошук напряму"
+              placeholder={t.searchPh}
+              aria-label={t.searchAria}
               autoComplete="off"
               className="w-full rounded-[7px] border-0 bg-white/[0.05] px-3 py-2.5 font-sans text-[14.5px] font-light text-white placeholder:text-on-dark-2 focus:outline-none focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-accent)]"
             />
@@ -289,12 +293,12 @@ export function PracticeSelect({
             ref={listRef}
             id={listId}
             role="listbox"
-            aria-label={listLabel}
+            aria-label={listLabel ?? t.listLabel}
             className={`m-0 max-h-[min(58vh,340px)] list-none overflow-y-auto overscroll-contain p-0 ${searchable ? '' : 'py-1.5'}`}
           >
             {shown.length === 0 && (
               <li className="px-4 py-5 text-[14px] text-on-dark-2">
-                Нічого не знайшли. Напишіть суть справи в полі нижче — розберемось.
+                {t.empty}
               </li>
             )}
             {shown.map((o, i) => {

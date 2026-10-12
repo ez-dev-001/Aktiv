@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { pageMeta, withCity } from '@/lib/seo'
-import { LOCALES } from '@/lib/i18n'
+import { LOCALES, localeHref } from '@/lib/i18n'
+import { ui } from '@/lib/ui'
 import { notFound } from 'next/navigation'
 import { categories as staticCategories } from '@/lib/content'
 import { getCategories, getContacts } from '@/lib/sanity/content'
@@ -11,7 +12,7 @@ import { POST_GRID, PostCard, needsMedia } from '@/components/site/PostCard'
 import { ArrowLink, ButtonLink } from '@/components/ui/Button'
 import { TrustedBy } from '@/components/home/TrustedBy'
 import { getCategoryPeople, getCategoryPosts } from '@/components/practice/data'
-import { LeadTeam, plural, splitConj, splitDash } from '@/components/practice/Parts'
+import { LeadTeam, splitConj, splitDash } from '@/components/practice/Parts'
 
 /**
  * Сторінка напряму практики — у форматі головної (armada.law).
@@ -35,10 +36,10 @@ export async function generateMetadata({
   const { lang, category } = await params
   const { data } = await getCategories(lang)
   const cat = data.find((c) => c.slug === category)
-  if (!cat) return { title: 'Практика' }
+  if (!cat) return { title: ui(lang).common.practice }
   return {
     ...pageMeta(lang, `/practices/${cat.slug}`),
-    title: cat.seoTitle || withCity(cat.title),
+    title: cat.seoTitle || withCity(cat.title, lang),
     description: (cat.seoDescription || cat.excerpt).slice(0, 180),
   }
 }
@@ -62,7 +63,9 @@ export default async function CategoryPage({
   const prefix = lang === 'ua' ? '' : `/${lang}`
   /* Відносне посилання: форма на цій же сторінці й сама обере напрям. */
   const consult = `?practice=cat:${encodeURIComponent(cat.slug)}#contact`
-  const [title, accent] = splitConj(cat.title)
+  const T = ui(lang)
+  const t = T.category
+  const [title, accent] = splitConj(cat.title, lang)
   const n = cat.practices.length
   const telegram = contacts.messengers.find((m) => /telegram/i.test(m.label) || /t\.me\//i.test(m.href))
   const withMedia = needsMedia(posts)
@@ -71,37 +74,38 @@ export default async function CategoryPage({
     <PageShell lang={lang} overDark>
       <PageHero
         crumbs={[
-          { label: 'Головна', href: prefix || '/' },
-          { label: 'Практики', href: `${prefix}/#practices` },
+          { label: T.common.home, href: localeHref(lang, '/') },
+          { label: T.common.practices, href: localeHref(lang, '/practices') },
           { label: cat.title },
         ]}
+        lang={lang}
         title={title}
         accent={accent}
         lede={cat.excerpt}
       >
         <HeroActions>
           <ButtonLink href={consult} arrow>
-            Отримати консультацію
+            {T.common.getConsultation}
           </ButtonLink>
           {n > 0 && (
             <DownLink href="#services">
-              {n} {plural(n, ['послуга', 'послуги', 'послуг'])}
+              {T.common.services(n)}
             </DownLink>
           )}
         </HeroActions>
       </PageHero>
 
       {/* ── ХТО ВЕДЕ НАПРЯМ ── лише якщо хтось привʼязаний у студії */}
-      {people.length > 0 && <LeadTeam people={people} contactHref={consult} />}
+      {people.length > 0 && <LeadTeam people={people} contactHref={consult} lang={lang} />}
 
       {/* ── ПОСЛУГИ НАПРЯМУ ── */}
       {n > 0 && (
         <section id="services" className={`scroll-mt-[var(--hdr)] bg-paper-2 ${SEC}`}>
           <div className="shell inner">
             <SecHead
-              eyebrow="Послуги напряму"
-              title="Що ми робимо"
-              lede="Оберіть послугу, щоб дізнатися більше, — або опишіть ситуацію у формі нижче, і ми підкажемо, що підходить."
+              eyebrow={t.services}
+              title={t.whatWeDo}
+              lede={t.servicesLede}
               row
             />
             <NumRows
@@ -126,16 +130,16 @@ export default async function CategoryPage({
                 id="posts-h"
                 className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink"
               >
-                Статті за темою
+                {T.common.relatedArticles}
               </h2>
               <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
-                Усі статті
+                {T.common.allArticles}
               </ArrowLink>
             </div>
             <ul className={POST_GRID}>
               {posts.map((a) => (
                 <li key={a.slug}>
-                  <PostCard post={a} href={`${prefix}/blog/${a.slug}`} withMedia={withMedia} />
+                  <PostCard post={a} href={`${prefix}/blog/${a.slug}`} withMedia={withMedia} lang={lang} />
                 </li>
               ))}
             </ul>
@@ -148,16 +152,16 @@ export default async function CategoryPage({
         /* Без статей перед банером — «Нам довіряють» на тому ж тлі: його
             нижній відступ уже є, повний верхній зробив би діру. Невеликий
             лишається на випадок, коли блоку довіри немає (у проді без логотипів). */
-        <section aria-label="Написати в Telegram" className={posts.length > 0 ? SEC : 'pb-[clamp(56px,8vw,112px)] pt-[clamp(12px,2vw,24px)]'}>
+        <section aria-label={t.telegramAria} className={posts.length > 0 ? SEC : 'pb-[clamp(56px,8vw,112px)] pt-[clamp(12px,2vw,24px)]'}>
           <div className="shell inner">
             <Band
               dark
-              title={`Питання щодо напряму «${cat.title}»?`}
-              accent="Напишіть у Telegram"
-              text={contacts.hours ? `Відповідаємо в робочий час: ${contacts.hours}.` : undefined}
+              title={t.telegramTitle(cat.title)}
+              accent={t.telegramAccent}
+              text={contacts.hours ? t.telegramHours(contacts.hours) : undefined}
               actions={
                 <ButtonLink href={telegram.href} target="_blank" rel="noopener noreferrer" arrow>
-                  Написати в Telegram
+                  {t.telegramButton}
                 </ButtonLink>
               }
             />

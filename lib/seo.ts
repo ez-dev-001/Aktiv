@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { DEFAULT_LOCALE, HREFLANG, isLocale, type Locale } from './i18n'
 import { SITE_URL } from './site'
+import { ui } from './ui'
 
 /**
  * Canonical, hreflang і robots для кожної сторінки — з одного місця.
@@ -12,15 +13,13 @@ import { SITE_URL } from './site'
  * показує у видачі. Тепер кожна сторінка передає свій шлях.
  *
  * ── Англійська версія ──
- * Маршрути /en/... існують, але перекладу в Sanity ще немає: сторінки
- * показують український текст. Для Google це дублі всього сайту з
- * неправильною мовою. Тому, поки мова не в INDEXED_LOCALES:
- *   • її сторінки — noindex, follow, canonical на український двійник;
- *   • вона не потрапляє в hreflang і карту сайту.
- * Коли переклад зʼявиться — додайте 'en' у INDEXED_LOCALES, і все
- * увімкнеться саме.
+ * Мова, якої немає в INDEXED_LOCALES, отримує noindex, follow і
+ * canonical на український двійник і не потрапляє в hreflang і карту
+ * сайту. Англійська увімкнена (жовтень 2026): інтерфейс перекладено в
+ * коді (lib/ui.ts), тексти — у Sanity. Тепер /en/... має власний
+ * canonical, hreflang uk-UA / en-US / x-default і є в sitemap.xml.
  */
-export const INDEXED_LOCALES: readonly Locale[] = ['ua']
+export const INDEXED_LOCALES: readonly Locale[] = ['ua', 'en']
 
 /** Шлях для мови: основна — без префікса. `path` — '' або '/about'. */
 export const localePath = (lang: string, path: string) =>
@@ -43,13 +42,14 @@ export const OG_IMAGE = { url: '/og.jpg', width: 1200, height: 630, alt: 'Юри
  * фірми в X/Twitter немає.
  */
 export function socialMeta(lang: string, url: string): Pick<Metadata, 'openGraph' | 'twitter'> {
+  const t = ui(lang)
   return {
     openGraph: {
       type: 'website',
-      siteName: 'ЮК «АКТИВ»',
+      siteName: t.common.firmShort,
       locale: lang !== DEFAULT_LOCALE && isLocale(lang) ? 'en_US' : 'uk_UA',
       url,
-      images: [OG_IMAGE],
+      images: [{ ...OG_IMAGE, alt: t.meta.ogAlt }],
     },
     twitter: { card: 'summary_large_image', images: [OG_IMAGE.url] },
   }
@@ -104,4 +104,7 @@ export function openingHours(hours: string) {
  * доповнюємо містом — запити здебільшого локальні («банкрутство фізичних
  * осіб Київ»). Довгі назви не чіпаємо, щоб title не обрізався у видачі.
  */
-export const withCity = (title: string) => (title.length <= 40 && !/киє?в|київ/i.test(title) ? `${title} у Києві` : title)
+export const withCity = (title: string, lang = 'ua') => {
+  const t = ui(lang).meta
+  return title.length <= 40 && !t.cityTest.test(title) ? t.inCity(title) : title
+}

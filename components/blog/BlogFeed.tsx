@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icon } from '@/components/site/Icon'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Стрічка блогу на клієнті: пошук, рубрики й пагінація.
@@ -30,6 +31,7 @@ export function BlogFilterProvider({ children }: { children: ReactNode }) {
 /** Поле пошуку на темному: фільтр за назвою й анонсом завантажених статей. */
 export function BlogSearch() {
   const { q, setQ } = useContext(FeedCtx)
+  const t = useUi().blog
   return (
     <form role="search" className="mt-7 max-w-[440px]" onSubmit={(e) => {
       e.preventDefault()
@@ -37,12 +39,12 @@ export function BlogSearch() {
     }}>
       <label className="flex min-h-[52px] items-center gap-2.5 rounded-full bg-white/[0.07] px-[18px] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] transition-shadow focus-within:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.45)]">
         <Icon name="search" className="size-[18px] shrink-0 text-accent-soft" />
-        <span className="sr-only">Пошук статей</span>
+        <span className="sr-only">{t.search}</span>
         <input
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Пошук статей"
+          placeholder={t.search}
           aria-controls="feed-list"
           className="min-w-0 flex-1 bg-transparent py-3 text-[15px] text-white placeholder:text-on-dark-2 focus:outline-none [&::-webkit-search-cancel-button]:invert"
         />
@@ -79,6 +81,8 @@ export function BlogFeed({
   stubNote?: boolean
 }) {
   const { q, setQ } = useContext(FeedCtx)
+  const T = useUi()
+  const t = T.blog
   const [cat, setCat] = useState('')
   /* ?cat= з адреси — після завантаження: сторінка статична, тож сервер
      параметра не бачить. Посилання на рубрику однаково відкривається
@@ -126,8 +130,8 @@ export function BlogFeed({
   return (
     <div ref={top} className="scroll-mt-[calc(var(--hdr)+16px)]">
       {cats.length > 1 && (
-        <div role="group" aria-label="Рубрики" className="mb-[22px] flex flex-wrap gap-1.5">
-          {[{ id: '', label: 'Усі' }, ...cats].map((c) => {
+        <div role="group" aria-label={t.categoriesAria} className="mb-[22px] flex flex-wrap gap-1.5">
+          {[{ id: '', label: T.common.all }, ...cats].map((c) => {
             const on = cat === c.id
             return (
               <button
@@ -151,7 +155,7 @@ export function BlogFeed({
 
       {/* зміна результату озвучується читачам екрана */}
       <p aria-live="polite" className="sr-only">
-        {query || cat ? `Знайдено статей: ${list.length}` : ''}
+        {query || cat ? t.found(list.length) : ''}
       </p>
 
       {plain && featured && cur === 1 && <div className="mb-[18px]">{featured.node}</div>}
@@ -160,7 +164,7 @@ export function BlogFeed({
         {empty ? (
           <div className="rounded-[20px] bg-white px-6 py-10 text-center shadow-[inset_0_0_0_1px_var(--color-hair)]">
             <p className="m-0 font-serif text-[21px] text-ink">
-              {query ? 'За цим запитом статей не знайшлося.' : 'У цій рубриці поки немає матеріалів.'}
+              {query ? t.noResults : t.noInCategory}
             </p>
             <button
               type="button"
@@ -170,7 +174,7 @@ export function BlogFeed({
               }}
               className="mt-3 cursor-pointer text-[15px] font-medium text-accent-ink underline underline-offset-[3px]"
             >
-              Показати всі статті
+              {t.showAll}
             </button>
           </div>
         ) : (
@@ -185,16 +189,16 @@ export function BlogFeed({
       </div>
 
       {pages > 1 && (
-        <nav aria-label="Сторінки блогу" className="mt-[clamp(28px,4vw,48px)] flex flex-wrap justify-center gap-1.5">
-          <PagerBtn label="Попередня сторінка" disabled={cur === 1} onClick={() => go(cur - 1)}>
+        <nav aria-label={t.pagesAria} className="mt-[clamp(28px,4vw,48px)] flex flex-wrap justify-center gap-1.5">
+          <PagerBtn label={t.prevPage} disabled={cur === 1} onClick={() => go(cur - 1)}>
             <Icon name="arrow" className="size-4 rotate-180" />
           </PagerBtn>
           {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-            <PagerBtn key={n} label={`Сторінка ${n}`} current={n === cur} onClick={() => go(n)}>
+            <PagerBtn key={n} label={t.page(n)} current={n === cur} onClick={() => go(n)}>
               {n}
             </PagerBtn>
           ))}
-          <PagerBtn label="Наступна сторінка" disabled={cur === pages} onClick={() => go(cur + 1)}>
+          <PagerBtn label={t.nextPage} disabled={cur === pages} onClick={() => go(cur + 1)}>
             <Icon name="arrow" className="size-4" />
           </PagerBtn>
         </nav>
@@ -202,7 +206,7 @@ export function BlogFeed({
 
       {stubNote && (
         <p className="mt-5 text-[13px] leading-relaxed text-slate-2">
-          Це анонси-заглушки. Повні тексти зʼявляться, щойно статті буде додано в Sanity — див.{' '}
+          {t.stubNote}{' '}
           <code className="font-mono text-ink">/sanity-check</code>.
         </p>
       )}

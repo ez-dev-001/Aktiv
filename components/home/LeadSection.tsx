@@ -18,6 +18,9 @@ import { submitLead } from '@/app/actions/lead'
 import { captureAttribution, readAttribution, saveReceipt } from '@/lib/leads/client'
 import type { FieldErrors } from '@/lib/leads/types'
 import { validateLead } from '@/lib/leads/validate'
+import { localeHref } from '@/lib/i18n'
+import { useLang } from '@/components/site/LangProvider'
+import { ui } from '@/lib/ui'
 
 /**
  * Форма заявки.
@@ -68,6 +71,8 @@ export function LeadSection({
   const [done, setDone] = useState(false)
   const [pkg, setPkg] = useState<string | null>(null)
   const fieldA11y = fieldA11yFor(errors)
+  const lang = useLang()
+  const t = ui(lang)
 
   /* Плоский указатель slug → направление и его категория.
      Нужен дважды: подписать выбор под полем и положить в лид
@@ -75,16 +80,16 @@ export function LeadSection({
   const index = useMemo(() => {
     const m = new Map<string, { title: string; category: Category; practice?: Category['practices'][number] }>()
     for (const c of categories) {
-      m.set(`cat:${c.slug}`, { title: `${c.title} — напрям уточнимо`, category: c })
+      m.set(`cat:${c.slug}`, { title: t.lead.tbdTitle(c.title), category: c })
       for (const p of c.practices) m.set(p.slug, { title: p.title, category: c, practice: p })
     }
     return m
-  }, [categories])
+  }, [categories, t])
 
   /* Плоский список строк панели. Строится из того же дерева, что и
      index, — один источник, поэтому подпись под полем и строка в
      панели не могут разойтись. */
-  const options = useMemo(() => buildOptions(categories), [categories])
+  const options = useMemo(() => buildOptions(categories, lang), [categories, lang])
 
   const chosen = index.get(practice)
 
@@ -131,12 +136,15 @@ export function LeadSection({
 
     /* Та же проверка, что на сервере, — чтобы не гонять запрос ради
        пустого телефона. Решение всё равно принимает сервер. */
-    const { errors: local } = validateLead({
-      name: String(fd.get('name') ?? ''),
-      phone: String(fd.get('phone') ?? ''),
-      email: String(fd.get('email') ?? ''),
-      message: String(fd.get('message') ?? ''),
-    })
+    const { errors: local } = validateLead(
+      {
+        name: String(fd.get('name') ?? ''),
+        phone: String(fd.get('phone') ?? ''),
+        email: String(fd.get('email') ?? ''),
+        message: String(fd.get('message') ?? ''),
+      },
+      lang,
+    )
     if (Object.keys(local).length) {
       setErrors(local)
       const first = Object.keys(local)[0]
@@ -149,6 +157,8 @@ export function LeadSection({
     if (pkg) fd.set('package', pkg)
     fd.set('page', window.location.pathname)
     fd.set('attribution', JSON.stringify(readAttribution()))
+    /* мова — для текстів помилок із сервера і назви напряму в квитанції */
+    fd.set('lang', lang)
 
     setFormError(null)
     start(async () => {
@@ -156,7 +166,7 @@ export function LeadSection({
       try {
         res = await submitLead(fd)
       } catch {
-        res = { ok: false as const, message: 'Немає звʼязку із сервером. Спробуйте ще раз або зателефонуйте.' }
+        res = { ok: false as const, message: t.lead.offline }
       }
       if (!res.ok) {
         setErrors(res.errors ?? {})
@@ -174,8 +184,7 @@ export function LeadSection({
 
       saveReceipt(res.receipt)
       setDone(true)
-      const prefix = window.location.pathname.startsWith('/en') ? '/en' : ''
-      window.location.assign(`${prefix}/dyakuyemo`)
+      window.location.assign(localeHref(lang, '/dyakuyemo'))
     })
   }
 
@@ -187,16 +196,16 @@ export function LeadSection({
             до своей полной ширины, и на телефоне вся секция уезжает вбок. */}
         <div className="grid grid-cols-1 items-start gap-[clamp(32px,4.5vw,64px)] min-[920px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <div>
-            <Eyebrow>Консультація</Eyebrow>
-            <Reveal className="text-[clamp(26px,4.6vw,44px)] leading-[1.1] !text-white">Розкажіть про справу</Reveal>
+            <Eyebrow>{t.lead.eyebrow}</Eyebrow>
+            <Reveal className="text-[clamp(26px,4.6vw,44px)] leading-[1.1] !text-white">{t.lead.title}</Reveal>
             {/* Один рядок замість абзацу: що буде після заявки. */}
             <p className="m-0 mt-4 max-w-[40ch] text-[15.5px] leading-relaxed text-on-dark">
-              Перша консультація — безкоштовно. Юрист оцінить перспективу й чесно скаже, чи є шлях.
+              {t.lead.lede}
             </p>
 
             <dl className="mt-[38px] grid gap-x-6 gap-y-[22px] min-[480px]:grid-cols-2">
               <div className="grid gap-1">
-                <dt className={LABEL}>Телефон</dt>
+                <dt className={LABEL}>{t.common.phone}</dt>
                 <dd className="m-0 font-serif text-[19px] font-semibold leading-snug text-white">
                   <a href={contacts.phoneHref} onClick={() => trackPhone('contact_section')}>
                     {contacts.phone}
@@ -205,13 +214,13 @@ export function LeadSection({
                 </dd>
               </div>
               <div className="grid gap-1">
-                <dt className={LABEL}>Пошта</dt>
+                <dt className={LABEL}>{t.common.email}</dt>
                 <dd className="m-0 font-serif text-[19px] font-semibold text-white">
                   <a href={`mailto:${contacts.email}`}>{contacts.email}</a>
                 </dd>
               </div>
               <div className="grid gap-1 min-[480px]:col-span-2">
-                <dt className={LABEL}>Месенджери</dt>
+                <dt className={LABEL}>{t.common.messengers}</dt>
                 <dd className="m-0 mt-1.5 flex flex-wrap gap-2">
                   {contacts.messengers.map((m) => (
                     <a
@@ -232,14 +241,14 @@ export function LeadSection({
             <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-name" className={LABEL}>
-                  Ім&apos;я
+                  {t.lead.name}
                 </label>
-                <input id="lead-name" name="name" type="text" autoComplete="name" placeholder="Як до вас звертатися" className={FIELD} {...fieldA11y('name')} onChange={() => clearError('name')} />
+                <input id="lead-name" name="name" type="text" autoComplete="name" placeholder={t.lead.namePh} className={FIELD} {...fieldA11y('name')} onChange={() => clearError('name')} />
                 <FieldError id="name" text={errors.name} />
               </div>
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-phone" className={LABEL}>
-                  Телефон
+                  {t.common.phone}
                 </label>
                 <input id="lead-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="067 123 45 67" className={FIELD} required {...fieldA11y('phone')} onChange={() => clearError('phone')} />
                 <FieldError id="phone" text={errors.phone} />
@@ -248,9 +257,9 @@ export function LeadSection({
             <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2">
               <div className="grid gap-[7px]">
                 <label htmlFor="lead-email" className={LABEL}>
-                  Пошта
+                  {t.common.email}
                 </label>
-                <input id="lead-email" name="email" type="email" autoComplete="email" placeholder="необовʼязково" className={FIELD} {...fieldA11y('email')} onChange={() => clearError('email')} />
+                <input id="lead-email" name="email" type="email" autoComplete="email" placeholder={t.common.optional} className={FIELD} {...fieldA11y('email')} onChange={() => clearError('email')} />
                 <FieldError id="email" text={errors.email} />
               </div>
               {/* ── выбор направления ──
@@ -268,7 +277,7 @@ export function LeadSection({
                   для тех, кто знает блок, но не знает точной услуги. */}
               <div className="grid gap-[7px]">
                 <span id="lead-practice-label" className={LABEL}>
-                  Напрям, якщо знаєте
+                  {t.lead.practice}
                 </span>
                 <PracticeSelect
                   options={options}
@@ -284,23 +293,23 @@ export function LeadSection({
               <p className="m-0 -mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[13px] leading-snug text-on-dark">
                 <span className="text-white">{chosen.title}</span>
                 <a
-                  href={`/practices/${chosen.category.slug}/${chosen.practice.slug}`}
+                  href={localeHref(lang, `/practices/${chosen.category.slug}/${chosen.practice.slug}`)}
                   className="text-accent-soft underline decoration-accent-soft/40 underline-offset-2 hover:decoration-accent-soft"
                 >
-                  про послугу
+                  {t.lead.aboutService}
                 </a>
               </p>
             )}
 
             <div className="grid gap-[7px]">
               <label htmlFor="lead-message" className={LABEL}>
-                Суть справи
+                {t.lead.message}
               </label>
               <textarea
                 id="lead-message"
                 name="message"
                 rows={4}
-                placeholder="Коротко: що сталося і яке питання хочете розібрати"
+                placeholder={t.lead.messagePh}
                 className={`${FIELD} min-h-[92px] resize-y`}
                 {...fieldA11y('message')}
                 onChange={() => clearError('message')}
@@ -310,22 +319,22 @@ export function LeadSection({
 
             {/* honeypot */}
             <div aria-hidden="true" className="absolute -left-[9999px] size-px overflow-hidden">
-              <label htmlFor="lead-hp">Не заповнювати</label>
+              <label htmlFor="lead-hp">{t.common.honeypot}</label>
               <input id="lead-hp" name="company_url" type="text" tabIndex={-1} autoComplete="off" />
             </div>
 
             {/* Вариант услуги, выбранный кнопкой «Обрати цей варіант». */}
             {pkg && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[10px] bg-white/[0.055] px-4 py-3 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
-                <span className={LABEL}>Варіант</span>
+                <span className={LABEL}>{t.lead.option}</span>
                 <span className="text-[13.5px] text-white">{pkg}</span>
                 <button
                   type="button"
                   onClick={() => setPkg(null)}
                   className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-[12px] text-on-dark-2 transition-colors hover:text-white"
-                  aria-label="Прибрати варіант із заявки"
+                  aria-label={t.lead.removeOption}
                 >
-                  <Icon name="close" className="size-3" /> прибрати
+                  <Icon name="close" className="size-3" /> {t.common.remove}
                 </button>
               </div>
             )}
@@ -343,17 +352,17 @@ export function LeadSection({
               {pending || done ? (
                 <span className="inline-flex items-center gap-2.5">
                   <span aria-hidden="true" className="size-[15px] animate-spin rounded-full border-2 border-white/35 border-t-white" />
-                  Надсилаємо…
+                  {t.common.sending}
                 </span>
               ) : (
-                'Записатися на консультацію'
+                t.lead.submit
               )}
             </Button>
 
             <p className="m-0 mt-1 max-w-[44ch] text-[12.5px] leading-relaxed text-on-dark-2">
-              Надсилаючи форму, ви погоджуєтесь на обробку даних для звʼязку у вашій справі —{' '}
-              <a href="/privacy" className="underline decoration-white/30 underline-offset-2 hover:text-white">
-                політика конфіденційності
+              {t.lead.consent}{' '}
+              <a href={localeHref(lang, '/privacy')} className="underline decoration-white/30 underline-offset-2 hover:text-white">
+                {t.common.privacyLower}
               </a>
               .
             </p>

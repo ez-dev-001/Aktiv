@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import { localeHref } from '@/lib/i18n'
+import { useLang } from '@/components/site/LangProvider'
+import { ui } from '@/lib/ui'
 
 /**
  * «Наша практика» на головній — як «Наша експертиза» в armada.law.
@@ -28,6 +31,7 @@ export interface PracticeGroup {
 export function PracticeTabs({ groups }: { groups: PracticeGroup[] }) {
   const [active, setActive] = useState(0)
   const base = useId()
+  const lang = useLang()
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
 
   useEffect(() => {
@@ -54,7 +58,7 @@ export function PracticeTabs({ groups }: { groups: PracticeGroup[] }) {
 
   return (
     <div className="min-w-0">
-      <div role="tablist" aria-label="Напрями практики" className="mb-4 flex flex-wrap gap-1.5">
+      <div role="tablist" aria-label={ui(lang).home.practiceAreas} className="mb-4 flex flex-wrap gap-1.5">
         {groups.map((x, i) => {
           const on = i === active
           return (
@@ -97,7 +101,7 @@ export function PracticeTabs({ groups }: { groups: PracticeGroup[] }) {
         {g.practices.map((p) => (
           <li key={p.slug} className="min-w-0">
             <a
-              href={`/practices/${g.slug}/${p.slug}`}
+              href={localeHref(lang, `/practices/${g.slug}/${p.slug}`)}
               className="flex min-h-16 items-center justify-center rounded-[14px] bg-white px-4 py-3 text-center text-[14.5px] font-medium leading-[1.35] text-ink shadow-[0_1px_2px_rgb(20_11_51/0.05)] transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_12px_24px_-16px_rgb(20_11_51/0.35)]"
             >
               {p.title}

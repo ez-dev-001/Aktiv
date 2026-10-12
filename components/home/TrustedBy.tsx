@@ -1,6 +1,7 @@
 import { trustPlaceholders } from '@/lib/content'
 import { getTrustBlock, type ClientLogo, type TrustBlock } from '@/lib/sanity/content'
 import { Reveal } from '@/components/ui/Reveal'
+import { ui } from '@/lib/ui'
 
 /**
  * «Нам довіряють».
@@ -67,6 +68,7 @@ export async function TrustedBy({
   block?: TrustBlock
 }) {
   const t = block ?? (await getTrustBlock(lang)).data
+  const T = ui(lang).trust
   const hasClients = t.clients.length > 0
   /* Локально без клієнтів показуємо службові заглушки, щоб було що
      налаштовувати. У проді порожній список — блоку немає: вигадані
@@ -79,13 +81,13 @@ export async function TrustedBy({
     <section id="trust" className="bg-paper py-[clamp(48px,7vw,96px)]">
       <div className="shell inner grid items-start gap-[clamp(28px,4vw,64px)] min-[900px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div>
-          <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">{t.eyebrow || 'Нам довіряють'}</Reveal>
+          <Reveal className="text-[clamp(32px,4.4vw,56px)] font-normal leading-[1.05] tracking-[-0.02em]">{t.eyebrow || T.title}</Reveal>
           <p className="m-0 mt-[18px] max-w-[46ch] text-[15.5px] leading-[1.65] text-slate">
             {t.text}
           </p>
           {preview && (
             <p className="m-0 mt-4 max-w-[46ch] text-[13px] leading-relaxed text-slate-2">
-              Це демонстрація, а не клієнти. Реальні компанії додаються в Sanity → «Налаштування сайту» → «Нам довіряють».
+              {T.preview}
             </p>
           )}
         </div>

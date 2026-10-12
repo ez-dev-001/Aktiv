@@ -6,6 +6,7 @@ import type { Contacts } from '@/lib/sanity/content'
 import { trackMessenger, trackPhone } from '@/lib/analytics'
 import { Icon } from './Icon'
 import { LogoMark } from './Logo'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Плавающий блок действий: связь + «наверх».
@@ -37,6 +38,7 @@ export function FloatingActions({
   /** на телефоні й планшеті замість кружка — липка панель MobileDock */
   desktopOnly?: boolean
 }) {
+  const t = useUi().floating
   const [open, setOpen] = useState(false)
   const [showTop, setShowTop] = useState(false)
   const [hidden, setHidden] = useState(false)
@@ -99,7 +101,7 @@ export function FloatingActions({
   }, [open])
 
   const items: { label: string; href: string; icon: 'phone' | 'message'; on: () => void }[] = [
-    { label: 'Подзвонити', href: contacts.phoneHref, icon: 'phone', on: () => trackPhone('floating') },
+    { label: t.call, href: contacts.phoneHref, icon: 'phone', on: () => trackPhone('floating') },
     ...contacts.messengers.map((m) => ({
       label: m.label,
       href: m.href,
@@ -121,7 +123,7 @@ export function FloatingActions({
       <button
         type="button"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        aria-label="Нагору"
+        aria-label={t.toTop}
         data-show={showTop && !open}
         className="pointer-events-auto grid size-12 place-items-center rounded-full border-0 bg-white/90 shadow-[0_2px_10px_-2px_rgb(20_11_51/0.14),inset_0_0_0_1px_var(--color-hair)] backdrop-blur-sm transition-[opacity,transform,box-shadow] duration-300 hover:shadow-[0_4px_16px_-2px_rgb(20_11_51/0.2),inset_0_0_0_1px_var(--color-accent)] data-[show=false]:pointer-events-none data-[show=false]:translate-y-2 data-[show=false]:scale-90 data-[show=false]:opacity-0"
       >
@@ -132,7 +134,7 @@ export function FloatingActions({
       <div
         id="floating-channels"
         role="group"
-        aria-label="Звʼязок"
+        aria-label={t.group}
         data-open={open}
         className="group pointer-events-none flex flex-col items-end gap-2"
       >
@@ -161,7 +163,7 @@ export function FloatingActions({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="floating-channels"
-        aria-label={open ? 'Закрити звʼязок' : 'Звʼязатися'}
+        aria-label={open ? t.close : t.open}
         className="pointer-events-auto grid size-14 place-items-center rounded-full border-0 bg-accent text-white shadow-[0_6px_20px_-4px_rgb(250_33_99/0.5)] transition-[background-color,transform,box-shadow] duration-200 hover:bg-accent-ink active:scale-95"
       >
         <span className="relative grid size-6 place-items-center">

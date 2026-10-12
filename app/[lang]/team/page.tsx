@@ -9,14 +9,15 @@ import { Bold } from '@/components/ui/Bold'
 import { Icon } from '@/components/site/Icon'
 import { ExecutorSpot } from '@/components/team/ExecutorSpot'
 import { PeopleGrid, type Group } from '@/components/team/PeopleGrid'
+import { ui } from '@/lib/ui'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = ui(lang).meta
   return {
     ...pageMeta(lang, '/team'),
-    title: 'Команда: адвокати й юристи в Києві',
-    description:
-      'Фахівці ЮК «АКТИВ»: партнери, адвокати, військовий юрист і приватний виконавець у штаті. Справу веде конкретна людина, а не відділ.',
+    title: t.teamTitle,
+    description: t.teamDescription,
   }
 }
 
@@ -34,7 +35,8 @@ function groupOf(m: TeamMember): Group {
       return 'adv'
   }
   const r = m.role.toLowerCase()
-  return r.includes('партнер') ? 'partner' : r.includes('військ') ? 'mil' : r.includes('виконав') ? 'exec' : 'adv'
+  /* англійські підписи ролей — на випадок, коли роль перекладена в студії */
+  return /партнер|partner/.test(r) ? 'partner' : /військ|military/.test(r) ? 'mil' : /виконав|enforcement/.test(r) ? 'exec' : 'adv'
 }
 
 export default async function TeamPage({ params }: { params: Promise<{ lang: string }> }) {
@@ -59,11 +61,13 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
   const rest = team.filter((m) => m !== executor)
   const home = lang === 'ua' ? '/' : `/${lang}`
   const career = lang === 'ua' ? '/career' : `/${lang}/career`
+  const T = ui(lang)
 
   return (
     <PageShell lang={lang} overDark>
       <PageHero
-        crumbs={[{ label: 'Головна', href: home }, { label: 'Команда' }]}
+        crumbs={[{ label: T.common.home, href: home }, { label: T.common.team }]}
+        lang={lang}
         title={t.headTitle}
         accent={t.headTitleAccent}
         lede={<Bold text={t.headLede} onDark />}
@@ -76,7 +80,7 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
           >
             {t.ctaPrimary}
           </ButtonLink>
-          <DownLink href="#people">Фахівці</DownLink>
+          <DownLink href="#people">{T.team.specialists}</DownLink>
         </HeroActions>
       </PageHero>
 
@@ -130,13 +134,13 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
       <section className={`${SEC} !pt-0`}>
         <div className="shell inner">
           <Band
-            kicker="Карʼєра"
-            title="Приєднатися"
-            accent="до команди"
-            text="Шукаємо юристів і адвокатів у команду. Відкриті вакансії та умови — на сторінці «Карʼєра»."
+            kicker={T.team.careerKicker}
+            title={T.team.joinTitle}
+            accent={T.team.joinAccent}
+            text={T.team.joinText}
             actions={
               <ButtonLink href={career} variant="ghost" arrow>
-                Вакансії
+                {T.common.vacancies}
               </ButtonLink>
             }
           />

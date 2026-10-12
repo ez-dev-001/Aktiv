@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { pageMeta } from '@/lib/seo'
-import { Icon } from '@/components/site/Icon'
+import { ValuesIndex } from '@/components/about/ValuesIndex'
 import { PageShell } from '@/components/site/PageShell'
 import { DownLink, HeroActions, PageHero } from '@/components/site/PageHero'
 import { Kicker, NumRows, SEC, SecHead } from '@/components/site/Blocks'
@@ -8,14 +8,15 @@ import { ButtonLink } from '@/components/ui/Button'
 import { Bold } from '@/components/ui/Bold'
 import { getAboutContent } from '@/lib/sanity/content'
 import { TrustedBy } from '@/components/home/TrustedBy'
+import { ui } from '@/lib/ui'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = ui(lang).meta
   return {
     ...pageMeta(lang, '/about'),
-    title: { absolute: 'Про компанію «АКТИВ» — юридична компанія в Києві' },
-    description:
-      'Юридична компанія «АКТИВ»: місія, візія, цінності та принципи роботи. Київ, з 2007 року. 10 адвокатів і приватний виконавець у команді.',
+    title: { absolute: t.aboutTitle },
+    description: t.aboutDescription,
   }
 }
 
@@ -36,11 +37,13 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
   const { data: a } = await getAboutContent(lang)
   const home = lang === 'ua' ? '/' : `/${lang}`
   const teamHref = lang === 'ua' ? '/team' : `/${lang}/team`
+  const t = ui(lang)
 
   return (
     <PageShell lang={lang} overDark>
       <PageHero
-        crumbs={[{ label: 'Головна', href: home }, { label: 'Про компанію' }]}
+        crumbs={[{ label: t.common.home, href: home }, { label: t.common.about }]}
+        lang={lang}
         title={a.headTitle}
         accent={a.headTitleAccent}
         lede={<Bold text={a.headLede} onDark />}
@@ -51,16 +54,16 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
             arrow
             className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)] max-[640px]:w-full"
           >
-            Отримати консультацію
+            {t.common.getConsultation}
           </ButtonLink>
-          <DownLink href={teamHref}>Команда</DownLink>
+          <DownLink href={teamHref}>{t.common.team}</DownLink>
         </HeroActions>
       </PageHero>
 
       {/* ── МІСІЯ І ВІЗІЯ ──
           Дві половини на всю ширину: місія світла, візія темна. Темна
           місія одразу під темною шапкою зливалася з нею в одну пляму. */}
-      <section id="mission" aria-label="Місія і візія" className="grid min-[900px]:grid-cols-2">
+      <section id="mission" aria-label={t.about.missionAria} className="grid min-[900px]:grid-cols-2">
         {[
           { block: a.mission, dark: false },
           { block: a.vision, dark: true },
@@ -92,18 +95,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
       <section id="values" className={SEC}>
         <div className="shell inner">
           <SecHead eyebrow={a.valuesEyebrow} title={a.valuesTitle} lede={a.valuesLede} row />
-          <div className="grid gap-3 min-[680px]:grid-cols-2">
-            {a.values.map((v) => (
-              <div
-                key={v.title}
-                className="flex flex-col gap-3.5 rounded-[20px] bg-white p-[clamp(24px,3vw,36px)] shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1.5px_var(--color-accent)]"
-              >
-                {v.icon && <Icon name={v.icon} className="mb-1 size-[34px] text-accent" />}
-                <h3 className="m-0 font-serif text-[clamp(22px,2.3vw,26px)] font-normal leading-[1.2] text-ink">{v.title}</h3>
-                <p className="m-0 text-[14.5px] leading-[1.6] text-slate">{v.text}</p>
-              </div>
-            ))}
-          </div>
+          <ValuesIndex values={a.values} />
         </div>
       </section>
 

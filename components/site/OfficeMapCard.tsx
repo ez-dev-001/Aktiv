@@ -4,6 +4,7 @@ import type { Contacts } from '@/lib/sanity/content'
 import { CopyAddress } from './CopyAddress'
 import { Icon } from './Icon'
 import { OfficeMap } from './OfficeMap'
+import { useUi } from '@/components/site/LangProvider'
 
 /**
  * Офис на карте — нижняя часть блока «Консультація».
@@ -26,6 +27,7 @@ import { OfficeMap } from './OfficeMap'
  * Адрес частями и «як знайти» — Sanity, «Налаштування сайту → Контакти».
  */
 export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
+  const t = useUi().map
   const { street, unit, city } = contacts.office
   /* Номер офиса карте только мешает: Google ищет здание, а не кабинет. */
   const query = contacts.mapQuery || [street, city].filter(Boolean).join(', ')
@@ -36,12 +38,12 @@ export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
       <figcaption className="order-2 flex flex-col p-[clamp(18px,2.6vw,30px)] min-[800px]:order-1">
         <p className="m-0 flex items-center gap-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent-soft">
           <span aria-hidden="true" className="h-px w-5 bg-accent" />
-          Офіс{city ? ` · ${city}` : ''}
+          {t.office}{city ? ` · ${city}` : ''}
         </p>
 
         <div className="my-auto py-6 min-[800px]:py-8">
           <p className="m-0 font-serif text-[clamp(26px,3.2vw,38px)] font-semibold leading-[1.08] tracking-[-0.01em] text-white">
-            <span className="sr-only">Адреса: </span>
+            <span className="sr-only">{t.address}</span>
             {street}
           </p>
           {(unit || contacts.officeHint) && (
@@ -63,7 +65,7 @@ export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
             rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent-btn px-5 text-[14px] font-medium text-white transition-colors hover:bg-accent-btn-hover"
           >
-            Маршрут
+            {t.route}
             <Icon name="arrow" className="size-[14px]" />
           </a>
           <a
@@ -79,7 +81,7 @@ export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
       </figcaption>
 
       <div className="relative order-1 h-[260px] overflow-hidden rounded-[16px] bg-ink-2 min-[480px]:h-[320px] min-[800px]:order-2 min-[800px]:h-[clamp(340px,32vw,400px)]">
-        <OfficeMap query={query} title={`Офіс «АКТИВ» на карті: ${contacts.address}`} />
+        <OfficeMap query={query} title={t.title(contacts.address)} />
       </div>
     </figure>
   )
