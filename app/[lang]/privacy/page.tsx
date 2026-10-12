@@ -6,7 +6,6 @@ import { HeroChips, PageHero } from '@/components/site/PageHero'
 import { CookieSettingsLink } from '@/components/site/CookieConsent'
 import { CONSENT_COOKIE, CONSENT_DAYS } from '@/lib/consent'
 import { getContacts } from '@/lib/sanity/content'
-import { isLiveSite } from '@/lib/site'
 
 /**
  * Політика конфіденційності — /privacy.
@@ -47,7 +46,6 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
   const { lang } = await params
   const prefix = lang === 'ua' ? '' : `/${lang}`
   const { data: c } = await getContacts(lang)
-  const draft = !isLiveSite()
 
   const toc = [
     ['who', 'Хто обробляє дані'],
@@ -72,7 +70,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
         accent="конфіденційності"
         lede="Коротко: ми просимо лише те, що потрібно, щоб звʼязатися з вами у справі. Статистику й рекламу вмикаємо тільки з вашої згоди. Усе, що ви розповідаєте про справу, захищене адвокатською таємницею."
       >
-        <HeroChips items={[...(draft ? ['Чернетка для перевірки фірмою'] : []), `Оновлено ${UPDATED}`]} />
+        <HeroChips items={[`Оновлено ${UPDATED}`]} />
       </PageHero>
 
       <section className="py-[clamp(48px,7vw,96px)]">
@@ -107,13 +105,6 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
           </aside>
 
           <article className="min-w-0 max-w-[76ch]">
-            {draft && (
-              <p className="m-0 mb-8 rounded-[12px] bg-[#fbf3e3] px-4 py-3 text-[13.5px] leading-relaxed text-[#8a5a0b]">
-                <b className="font-semibold">Чернетка для перевірки фірмою.</b> Уточніть повну назву юрособи, код ЄДРПОУ
-                та строки зберігання. На бойовому сайті цієї позначки немає.
-              </p>
-            )}
-
             <Part id="who" n={1} title="Хто обробляє дані">
               <P>
                 Володілець персональних даних — Юридична компанія «АКТИВ» (далі — «ми»). Адреса: {c.address}. З усіх
