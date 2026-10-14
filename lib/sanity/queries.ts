@@ -132,7 +132,12 @@ export const TEAM_QUERY = groq`
   "areas": array::unique(
     (practices[]->category->title.ua) +
     (*[_type == "practice" && references(^._id)].category->title.ua)
-  )
+  ),
+  "practiceList": *[_type == "practice" && defined(slug.current) && (_id in ^.practices[]._ref || references(^._id))] | order(order asc) {
+    "slug": slug.current,
+    "title": coalesce(title[$lang], title.ua),
+    "cat": category->slug.current
+  }
 }`
 
 /** Контакты: один документ настроек на весь сайт. */

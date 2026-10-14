@@ -269,10 +269,16 @@ export interface TeamMember {
   email?: string
   /** подпись под карточкой: какую практику ведёт */
   practice?: string
+  /** практики, які веде (teamMember.practices + practice.lawyers) — для панелі на «Команді» */
+  practices?: { slug: string; title: string; cat: string }[]
 }
 
 /** Что Sanity отдаёт по человеку, до сборки подписи practice. */
-type RawTeamMember = TeamMember & { practiceNote?: string; areas?: (string | null)[] }
+type RawTeamMember = TeamMember & {
+  practiceNote?: string
+  areas?: (string | null)[]
+  practiceList?: ({ slug?: string; title?: string; cat?: string } | null)[]
+}
 
 /**
  * Подпись «какую практику ведёт».
@@ -304,9 +310,12 @@ export async function getTeam(lang = 'ua'): Promise<Sourced<TeamMember[]>> {
     return {
       data: safe(rows, lang)
         .filter((m) => m?.name)
-        .map(({ practiceNote: _n, areas: _a, ...m }) => {
+        .map(({ practiceNote: _n, areas: _a, practiceList: _l, ...m }) => {
           const practice = practiceLine({ ...m, practiceNote: _n, areas: _a }, lang)
-          return practice ? { ...m, practice } : m
+          const practices = (_l ?? [])
+            .filter((x): x is { slug: string; title: string; cat: string } => !!(x?.slug && x.title && x.cat))
+            .map((x) => ({ ...x, title: x.title.split(' — ')[0]! }))
+          return { ...m, ...(practice ? { practice } : {}), ...(practices.length ? { practices } : {}) }
         }),
       source: 'sanity',
     }

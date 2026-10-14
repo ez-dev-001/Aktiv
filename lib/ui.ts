@@ -293,6 +293,13 @@ const ua = {
     aboutSpecialist: 'Про спеціаліста',
     /** хвіст підпису «А · Б та ін.» (lib/sanity/content.ts → practiceLine) */
     etc: ' та ін.',
+    /* картка → панель з практиками */
+    openCard: (name: string) => `${name}: які практики веде`,
+    handles: 'Веде практики',
+    prev: 'Попередній',
+    next: 'Наступний',
+    close: 'Закрити',
+    hint: 'Натисніть на фахівця — покажемо, які практики він веде',
   },
   career: {
     openNow: 'Зараз відкрито',
@@ -729,6 +736,12 @@ const en: Dict = {
     directPhone: 'Direct phone',
     aboutSpecialist: 'About',
     etc: ' etc.',
+    openCard: (name: string) => `${name}: practice areas`,
+    handles: 'Practice areas',
+    prev: 'Previous',
+    next: 'Next',
+    close: 'Close',
+    hint: 'Tap a lawyer to see the practice areas they handle',
   },
   career: {
     openNow: 'Open now',

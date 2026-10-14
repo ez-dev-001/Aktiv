@@ -1,3 +1,4 @@
+import { localeHref } from '@/lib/i18n'
 import type { Metadata } from 'next'
 import { pageMeta } from '@/lib/seo'
 import { getCategories, getTeam, getTeamPage, type TeamMember } from '@/lib/sanity/content'
@@ -111,9 +112,11 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
                 name: m.name,
                 role: m.role,
                 practice: m.practice,
+                practices: m.practices?.map((p) => ({ title: p.title, href: localeHref(lang, `/practices/${p.cat}/${p.slug}`) })),
                 group: groupOf(m),
                 /* портретний кроп 4:5 від верху кадру — голова не йде за край */
                 photo: m.photoUrl ? `${m.photoUrl}?w=480&h=600&fit=crop&crop=top&auto=format&q=75` : undefined,
+                photoWide: m.photoUrl ? `${m.photoUrl}?w=920&h=750&fit=crop&crop=top&auto=format&q=78` : undefined,
               }))}
             />
 

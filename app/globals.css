@@ -629,3 +629,48 @@
 @media (prefers-reduced-motion: reduce) {
   .sm-panel, .sm-in::before, .sm-in dl > * { transition: none !important; }
 }
+
+/* ═══ «Команда»: картки фахівців і панель з практиками (components/team/PeopleGrid.tsx) ═══ */
+.pg-tile { transition: box-shadow .3s, transform .35s cubic-bezier(.16, 1, .3, 1); -webkit-tap-highlight-color: transparent; }
+.pg-photo { transition: transform .8s cubic-bezier(.16, 1, .3, 1); }
+.pg-badge { box-shadow: 0 8px 20px -10px rgb(20 11 51 / .5); transition: background-color .3s, color .3s, transform .35s cubic-bezier(.16, 1, .3, 1); }
+.pg-badge .pg-arrow { transition: transform .45s cubic-bezier(.16, 1, .3, 1); }
+@media (hover: hover) {
+  .pg-tile.is-click:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1.5px var(--color-accent), 0 26px 44px -32px rgb(20 11 51 / .55); }
+  .pg-tile.is-click:hover .pg-photo { transform: scale(1.035); }
+  .pg-tile.is-click:hover .pg-badge { background: var(--color-ink); color: var(--color-accent-soft); transform: translateY(-2px); }
+  .pg-tile.is-click:hover .pg-badge .pg-arrow { transform: translateX(-30px); }
+}
+.pg-tile:has(> button:focus-visible) { box-shadow: inset 0 0 0 2px var(--color-accent), 0 0 0 4px rgb(250 33 99 / .18); }
+.pg-tile.is-click:active { transform: scale(.985); }
+
+/* підказка на телефоні: знак пульсує, над першою карткою — бульбашка */
+.pg-hint .pg-badge { animation: pg-ring 1.6s cubic-bezier(.2, .6, .3, 1) 3; }
+@keyframes pg-ring {
+  0% { box-shadow: 0 8px 20px -10px rgb(20 11 51 / .5), 0 0 0 0 rgb(250 33 99 / .6); }
+  100% { box-shadow: 0 8px 20px -10px rgb(20 11 51 / .5), 0 0 0 14px rgb(250 33 99 / 0); }
+}
+.pg-tip {
+  position: absolute; z-index: 6; left: 10px; top: 18px; width: max-content; max-width: min(300px, calc(200% + 12px));
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px 11px 12px; border-radius: 14px;
+  background: var(--color-ink); color: #fff; font-size: 13px; line-height: 1.35; box-shadow: 0 18px 36px -18px rgb(20 11 51 / .7);
+  pointer-events: none; animation: pg-tip .45s cubic-bezier(.16, 1, .3, 1) both;
+}
+.pg-tip::after { content: ""; position: absolute; left: 22px; bottom: -6px; width: 12px; height: 12px; background: var(--color-ink); transform: rotate(45deg); border-radius: 2px; }
+@keyframes pg-tip { from { opacity: 0; transform: translateY(6px) scale(.97); } }
+
+/* панель: ПК — справа, телефон — знизу */
+.pg-panel { top: 0; right: 0; bottom: 0; width: min(460px, 100%); transform: translateX(100%); transition: transform .5s cubic-bezier(.16, 1, .3, 1); }
+.pg-panel[data-shown="true"] { transform: none; }
+@media (max-width: 639px) {
+  .pg-panel { top: auto; left: 0; width: 100%; max-height: 88dvh; border-radius: 22px 22px 0 0; transform: translateY(100%); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pg-panel[data-shown="true"] { transform: translateY(var(--dy, 0px)); }
+  .pg-panel.is-drag { transition: none; }
+  .pg-grab::after { content: ""; position: absolute; left: 50%; top: 9px; width: 42px; height: 5px; margin-left: -21px; border-radius: 3px; background: rgb(255 255 255 / .85); box-shadow: 0 0 0 1px rgb(20 11 51 / .12); }
+}
+.pg-swap { animation: pg-swap .4s cubic-bezier(.16, 1, .3, 1); }
+@keyframes pg-swap { from { opacity: .2; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .pg-tile, .pg-photo, .pg-badge, .pg-panel { transition: none; }
+  .pg-hint .pg-badge, .pg-tip, .pg-swap { animation: none; }
+}
