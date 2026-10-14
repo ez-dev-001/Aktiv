@@ -9,10 +9,14 @@ import { PageShell } from '@/components/site/PageShell'
 import { HeroChips, PageHero } from '@/components/site/PageHero'
 import { Faq, Kicker, NumRows, SEC, SecHead } from '@/components/site/Blocks'
 import { Prose } from '@/components/site/Prose'
+import { ArticleIntro, ArticleSectionView, readMinutes, splitArticle } from '@/components/practice/Article'
+import { Toc } from '@/components/practice/Toc'
+import { FaceStack, LawyerCards } from '@/components/practice/Lawyers'
+import { StagesLine } from '@/components/practice/Stages'
 import { POST_GRID, PostCard } from '@/components/site/PostCard'
 import { ArrowLink, ButtonLink } from '@/components/ui/Button'
 import { getPracticePeople, postLabel, type PracticePerson } from '@/components/practice/data'
-import { CheckList, MarkGlyph, MiniLabel, OtherServices, PersonLine, splitDash } from '@/components/practice/Parts'
+import { CheckList, MarkGlyph, MiniLabel, OtherServices, splitDash } from '@/components/practice/Parts'
 
 /**
  * Сторінка послуги — у форматі головної (armada.law).
@@ -111,6 +115,22 @@ export default async function PracticePage({
   const hasBody = !!p.body || (p.bodyText?.length ?? 0) > 0
   const others = (cat?.practices ?? []).filter((x) => x.slug !== p.slug)
 
+  /* Стаття: вступ + розділи за h2 (для змісту збоку). */
+  const article = p.body ? splitArticle(p.body) : null
+  const toc = (article?.sections ?? []).map((x) => ({ id: x.id, title: x.title }))
+  const minutes = p.body ? readMinutes(p.body) : 0
+
+  /* «Також веде» — інші практики людини з тих, що є на сайті. */
+  const practiceIndex = new Map<string, { title: string; href: string }>(
+    cats.flatMap((c) => c.practices.map((x): [string, { title: string; href: string }] => [x.slug, { title: splitDash(x.title)[0], href: `${prefix}/practices/${c.slug}/${x.slug}` }])),
+  )
+  const alsoOf = (m: PracticePerson) =>
+    [...new Set(m.practices)]
+      .filter((sl) => sl !== p.slug)
+      .map((sl) => practiceIndex.get(sl))
+      .filter((x): x is { title: string; href: string } => !!x)
+      .map((x) => ({ href: x.href, label: x.title }))
+
   /* Фон розділів чергується (білий / paper-2) за фактично показаними
      блоками: інакше два сусідні розділи одного кольору зливаються в
      одну смугу з подвійним відступом. Варіанти завжди на paper-2. */
@@ -123,7 +143,7 @@ export default async function PracticePage({
   const bg = {
     packages: tint(n > 0, true),
     includes: tint(includes.length > 0),
-    stages: tint(stages.length > 0),
+    stages: tint(stages.length > 0, people.length > 0 ? false : undefined),
     faq: tint(faq.length > 0),
     posts: tint(related.length > 0),
   }
@@ -134,7 +154,6 @@ export default async function PracticePage({
   const facts: { k: string; v: string }[] = [
     ...(n > 0 ? [{ k: n === 1 ? t.factOption : t.factOptions, v: packages.map((pk) => pk.name).join(' · ') }] : []),
     /* Без тексту послуги немає картки «хто веде» — імʼя переїжджає сюди. */
-    ...(!hasBody && people.length > 0 ? [{ k: t.factLead, v: people.map((m) => m.name).join(', ') }] : []),
     { k: t.factFirst, v: t.factFree },
   ]
 
@@ -181,6 +200,17 @@ export default async function PracticePage({
         lede={p.excerpt}
         aside={
           <div className="grid overflow-hidden rounded-[22px] bg-white/[0.05] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] min-[900px]:ml-auto min-[900px]:max-w-[420px]">
+            {people.length > 0 && (
+              <a href="#lawyers" className="group flex items-center gap-4 border-b border-on-dark-hair px-[22px] py-[18px] no-underline">
+                <FaceStack people={people} />
+                <span className="min-w-0">
+                  <span className="block font-mono text-[10px] uppercase tracking-[0.13em] text-on-dark-2">{t.leads(people.length)}</span>
+                  <span className="mt-1 block font-serif text-[16.5px] font-semibold leading-[1.3] text-white transition-colors group-hover:text-accent-soft">
+                    {people.map((m) => m.name).join(', ')}
+                  </span>
+                </span>
+              </a>
+            )}
             <dl className="m-0">
               {facts.map((f) => (
                 <div key={f.k} className="flex justify-between gap-4 border-b border-on-dark-hair px-[22px] py-[17px]">
@@ -195,18 +225,37 @@ export default async function PracticePage({
           </div>
         }
       >
-        {n > 1 && <HeroChips items={[t.options(n)]} />}
+        {(n > 1 || minutes > 1) && (
+          <HeroChips items={[...(n > 1 ? [t.options(n)] : []), ...(minutes > 1 ? [t.readMin(minutes)] : [])]} />
+        )}
       </PageHero>
 
-      {/* ── ТЕКСТ + «ХТО ВЕДЕ» ──
-          Из Sanity приходит PortableText, из статики — обычные абзацы,
-          перенесённые со старого сайта дословно. */}
+      {/* ── ТЕКСТ ЯК СТАТТЯ ──
+          Зміст збоку (липкий) + вступ і пронумеровані розділи. */}
       {hasBody && (
         <section className={SEC}>
-          <div className="shell inner grid items-start gap-[clamp(30px,4vw,64px)] min-[900px]:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="min-w-0 [&>p:first-child]:text-[clamp(17.5px,1.6vw,19.5px)] [&>p:first-child]:leading-[1.6] [&>p:first-child]:text-ink">
-              {p.body ? (
-                <Prose value={p.body} />
+          <div
+            className="shell inner grid items-start gap-[clamp(30px,5vw,88px)] min-[1000px]:grid-cols-[268px_minmax(0,1fr)]"
+          >
+            {/* зміст — від двох розділів; картка з кнопкою — завжди */}
+            <aside className="hidden min-[1000px]:sticky min-[1000px]:top-[calc(var(--hdr)+28px)] min-[1000px]:block">
+                <Toc items={toc} label={t.contents} />
+                <div className={`${toc.length > 1 ? 'mt-8' : ''} rounded-[20px] bg-paper-2 p-5`}>
+                  <p className="m-0 font-serif text-[18px] leading-[1.3] text-ink">{t.describe}</p>
+                  <p className="m-0 mt-2 text-[13.5px] leading-[1.55] text-slate">{T.common.firstConsultFree}</p>
+                  <ButtonLink href={consult} arrow className="mt-4 w-full">
+                    {T.common.askQuestion}
+                  </ButtonLink>
+                </div>
+            </aside>
+            <article className="min-w-0 max-w-[760px]">
+              {article ? (
+                <>
+                  <ArticleIntro blocks={article.intro as never} />
+                  {article.sections.map((x, i) => (
+                    <ArticleSectionView key={x.id} s={x} n={i + 1} />
+                  ))}
+                </>
               ) : (
                 p.bodyText!.map((t) => (
                   <p key={t.slice(0, 40)} className="mb-5 max-w-[68ch] text-[16.5px] leading-[1.68] text-slate">
@@ -214,39 +263,27 @@ export default async function PracticePage({
                   </p>
                 ))
               )}
-            </div>
+            </article>
+          </div>
+        </section>
+      )}
 
-            <aside className="min-[900px]:sticky min-[900px]:top-[calc(var(--hdr)+20px)]">
-              <div className="rounded-[22px] bg-white p-6 shadow-[inset_0_0_0_1px_var(--color-hair)]">
-                {people.length > 0 ? (
-                  <>
-                    <h2 className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">
-                      {t.whoHandles}
-                    </h2>
-                    <ul className="m-0 grid list-none gap-4 p-0">
-                      {people.map((m) => (
-                        <li key={m.slug ?? m.name}>
-                          <PersonLine m={m} />
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">
-                      {T.common.askQuestion}
-                    </h2>
-                    <p className="m-0 font-serif text-[20px] leading-[1.3] text-ink">
-                      {t.describe}
-                    </p>
-                    <p className="m-0 mt-3 text-[14.5px] leading-[1.6] text-slate">{T.common.firstConsultFree}</p>
-                  </>
-                )}
-                <ButtonLink href={consult} arrow className="mt-[18px] w-full">
-                  {T.common.askQuestion}
-                </ButtonLink>
-              </div>
-            </aside>
+      {/* ── ХТО ВЕДЕ СПРАВУ ── портрети, як на старому сайті */}
+      {people.length > 0 && (
+        <section id="lawyers" aria-labelledby="lawyers-h" className={`scroll-mt-[var(--hdr)] bg-paper-2 ${SEC}`}>
+          <div className="shell inner">
+            <SecHead
+              eyebrow={t.lawyersEyebrow}
+              title={<span id="lawyers-h">{t.lawyersTitle}</span>}
+              accent={t.lawyersAccent}
+              lede={t.lawyersLede}
+              row
+            />
+            <LawyerCards
+              people={people}
+              also={alsoOf}
+              label={t.alsoHandles}
+            />
           </div>
         </section>
       )}
@@ -333,22 +370,7 @@ export default async function PracticePage({
               lede={stages.some((s) => s.duration) ? t.stagesLede : undefined}
               row
             />
-            <NumRows
-              items={stages.map((s) => ({
-                title: s.title,
-                text:
-                  s.duration || s.text ? (
-                    <>
-                      {s.duration && (
-                        <span className="mb-1 block font-mono text-[11px] uppercase tracking-[0.12em] text-accent-ink">
-                          {s.duration}
-                        </span>
-                      )}
-                      {s.text}
-                    </>
-                  ) : undefined,
-              }))}
-            />
+            <StagesLine stages={stages} />
           </div>
         </section>
       )}

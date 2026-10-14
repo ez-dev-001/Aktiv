@@ -110,6 +110,7 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
               people={rest.map((m) => ({
                 name: m.name,
                 role: m.role,
+                practice: m.practice,
                 group: groupOf(m),
                 /* портретний кроп 4:5 від верху кадру — голова не йде за край */
                 photo: m.photoUrl ? `${m.photoUrl}?w=480&h=600&fit=crop&crop=top&auto=format&q=75` : undefined,

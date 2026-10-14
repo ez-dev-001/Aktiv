@@ -35,7 +35,7 @@ export function plural(n: number, [one, few, many]: [string, string, string]) {
   return many
 }
 
-const portraitUrl = (u: string) => `${u}?w=760&h=950&fit=crop&crop=top&auto=format&q=80`
+export const portraitUrl = (u: string) => `${u}?w=760&h=950&fit=crop&crop=top&auto=format&q=80`
 const avatarUrl = (u: string) => `${u}?w=320&h=320&fit=crop&crop=top&auto=format&q=80`
 
 /** Імʼя + роль поруч з аватаром у кільці. */
@@ -139,12 +139,12 @@ export function LeadTeam({ people, contactHref, lang = 'ua' }: { people: Practic
 }
 
 /* ── список з рожевими галочками (пакети, «що входить») ── */
-export function CheckList({ items, dark = false }: { items: string[]; dark?: boolean }) {
+export function CheckList({ items, dark = false }: { items: ReactNode[]; dark?: boolean }) {
   return (
     <ul className="m-0 grid list-none gap-2.5 p-0">
       {items.map((a, i) => (
         <li
-          key={`${i}-${a}`}
+          key={i}
           className={`relative pl-[26px] text-[15px] leading-[1.55] before:absolute before:left-0 before:top-[7px] before:h-2 before:w-3.5 before:-rotate-45 before:border-b-[1.8px] before:border-l-[1.8px] before:border-accent before:content-[''] ${
             dark ? 'text-on-dark' : 'text-[#3b3450]'
           }`}

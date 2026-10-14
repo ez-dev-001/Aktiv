@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useUi } from '@/components/site/LangProvider'
+import { useLang, useUi } from '@/components/site/LangProvider'
+import { PracticeNote } from '@/components/site/PracticeNote'
 
 /**
  * Сітка фахівців з фільтром за роллю.
@@ -16,6 +17,8 @@ import { useUi } from '@/components/site/LangProvider'
 
 export interface Person {
   name: string
+  /** підпис «які практики веде» (getTeam → practice) */
+  practice?: string
   role: string
   group: Group
   /** вже з кропом 4:5 */
@@ -29,6 +32,7 @@ const ORDER: Group[] = ['partner', 'adv', 'mil', 'exec']
 
 export function PeopleGrid({ people }: { people: Person[] }) {
   const T = useUi()
+  const lang = useLang()
   const LABELS: Record<Group, string> = T.team.groups
   const [f, setF] = useState<Group | 'all'>('all')
   const groups = ORDER.filter((g) => people.some((p) => p.group === g))
@@ -75,6 +79,11 @@ export function PeopleGrid({ people }: { people: Person[] }) {
               {m.name}
             </h3>
             <p className="m-0 mt-1 text-[12.5px] leading-snug text-accent-ink min-[520px]:text-[13.5px]">{m.role}</p>
+            {m.practice && (
+              <div className="mt-3 flex flex-1 flex-col">
+                <PracticeNote text={m.practice} lang={lang} />
+              </div>
+            )}
           </li>
         ))}
       </ul>

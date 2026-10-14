@@ -1,4 +1,4 @@
-import { PortableText, type PortableTextComponents } from '@portabletext/react'
+import { PortableText, type PortableTextBlockComponent, type PortableTextComponents } from '@portabletext/react'
 
 /**
  * Рендер текста из Sanity.
@@ -10,8 +10,7 @@ import { PortableText, type PortableTextComponents } from '@portabletext/react'
  * Мера набора 68ch: длинные строки в юридическом тексте читаются хуже
  * всего, а его тут будет много.
  */
-const components: PortableTextComponents = {
-  block: {
+const blockStyles: Record<string, PortableTextBlockComponent> = {
     normal: ({ children }) => (
       <p className="mb-5 max-w-[68ch] text-[16.5px] leading-[1.68] text-slate">{children}</p>
     ),
@@ -26,7 +25,10 @@ const components: PortableTextComponents = {
         {children}
       </blockquote>
     ),
-  },
+}
+
+const components: PortableTextComponents = {
+  block: blockStyles,
   list: {
     bullet: ({ children }) => <ul className="mb-6 grid max-w-[66ch] list-none gap-2.5 p-0">{children}</ul>,
     number: ({ children }) => (
@@ -65,7 +67,28 @@ const components: PortableTextComponents = {
   },
 }
 
-export function Prose({ value }: { value: unknown }) {
+/* Лід статті: той самий текст, але великим серифом (перший абзац послуги). */
+const leadComponents: PortableTextComponents = {
+  ...components,
+  block: {
+    ...blockStyles,
+    normal: ({ children }) => (
+      <p className="m-0 mb-6 max-w-[42ch] font-serif text-[clamp(20px,1.9vw,24px)] leading-[1.42] tracking-[-0.005em] text-ink">{children}</p>
+    ),
+  },
+}
+
+export function Prose({ value, lead = false }: { value: unknown; lead?: boolean }) {
   if (!value || (Array.isArray(value) && value.length === 0)) return null
-  return <PortableText value={value as never} components={components} />
+  return <PortableText value={value as never} components={lead ? leadComponents : components} />
+}
+
+/** Один блок без обгортки (для пункту списку з галочкою): жирне й посилання зберігаються. */
+export function ProseInline({ value }: { value: unknown }) {
+  return (
+    <PortableText
+      value={value as never}
+      components={{ ...components, block: { normal: ({ children }) => <>{children}</> }, list: ({ children }) => <>{children}</>, listItem: ({ children }) => <>{children}</> }}
+    />
+  )
 }
