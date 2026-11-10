@@ -121,7 +121,7 @@ function Logo({ c }: { c: ClientLogo }) {
     </span>
   )
   const cls =
-    'group flex min-h-[86px] items-center justify-center rounded-[14px] bg-white shadow-[inset_0_0_0_1px_var(--color-hair)] transition-shadow duration-300 hover:shadow-[inset_0_0_0_1px_var(--color-hair),0_16px_32px_-24px_rgb(20_11_51/0.35)]'
+    'group flex min-h-[86px] items-center justify-center rounded-[14px] bg-white shadow-[inset_0_0_0_1px_var(--color-hair)] transition-shadow duration-300 hover:shadow-[inset_0_0_0_1px_var(--color-hair),0_16px_32px_-24px_rgb(11_7_16/0.35)]'
   return c.url ? (
     <a href={c.url} target="_blank" rel="noopener noreferrer" title={c.note ? `${c.name} — ${c.note}` : c.name} className={cls}>
       {inner}

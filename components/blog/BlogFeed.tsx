@@ -207,7 +207,7 @@ export function BlogFeed({
       {stubNote && (
         <p className="mt-5 text-[13px] leading-relaxed text-slate-2">
           {t.stubNote}{' '}
-          <code className="font-mono text-ink">/sanity-check</code>.
+          <code className=" text-ink">/sanity-check</code>.
         </p>
       )}
     </div>
@@ -234,7 +234,7 @@ function PagerBtn({
       aria-current={current ? 'page' : undefined}
       disabled={disabled}
       onClick={onClick}
-      className={`grid h-11 min-w-11 cursor-pointer place-items-center rounded-full px-1.5 font-mono text-[14px] font-medium transition-[background-color,box-shadow] disabled:cursor-default disabled:opacity-35 ${
+      className={`grid h-11 min-w-11 cursor-pointer place-items-center rounded-full px-1.5 text-[14px] font-medium transition-[background-color,box-shadow] disabled:cursor-default disabled:opacity-35 ${
         current ? 'bg-ink text-white' : 'bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] hover:shadow-[inset_0_0_0_1px_var(--color-slate-2)]'
       }`}
     >

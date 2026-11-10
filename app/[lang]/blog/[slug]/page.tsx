@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { pageMeta } from '@/lib/seo'
-import { Cover } from '@/components/site/Cover'
 import { hasImage, imageUrl } from '@/lib/sanity/image'
 import { HTML_LANG, LOCALES, asLocale, localeHref } from '@/lib/i18n'
 import { ui } from '@/lib/ui'
@@ -8,10 +7,12 @@ import { notFound } from 'next/navigation'
 import { blogCategoryId, getBlog, getPost, getPostSlugs, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
 import { SITE_URL } from '@/lib/site'
 import { PageShell } from '@/components/site/PageShell'
-import { HeroChips, PageHero } from '@/components/site/PageHero'
+import { PageHero } from '@/components/site/PageHero'
 import { RingAvatar, SEC } from '@/components/site/Blocks'
 import { needsMedia } from '@/components/site/PostCard'
-import { ArrowLink, ButtonLink } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
+import { CtaBand } from '@/components/v2/Practice'
+import { v2text } from '@/lib/v2/content'
 import { ArticleBody } from '@/components/blog/ArticleBody'
 import { Share, Toc } from '@/components/blog/ArticleAside'
 import { BlogCard, fmtDate, type CardAuthor } from '@/components/blog/BlogCard'
@@ -62,7 +63,10 @@ export async function generateMetadata({
   }
 }
 
-const SIDE_LABEL = 'm-0 mb-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate'
+/* Фото першого екрана, коли в статті немає обкладинки (public/v2/img). */
+const NEWS_IMG = ['n-court', 'n-gavel', 'n-code', 'n-papers', 'n-tower', 'n-pen']
+
+const SIDE_LABEL = 'm-0 mb-2.5 text-[13px] font-medium text-slate'
 
 export default async function PostPage({
   params,
@@ -77,6 +81,7 @@ export default async function PostPage({
   const url = `${SITE_URL}${prefix}/blog/${post.slug}`
   const T = ui(lang)
   const t = T.post
+  const v = v2text(lang).pp
 
   /* «Читайте також»: свіжі статті, спершу тієї ж рубрики. Окремого
      поля «повʼязані» в схемі немає — беремо стрічку. */
@@ -149,31 +154,34 @@ export default async function PostPage({
       />
       <article>
         <PageHero
-          compact
           small
+          serif
           crumbs={[
             { label: T.common.home, href: localeHref(lang, '/') },
             { label: T.common.blog, href: `${prefix}/blog` },
             { label: post.category || T.common.article, href: catId ? `${prefix}/blog?cat=${catId}` : undefined },
           ]}
           lang={lang}
+          photoUrl={hasImage(post.cover) ? imageUrl(post.cover, 1800, 1000) : undefined}
+          img={hasImage(post.cover) ? undefined : NEWS_IMG[[...post.slug].reduce((h, c) => h + c.charCodeAt(0), 0) % NEWS_IMG.length]}
           title={post.title}
           lede={post.excerpt && post.excerpt.trim() !== post.title.trim() ? post.excerpt : undefined}
         >
-          <HeroChips
-            items={[post.category, date, minutes ? T.common.minRead(minutes) : null].filter(
-              (x): x is string => !!x,
+          <p className="m-0 mt-[22px] flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] text-white/70">
+            {post.category && (
+              <span className="rounded-full bg-accent/20 px-3 py-1.5 text-[13px] font-medium text-accent-soft">{post.category}</span>
             )}
-          />
-          {author && (
-            <div className="mt-[26px] flex items-center gap-3.5">
-              <RingAvatar src={author.photo} name={author.name} className="size-[64px]" />
-              <span>
-                <b className="block font-serif text-[18px] font-semibold leading-[1.25] text-white">{author.name}</b>
-                {author.role && <small className="mt-0.5 block text-[13.5px] text-accent-soft">{author.role}</small>}
+            {date && <time dateTime={post.publishedAt}>{date}</time>}
+            {!!minutes && (
+              <span className="inline-flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                {T.common.minRead(minutes)}
               </span>
-            </div>
-          )}
+            )}
+          </p>
         </PageHero>
 
         <section id="body" className="py-[clamp(40px,6vw,88px)]">
@@ -188,7 +196,7 @@ export default async function PostPage({
               {/* телефон: зміст згорнутий над текстом */}
               {toc.length > 0 && (
                 <details className="group mb-7 rounded-[18px] bg-white px-5 shadow-[inset_0_0_0_1px_var(--color-hair)] min-[960px]:hidden">
-                  <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ink [&::-webkit-details-marker]:hidden">
+                  <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 text-[13px] font-medium text-ink [&::-webkit-details-marker]:hidden">
                     {t.toc(toc.length)}
                     <span aria-hidden="true" className="text-[18px] leading-none text-accent-ink transition-transform group-open:rotate-45">
                       +
@@ -199,17 +207,6 @@ export default async function PostPage({
                   </div>
                 </details>
               )}
-
-              {/* Обкладинка — лише справжня; без неї текст починається одразу. */}
-              <Cover
-                image={post.cover}
-                alt={post.title}
-                ratio={16 / 9}
-                widths={[640, 960, 1280, 1600]}
-                sizes="(min-width: 1260px) 820px, (min-width: 960px) 62vw, 92vw"
-                priority
-                className="mb-[clamp(28px,4vw,44px)] rounded-[24px]"
-              />
 
               {post.body ? (
                 <ArticleBody body={post.body} middle={callout} />
@@ -239,18 +236,16 @@ export default async function PostPage({
                 </div>
               )}
 
+              <p className="m-0 mt-10 text-[14px] leading-[1.6] text-slate-2">{v.disclaimer}</p>
+
               {/* ── Автор ── */}
               {author && (
-                <div className="mt-10 grid gap-[18px] rounded-[22px] bg-paper-2 p-[26px] min-[700px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[700px]:items-center">
-                  <RingAvatar src={author.photo} name={author.name} className="size-[72px]" />
+                <div className="mt-6 flex items-center gap-4 border-t border-ink/10 pt-6">
+                  <RingAvatar src={author.photo} name={author.name} className="size-[56px]" />
                   <div>
-                    <p className="m-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate-2">{t.author}</p>
-                    <p className="m-0 mt-1 font-serif text-[18px] font-semibold leading-[1.25] text-ink">{author.name}</p>
-                    {author.role && <p className="m-0 mt-0.5 text-[13.5px] text-accent-ink">{author.role}</p>}
+                    <p className="m-0 text-[16px] font-semibold text-ink">{author.name}</p>
+                    <p className="m-0 mt-0.5 text-[14px] text-slate">{author.role || v.author}</p>
                   </div>
-                  <ButtonLink href={consult} size="sm" arrow className="justify-self-start">
-                    {T.common.bookConsultation}
-                  </ButtonLink>
                 </div>
               )}
 
@@ -261,6 +256,8 @@ export default async function PostPage({
         </section>
       </article>
 
+      <CtaBand title={v.ctaTitle} text={v.ctaText} action={<ButtonLink href={consult}>{T.common.getConsultation}</ButtonLink>} />
+
       {/* ── Читайте також ── */}
       {related.length > 0 && (
         <section aria-labelledby="more" className={`bg-paper-2 ${SEC}`}>
@@ -269,9 +266,9 @@ export default async function PostPage({
               <h2 id="more" className="m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-ink">
                 {t.readAlso}
               </h2>
-              <ArrowLink href={`${prefix}/blog`} className="text-[15px] font-semibold">
+              <ButtonLink href={`${prefix}/blog`} variant="ghost">
                 {T.common.allArticles}
-              </ArrowLink>
+              </ButtonLink>
             </div>
             <ul className="m-0 grid list-none gap-[18px] p-0 min-[640px]:grid-cols-2 min-[1000px]:grid-cols-3">
               {related.map((p) => (

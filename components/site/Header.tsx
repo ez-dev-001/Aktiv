@@ -10,6 +10,7 @@ import { ButtonLink } from '@/components/ui/Button'
 import { Logo } from './Logo'
 import { HTML_LANG, LOCALES, LOCALE_LABEL, localeHome, localeHref, swapLocale } from '@/lib/i18n'
 import { ui } from '@/lib/ui'
+import { V2_PRACTICES } from '@/lib/v2/practices'
 
 /**
  * Навигация в два слоя.
@@ -84,6 +85,7 @@ export function Header({
   categories?: MenuCategory[]
 }) {
   const [mega, setMega] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
   /* Направление, раскрытое в правой панели (режим 5+ направлений). */
   const [active, setActive] = useState(0)
   /* Направление могли удалить, пока меню открыто на нём. */
@@ -231,11 +233,11 @@ export function Header({
           light
             ? /* Прозрачная шапка над фото: лёгкое затемнение сверху, чтобы
                  малиновый логотип и белое меню читались на любом кадре. */
-              'bg-transparent bg-[linear-gradient(180deg,rgb(20_11_51/0.42)_0%,rgb(20_11_51/0)_100%)]'
-            : 'bg-paper/[0.88] backdrop-blur-[14px] backdrop-saturate-150'
+              'bg-transparent bg-[linear-gradient(180deg,rgb(11_7_16/0.42)_0%,rgb(11_7_16/0)_100%)]'
+            : mega ? 'bg-paper' : 'bg-paper/[0.88] backdrop-blur-[14px] backdrop-saturate-150'
         } ${
           !light && stuck
-            ? 'shadow-[0_1px_0_var(--color-hair-soft),0_1px_18px_-8px_rgb(20_11_51/0.12)]'
+            ? 'shadow-[0_1px_0_var(--color-hair-soft),0_1px_18px_-8px_rgb(11_7_16/0.12)]'
             : ''
         }`}
       >
@@ -264,7 +266,7 @@ export function Header({
               aria-expanded={mega}
               aria-controls="mega"
               onClick={() => setMega((v) => !v)}
-              className="group relative inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap border-0 bg-transparent py-2 text-[15px] text-inherit"
+              className={`group relative inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap border-0 bg-transparent py-2 text-[15px] ${mega ? 'font-semibold text-accent-ink' : 'text-inherit'}`}
             >
               {t.common.practices}
               <Icon
@@ -272,7 +274,7 @@ export function Header({
                 className={`size-[9px] transition-transform duration-[260ms] ${mega ? 'rotate-180' : ''}`}
               />
               <span
-                className={`absolute inset-x-0 bottom-0.5 h-px origin-left bg-accent transition-transform duration-[260ms] ease-[cubic-bezier(.5,0,.2,1)] ${
+                className={`absolute inset-x-0 bottom-0.5 h-[2px] origin-left bg-accent transition-transform duration-[260ms] ease-[cubic-bezier(.5,0,.2,1)] ${
                   mega ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                 }`}
               />
@@ -286,30 +288,36 @@ export function Header({
           </nav>
 
           <div className="hidden shrink-0 items-center gap-3 min-[980px]:flex min-[1240px]:gap-[18px]">
-            <div
-              role="group"
-              aria-label={t.header.language}
-              className="hidden gap-0.5 font-mono text-[11px] tracking-[0.06em] min-[1100px]:flex"
-            >
-              {LANGS.map((l) => (
-                <a
-                  key={l.id}
-                  href={langHref(l.id)}
-                  hrefLang={HTML_LANG[l.id]}
-                  aria-current={l.id === lang ? 'true' : undefined}
-                  className={
-                    l.id === lang
-                      ? light
-                        ? 'grid min-h-11 min-w-11 place-items-center rounded-sm px-2.5 text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.35)]'
-                        : 'grid min-h-11 min-w-11 place-items-center rounded-sm bg-paper-2 px-2.5 text-ink shadow-[inset_0_0_0_1px_var(--color-hair)]'
-                      : `grid min-h-11 min-w-11 place-items-center rounded-sm px-2.5 ${
-                          light ? 'text-white/60 hover:text-white' : 'text-slate-2 hover:text-ink'
-                        }`
-                  }
-                >
-                  {l.label}
-                </a>
-              ))}
+            {/* Мова — компактний список «UA ˅», як у макеті клієнта. */}
+            <div className="relative hidden min-[1100px]:block" onMouseLeave={() => setLangOpen(false)}>
+              <button
+                type="button"
+                aria-expanded={langOpen}
+                aria-label={t.header.language}
+                onClick={() => setLangOpen((v) => !v)}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-[12px] border-0 px-3.5 text-[14px] font-medium transition-colors ${
+                  light ? 'bg-white/[0.08] text-white hover:bg-white/[0.14]' : 'bg-white/70 text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] hover:bg-white'
+                }`}
+              >
+                {LANGS.find((l) => l.id === lang)?.label ?? lang.toUpperCase()}
+                <Icon name="caret" className={`size-[9px] transition-transform duration-200 ${langOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {langOpen && (
+                <ul className="absolute right-0 top-full z-10 m-0 mt-1.5 min-w-full list-none rounded-[12px] bg-white p-1.5 shadow-[0_18px_40px_-16px_rgb(11_7_16/0.3),inset_0_0_0_1px_var(--color-hair)]">
+                  {LANGS.map((l) => (
+                    <li key={l.id}>
+                      <a
+                        href={langHref(l.id)}
+                        hrefLang={HTML_LANG[l.id]}
+                        aria-current={l.id === lang ? 'true' : undefined}
+                        className={`block rounded-[8px] px-3 py-2 text-[14px] ${l.id === lang ? 'bg-accent-wash text-accent-ink' : 'text-ink hover:bg-paper'}`}
+                      >
+                        {l.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             {/* Телефон кнопкою-пігулкою, як в armada.law: над тёмним
                 першим екраном — прозора з контуром, на папері — заповнена. */}
@@ -317,13 +325,15 @@ export function Header({
               href={contacts.phoneHref}
               onClick={() => trackPhone('header')}
               className={`inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-[18px] text-[14.5px] font-medium transition-[background-color,color,box-shadow] duration-[420ms] ${
+                /* Нова редакція: пігулка з малиновим контуром — і над фото, і на папері. */
                 light
-                  ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.2)] hover:bg-white/[0.14]'
-                  : 'bg-ink text-white hover:bg-ink-2'
+                  ? 'bg-white/[0.04] text-white shadow-[inset_0_0_0_1.5px_var(--color-accent)] hover:bg-white/[0.1]'
+                  : 'bg-white text-ink shadow-[inset_0_0_0_1.5px_var(--color-accent)] hover:bg-accent-wash'
               }`}
             >
-              <Icon name="phone" className="size-4 text-accent-soft" />
+              <Icon name="phone" className="size-4 text-accent" />
               {contacts.phone}
+              <Icon name="arrow" className="size-[15px] text-accent" />
             </a>
           </div>
 
@@ -355,7 +365,16 @@ export function Header({
           </button>
         </div>
 
-        {/* ── мега-меню: до 4 направлений колонками, дальше — две панели ── */}
+        {/* Затемнення сторінки під відкритим меню: увага — на меню,
+            клік повз нього закриває його. */}
+        <div
+          aria-hidden="true"
+          onClick={() => setMega(false)}
+          className={`fixed inset-x-0 bottom-0 top-[var(--hdr)] hidden bg-ink/35 backdrop-blur-[2px] transition-opacity duration-300 min-[980px]:block ${
+            mega ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        />
+        {/* ── мега-меню «Практики»: вісім напрямів (нова редакція) ── */}
         <div
           id="mega"
           data-open={mega}
@@ -366,113 +385,68 @@ export function Header({
              панель по нижнему краю: сквозь неё не видно ничего
              ни в один момент. Приём тот же, что у заголовков и
              у мобильной панели. */
-          className="absolute inset-x-0 top-full hidden origin-top border-b border-hair-soft bg-paper shadow-[0_24px_48px_-28px_rgb(20_11_51/0.20)] [transition:clip-path_380ms_var(--ease-out-quint),visibility_380ms] data-[open=false]:invisible data-[open=false]:[clip-path:inset(0_0_100%_0)] data-[open=true]:visible data-[open=true]:[clip-path:inset(0_0_0%_0)] min-[980px]:block"
+          className="absolute inset-x-0 top-full hidden max-h-[calc(100svh-var(--hdr))] origin-top overflow-y-auto overscroll-contain border-b border-hair-soft bg-paper shadow-[0_24px_48px_-28px_rgb(11_7_16/0.20)] [transition:clip-path_380ms_var(--ease-out-quint),visibility_380ms] data-[open=false]:invisible data-[open=false]:[clip-path:inset(0_0_100%_0)] data-[open=true]:visible data-[open=true]:[clip-path:inset(0_0_0%_0)] min-[980px]:block"
         >
-          {categories.length <= MAX_COLUMNS ? (
-            <div
-              className="mx-auto grid max-w-[var(--shell)] gap-[30px] px-[var(--gut)] pb-[34px] pt-9"
-              style={{ gridTemplateColumns: `repeat(${Math.max(categories.length, 1)}, minmax(0, 1fr))` }}
-            >
-              {categories.map((c) => (
-                <div key={c.slug}>
-                  <p className="m-0 mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
-                    <Icon name={c.icon} className="size-[19px] text-accent" />
-                    {c.title}
-                  </p>
-                  {/* Все направления, без обрезки. Раньше здесь стояло
-                      slice(0, 9), и в судовій практиці два пункта из
-                      одиннадцати не показывались вовсе — ровно тот
-                      дефект старого сайта, ради которого меню и делалось. */}
-                  {c.practices.map((p) => (
-                    <a
-                      key={p.slug}
-                      href={to(`/practices/${c.slug}/${p.slug}`)}
-                      onClick={() => setMega(false)}
-                      className="block py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
-                    >
-                      {p.title}
-                    </a>
-                  ))}
-                  <a
-                    href={to(`/practices/${c.slug}`)}
-                    onClick={() => setMega(false)}
-                    className="mt-3 block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
-                  >
-                    {t.header.allInCategory(c.practices.length)}
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* ── Пять и больше направлений: две панели ──
-               Слева направления, справа услуги того, на котором мышь
-               или фокус. Правые панели лежат стопкой в одной ячейке
-               сетки, видна одна: высота меню — по самой длинной, и
-               оно не прыгает, когда ведёшь мышью по списку. */
-            <div className="mx-auto grid max-w-[var(--shell)] grid-cols-[minmax(250px,300px)_1fr] gap-[clamp(28px,3.4vw,52px)] px-[var(--gut)] pb-[34px] pt-9">
-              <ul className="m-0 list-none border-r border-hair-soft p-0 pr-[clamp(18px,2vw,28px)]">
-                {categories.map((c, i) => {
-                  const on = i === act
-                  return (
-                    <li key={c.slug}>
+          {/* Нова редакція (макет клієнта): вісім напрямів у дві смуги по
+              чотири колонки — малиновий квадрат біля назви, послуги рядками
+              зі стрілкою →. Праворуч угорі — світлі колони з малиновою
+              діагоналлю, як на першому екрані «Практик». */}
+          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-[360px] w-[min(680px,46%)] bg-cover bg-[right_top] opacity-50 [mask-composite:intersect] [mask-image:linear-gradient(90deg,transparent,#000_55%),linear-gradient(180deg,#000_25%,transparent)]" style={{ backgroundImage: "url(/v2/img/light-hall.jpg), linear-gradient(118deg, transparent 70%, rgb(250 33 99 / 0.18) 70.2%, transparent 76%)" }} />
+          <div className="relative mx-auto grid max-w-[var(--shell)] grid-cols-4 gap-x-[clamp(28px,3vw,56px)] gap-y-[clamp(28px,3vw,40px)] px-[var(--gut)] pb-[clamp(28px,3vw,40px)] pt-[clamp(28px,3vw,44px)]">
+            {V2_PRACTICES.map((c) => (
+              <div key={c.title} className="min-w-0">
+                <a
+                  href={to(c.href)}
+                  onClick={() => setMega(false)}
+                  className="group/t mb-3 flex items-start gap-3.5 font-serif text-[clamp(20px,1.6vw,25px)] font-bold leading-[1.15] tracking-[-0.01em] text-ink transition-colors hover:text-accent-ink"
+                >
+                  <span aria-hidden="true" className="mt-[0.32em] size-[13px] shrink-0 bg-accent" />
+                  {c.title}
+                </a>
+                <ul className="m-0 list-none p-0 pl-[27px]">
+                  {c.items.map((p) => (
+                    <li key={p.title}>
                       <a
-                        href={to(`/practices/${c.slug}`)}
-                        onMouseEnter={() => setActive(i)}
-                        onFocus={() => setActive(i)}
+                        href={to(p.href ?? c.href)}
                         onClick={() => setMega(false)}
-                        aria-current={on ? 'true' : undefined}
-                        className={`group/cat flex items-center gap-3 rounded-[8px] px-3 py-2.5 transition-colors ${
-                          on ? 'bg-paper-2 text-ink' : 'text-slate hover:text-ink'
-                        }`}
+                        className="group/i -mx-2.5 flex items-start justify-between gap-4 rounded-[10px] px-2.5 py-[5px] text-[15px] font-normal leading-[1.38] text-[#3b3440] transition-colors hover:bg-white/80 hover:text-accent-ink"
                       >
-                        <Icon name={c.icon} className={`size-[19px] shrink-0 ${on ? 'text-accent' : 'text-slate-2'}`} />
-                        <span className="flex-1 text-[14.5px] leading-tight">{c.title}</span>
-                        <span className="font-mono text-[10px] tabular-nums text-slate-2">{c.practices.length}</span>
+                        <span>{p.title}</span>
+                        <Icon name="arrow" className="mt-[3px] size-[15px] shrink-0 text-accent transition-transform duration-200 group-hover/i:translate-x-1" />
                       </a>
                     </li>
-                  )
-                })}
-              </ul>
-
-              <div className="grid">
-                {categories.map((c, i) => {
-                  const on = i === act
-                  return (
-                    <div
-                      key={c.slug}
-                      aria-hidden={!on}
-                      className={`[grid-area:1/1] transition-opacity duration-200 ${on ? 'visible opacity-100' : 'invisible opacity-0'}`}
-                    >
-                      <p className="m-0 mb-3.5 flex items-center gap-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.11em] text-slate-2">
-                        {c.title}
-                      </p>
-                      <div className="gap-x-[30px] [column-fill:balance] min-[1180px]:columns-3 columns-2">
-                        {c.practices.map((p) => (
-                          <a
-                            key={p.slug}
-                            href={to(`/practices/${c.slug}/${p.slug}`)}
-                            tabIndex={on ? undefined : -1}
-                            onClick={() => setMega(false)}
-                            className="block break-inside-avoid py-1.5 text-sm font-light leading-tight text-ink transition-colors hover:text-accent-ink"
-                          >
-                            {p.title}
-                          </a>
-                        ))}
-                      </div>
-                      <a
-                        href={to(`/practices/${c.slug}`)}
-                        tabIndex={on ? undefined : -1}
-                        onClick={() => setMega(false)}
-                        className="mt-3 inline-block border-t border-hair-soft pt-3 font-mono text-[10.5px] uppercase tracking-[0.09em] text-accent-ink"
-                      >
-                        {t.header.allInCategory(c.practices.length)}
-                      </a>
-                    </div>
-                  )
-                })}
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          {/* Нижня смуга меню: для тих, хто не знає, куди віднести свою ситуацію. */}
+          <div className="relative border-t border-ink/[0.08] bg-white/60 backdrop-blur">
+            <div className="mx-auto flex max-w-[var(--shell)] flex-wrap items-center justify-between gap-x-8 gap-y-3 px-[var(--gut)] py-4">
+              <p className="m-0 flex items-center gap-3 text-[15px] text-slate">
+                <span aria-hidden="true" className="grid size-9 place-items-center rounded-full bg-accent-wash text-accent">
+                  <Icon name="message" className="size-[17px]" />
+                </span>
+                <span>
+                  <b className="font-semibold text-ink">{t.v2menu.unsure}</b> {t.v2menu.unsureText}
+                </span>
+              </p>
+              <div className="flex items-center gap-5">
+                <a href={to('/practices')} onClick={() => setMega(false)} className="inline-flex items-center gap-2 text-[14.5px] font-semibold text-ink hover:text-accent-ink">
+                  {t.v2menu.all}
+                  <Icon name="arrow" className="size-[15px] text-accent" />
+                </a>
+                <a
+                  href="#contact"
+                  onClick={() => setMega(false)}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent-btn px-5 text-[14.5px] font-semibold text-white transition-colors hover:bg-accent-btn-hover"
+                >
+                  {t.common.getConsultation}
+                  <Icon name="arrow" className="size-[15px]" />
+                </a>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </header>
 
@@ -485,20 +459,20 @@ export function Header({
         className="on-dark fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-ink px-[var(--gut)] pb-[calc(40px+env(safe-area-inset-bottom,0px))] pt-[calc(var(--hdr)+env(safe-area-inset-top,0px)+20px)] text-on-dark [transition:clip-path_620ms_var(--ease-out-quint),visibility_620ms] data-[open=false]:invisible data-[open=false]:[clip-path:inset(0_0_100%_0)] data-[open=true]:visible data-[open=true]:[clip-path:inset(0_0_0%_0)] min-[980px]:hidden"
       >
         <div className="mx-auto max-w-[var(--shell)]">
-          {categories.map((c) => (
-            <div key={c.slug} className="drawer-item relative" style={next()}>
+          {V2_PRACTICES.map((c) => (
+            <div key={c.title} className="drawer-item relative" style={next()}>
               <button
                 type="button"
                 tabIndex={drawer ? 0 : -1}
-                aria-expanded={acc === c.slug}
-                onClick={() => setAcc((v) => (v === c.slug ? null : c.slug))}
+                aria-expanded={acc === c.title}
+                onClick={() => setAcc((v) => (v === c.title ? null : c.title))}
                 className="flex w-full items-center justify-between gap-3 border-0 bg-transparent py-[15px] text-left font-serif text-[clamp(20px,5.4vw,26px)] font-semibold text-white"
               >
                 {c.title}
                 <Icon
                   name="caret"
                   className={`size-3 shrink-0 text-accent-soft transition-transform duration-[320ms] ${
-                    acc === c.slug ? 'rotate-180' : ''
+                    acc === c.title ? 'rotate-180' : ''
                   }`}
                 />
               </button>
@@ -508,16 +482,16 @@ export function Header({
                   замеров в JS и без max-height, подобранного на глаз. */}
               <div
                 className={`grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(.22,1,.36,1)] ${
-                  acc === c.slug ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  acc === c.title ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                 }`}
               >
                 <div className="overflow-hidden">
                   <div className="pb-4 pt-2">
-                    {c.practices.map((p) => (
+                    {c.items.map((p) => (
                       <a
-                        key={p.slug}
-                        href={to(`/practices/${c.slug}/${p.slug}`)}
-                        tabIndex={drawer && acc === c.slug ? 0 : -1}
+                        key={p.title}
+                        href={to(p.href ?? c.href)}
+                        tabIndex={drawer && acc === c.title ? 0 : -1}
                         onClick={closeDrawer}
                         className="block py-[7px] text-[15px] font-light text-on-dark transition-colors hover:text-accent-soft"
                       >
@@ -560,13 +534,13 @@ export function Header({
                   key={m.label}
                   href={m.href}
                   tabIndex={drawer ? 0 : -1}
-                  className="rounded-full px-3.5 py-2.5 font-mono text-[11px] uppercase tracking-[0.09em] text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]"
+                  className="rounded-full px-3.5 py-2.5 text-[13px] text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]"
                 >
                   {m.label}
                 </a>
               ))}
             </div>
-            <div className="flex gap-0.5 font-mono text-[11px] tracking-[0.06em]">
+            <div className="flex gap-0.5 text-[13px]">
               {LANGS.map((l) => (
                 <a
                   key={l.id}

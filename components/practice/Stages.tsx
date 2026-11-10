@@ -20,11 +20,11 @@ export function StagesLine({ stages }: { stages: { title: string; text?: string;
                 className="absolute bottom-0 left-[25.5px] top-[52px] w-px bg-accent/40 min-[900px]:bottom-auto min-[900px]:left-[60px] min-[900px]:right-[calc(-1*clamp(18px,2.4vw,32px))] min-[900px]:top-[25.5px] min-[900px]:h-px min-[900px]:w-auto "
               />
             )}
-            <span className="relative z-[1] grid size-[52px] place-items-center rounded-full bg-ink font-mono text-[13px] tracking-[0.06em] text-white">
+            <span className="relative z-[1] grid size-[52px] place-items-center rounded-full bg-ink text-[13px] text-white">
               {String(i + 1).padStart(2, '0')}
             </span>
             <div className="min-w-0 pt-2.5 min-[900px]:pt-6">
-              {s.duration && <p className="m-0 mb-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-accent-ink">{s.duration}</p>}
+              {s.duration && <p className="m-0 mb-1.5 text-[13px] text-accent-ink">{s.duration}</p>}
               <h3 className="m-0 font-serif text-[clamp(21px,2vw,25px)] font-normal leading-[1.18] text-ink">{s.title}</h3>
               {s.text && <p className="m-0 mt-2.5 max-w-[34ch] text-[14.5px] leading-[1.62] text-slate">{s.text}</p>}
             </div>

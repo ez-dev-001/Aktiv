@@ -102,10 +102,10 @@ export function HeroMark({ still = false }: { still?: boolean }) {
             />
             {/* дуотон: множення на блідо-рожевий + «не темніше за фон» */}
             <span className="absolute inset-0 bg-[#e6b3d6] mix-blend-multiply" />
-            <span className="absolute inset-0 bg-[#140b33] mix-blend-lighten" />
-            <span className="absolute inset-0 bg-[linear-gradient(180deg,rgb(20_11_51/0)_35%,rgb(20_11_51/0.55))]" />
+            <span className="absolute inset-0 bg-[#0b0710] mix-blend-lighten" />
+            <span className="absolute inset-0 bg-[linear-gradient(180deg,rgb(11_7_16/0)_35%,rgb(11_7_16/0.55))]" />
             <span className="hm-refl absolute inset-0 bg-[radial-gradient(circle_at_92%_50%,rgb(250_33_99/0.55),rgb(250_33_99/0)_60%)]" />
-            <span className="hm-dim absolute inset-0 bg-[#140b33]" />
+            <span className="hm-dim absolute inset-0 bg-[#0b0710]" />
           </div>
 
           <svg viewBox="-26.5 -19.5 300 220" className="absolute inset-0 size-full overflow-visible">

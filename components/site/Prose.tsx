@@ -15,13 +15,13 @@ const blockStyles: Record<string, PortableTextBlockComponent> = {
       <p className="mb-5 max-w-[68ch] text-[16.5px] leading-[1.68] text-slate">{children}</p>
     ),
     h2: ({ children }) => (
-      <h2 className="mb-4 mt-11 max-w-[30ch] text-[clamp(21px,3vw,28px)] leading-[1.18]">{children}</h2>
+      <h2 className="mb-4 mt-11 max-w-[30ch] font-serif text-[clamp(26px,3vw,38px)] font-normal leading-[1.18] tracking-[-0.015em]">{children}</h2>
     ),
     h3: ({ children }) => (
       <h3 className="mb-3 mt-9 max-w-[34ch] text-[clamp(18px,2.3vw,22px)] leading-[1.24]">{children}</h3>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="my-7 max-w-[62ch] border-l-2 border-accent py-1 pl-5 font-serif text-[clamp(17px,2.2vw,21px)] italic leading-[1.42] text-ink">
+      <blockquote className="my-7 max-w-[62ch] border-l-2 border-accent py-1 pl-5 font-serif text-[clamp(18px,2.2vw,24px)] leading-[1.4] text-ink">
         {children}
       </blockquote>
     ),
@@ -43,7 +43,7 @@ const components: PortableTextComponents = {
       </li>
     ),
     number: ({ children }) => (
-      <li className="grid grid-cols-[22px_1fr] gap-3 text-[16px] leading-[1.6] text-slate [counter-increment:li] before:font-mono before:text-[12px] before:text-accent-ink before:content-[counter(li)'.']">
+      <li className="grid grid-cols-[22px_1fr] gap-3 text-[16px] leading-[1.6] text-slate [counter-increment:li] before: before:text-[13px] before:text-accent-ink before:content-[counter(li)'.']">
         <span>{children}</span>
       </li>
     ),

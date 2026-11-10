@@ -7,7 +7,9 @@ import type { Metadata } from 'next'
 import { localePath, openingHours, pageMeta } from '@/lib/seo'
 import { HREFLANG, asLocale } from '@/lib/i18n'
 import { ui } from '@/lib/ui'
-import { Claim, Footer, Hero, Journal, Practices, TeamIntro } from '@/components/home/Sections'
+import { Footer } from '@/components/home/Sections'
+import { V2Hero, V2News, V2Practices, V2Trusted, V2Values } from '@/components/v2/Home'
+import { Stack } from '@/components/v2/Stack'
 import { SITE_URL } from '@/lib/site'
 import { LeadSection } from '@/components/home/LeadSection'
 import {
@@ -15,9 +17,8 @@ import {
   getContacts,
   getHomeContent,
   getPosts,
-  getTeam,
+  getTrustBlock,
 } from '@/lib/sanity/content'
-import { TrustedBy } from '@/components/home/TrustedBy'
 
 /* ── Title і description головної ──
    Title до ~60 знаків: послуга + місто попереду, назва фірми — в кінці
@@ -39,26 +40,20 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const t = ui(lang)
   /* Sanity, если настроен и заполнен; иначе статика из lib/content.ts.
      Компонентам всё равно — форма данных одна. */
-  const [cats, posts, crew, contacts, home] = await Promise.all([
+  const [cats, posts, contacts, home, trust] = await Promise.all([
     getCategories(lang),
     getPosts(lang, 3),
-    getTeam(lang),
     getContacts(lang),
     getHomeContent(lang),
+    getTrustBlock(lang),
   ])
-
-  /* Керуючий партнер — автор цитаты в блоке «Команда», если автора
-     не выбрали в студии отдельно. Его портрет и есть акцент блока. */
-  const partner = crew.data.find((m) => t.home.managingRole.test(m.role))
-  const asPerson = (m?: { name: string; role: string; photoUrl?: string }) =>
-    m ? { name: m.name, role: m.role, ...(m.photoUrl ? { photoUrl: m.photoUrl } : {}) } : undefined
-  const quoteAuthor = home.data.teamQuoteAuthor ?? asPerson(partner)
 
   /* ── Структуровані дані (schema.org) ──
      LegalService — тип, який Google розуміє для юрфірм: назва, адреса,
      телефон, рік заснування і напрями практики з посиланнями. Дає
      картку з контактами у видачі та підтримує локальний пошук «юрист
      Київ». Дані — ті самі, що на сторінці (Sanity), щоб не розійшлися. */
+  const showTrust = trust.data.clients.length > 0 || process.env.NODE_ENV !== 'production'
   const c = contacts.data
   const hours = openingHours(c.hours)
   /* sameAs — лише публічні профілі (канал у Telegram), не посилання на чат. */
@@ -120,22 +115,18 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <Header lang={lang} overDark contacts={contacts.data} categories={toMenu(cats.data)} />
 
       <main id="top" className="relative">
-        {/* ── Порядок блоків — як в armada.law (затверджено за макетом) ──
-            1. перший екран — H1, абзац, кнопка до форми, знак;
-            2. команда — хто веде справи;
-            3. практика — напрями й послуги плашками;
-            4. головна фраза з водяним знаком;
-            5. нам довіряють — логотипи клієнтів;
-            6. блог (від двох статей);
-            7. форма — без змін. */}
-        <Hero lang={lang} home={home.data} />
-        <TeamIntro lang={lang} home={home.data} members={crew.data} author={quoteAuthor} />
-        <Practices categories={cats.data} lang={lang} text={home.data.practicesText} />
-        <Claim lang={lang} home={home.data} />
-        <TrustedBy lang={lang} />
-        {/* Блог — лише коли є з чого обирати: одна картка під великим
-            заголовком виглядає як порожня полиця. */}
-        {posts.data.length >= 2 && <Journal lang={lang} posts={posts.data} clickable={posts.source === 'sanity'} />}
+        {/* ── Нова редакція (макет клієнта) ──
+            перший екран → 8 напрямів → цінності → нам довіряють →
+            новини → форма з адресою. «Команди» на головній немає.
+            Stack: перший екран лишається на місці, практики наїжджають
+            на нього (components/v2/Stack); далі сторінка йде звичайно. */}
+        <Stack>
+          <V2Hero lang={lang} />
+          <V2Practices lang={lang} />
+        </Stack>
+        <V2Values lang={lang} />
+        {showTrust && <V2Trusted lang={lang} clients={trust.data.clients} />}
+        {posts.data.length >= 2 && <V2News lang={lang} posts={posts.data} clickable={posts.source === 'sanity'} />}
         <LeadSection contacts={contacts.data} categories={cats.data} />
       </main>
 

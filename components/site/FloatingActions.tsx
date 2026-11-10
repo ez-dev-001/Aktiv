@@ -125,7 +125,7 @@ export function FloatingActions({
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label={t.toTop}
         data-show={showTop && !open}
-        className="pointer-events-auto grid size-12 place-items-center rounded-full border-0 bg-white/90 shadow-[0_2px_10px_-2px_rgb(20_11_51/0.14),inset_0_0_0_1px_var(--color-hair)] backdrop-blur-sm transition-[opacity,transform,box-shadow] duration-300 hover:shadow-[0_4px_16px_-2px_rgb(20_11_51/0.2),inset_0_0_0_1px_var(--color-accent)] data-[show=false]:pointer-events-none data-[show=false]:translate-y-2 data-[show=false]:scale-90 data-[show=false]:opacity-0"
+        className="pointer-events-auto grid size-12 place-items-center rounded-full border-0 bg-white/90 shadow-[0_2px_10px_-2px_rgb(11_7_16/0.14),inset_0_0_0_1px_var(--color-hair)] backdrop-blur-sm transition-[opacity,transform,box-shadow] duration-300 hover:shadow-[0_4px_16px_-2px_rgb(11_7_16/0.2),inset_0_0_0_1px_var(--color-accent)] data-[show=false]:pointer-events-none data-[show=false]:translate-y-2 data-[show=false]:scale-90 data-[show=false]:opacity-0"
       >
         <LogoMark className="h-[15px] w-[20px] -rotate-90 text-accent" />
       </button>
@@ -149,7 +149,7 @@ export function FloatingActions({
             tabIndex={open ? 0 : -1}
             aria-hidden={!open}
             style={{ transitionDelay: open ? `${i * 35}ms` : '0ms' }}
-            className="pointer-events-auto flex min-h-12 items-center gap-2.5 rounded-full bg-white py-2.5 pl-4 pr-3.5 shadow-[0_2px_12px_-2px_rgb(20_11_51/0.16),inset_0_0_0_1px_var(--color-hair)] transition-[opacity,transform] duration-[280ms] ease-[cubic-bezier(.22,1,.36,1)] hover:shadow-[0_2px_12px_-2px_rgb(20_11_51/0.2),inset_0_0_0_1px_var(--color-accent)] group-data-[open=false]:pointer-events-none group-data-[open=false]:translate-y-3 group-data-[open=false]:scale-95 group-data-[open=false]:opacity-0"
+            className="pointer-events-auto flex min-h-12 items-center gap-2.5 rounded-full bg-white py-2.5 pl-4 pr-3.5 shadow-[0_2px_12px_-2px_rgb(11_7_16/0.16),inset_0_0_0_1px_var(--color-hair)] transition-[opacity,transform] duration-[280ms] ease-[cubic-bezier(.22,1,.36,1)] hover:shadow-[0_2px_12px_-2px_rgb(11_7_16/0.2),inset_0_0_0_1px_var(--color-accent)] group-data-[open=false]:pointer-events-none group-data-[open=false]:translate-y-3 group-data-[open=false]:scale-95 group-data-[open=false]:opacity-0"
           >
             <span className="whitespace-nowrap font-sans text-[14px] font-medium text-ink">{it.label}</span>
             <Icon name={it.icon} className="size-[18px] shrink-0 text-accent" />
@@ -164,7 +164,7 @@ export function FloatingActions({
         aria-expanded={open}
         aria-controls="floating-channels"
         aria-label={open ? t.close : t.open}
-        className="pointer-events-auto grid size-14 place-items-center rounded-full border-0 bg-accent text-white shadow-[0_6px_20px_-4px_rgb(250_33_99/0.5)] transition-[background-color,transform,box-shadow] duration-200 hover:bg-accent-ink active:scale-95"
+        className="pointer-events-auto grid size-14 place-items-center rounded-full border-0 bg-accent text-white transition-[background-color,transform,box-shadow] duration-200 hover:bg-accent-ink active:scale-95"
       >
         <span className="relative grid size-6 place-items-center">
           <Icon

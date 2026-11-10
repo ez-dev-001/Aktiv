@@ -48,7 +48,7 @@ export function Hero({ lang = 'ua', home = staticHome }: { lang?: string; home?:
     >
       <span
         aria-hidden="true"
-        className="absolute inset-0 -z-[1] bg-[radial-gradient(55%_70%_at_4%_0%,rgb(60_34_120/0.45),transparent_70%),radial-gradient(40%_60%_at_78%_55%,rgb(250_33_99/0.14),transparent_70%)]"
+        className="absolute inset-0 -z-[1] bg-[radial-gradient(55%_70%_at_4%_0%,rgb(70_20_45/0.4),transparent_70%),radial-gradient(40%_60%_at_78%_55%,rgb(250_33_99/0.14),transparent_70%)]"
       />
 
       {/* ── Сітка першого екрана ──
@@ -65,7 +65,7 @@ export function Hero({ lang = 'ua', home = staticHome }: { lang?: string; home?:
         <div className="col-start-1 row-start-1 -my-3 -ml-1 mr-1 w-[124px] min-w-0 min-[600px]:w-[150px] min-[1000px]:col-start-2 min-[1000px]:m-0 min-[1000px]:-mr-[24%] min-[1000px]:w-[min(760px,128%)] min-[1000px]:justify-self-end">
           <HeroMark />
         </div>
-        <p className="col-start-2 row-start-1 m-0 font-mono text-[10px] uppercase leading-[1.5] tracking-[0.14em] text-accent-soft min-[1000px]:hidden">
+        <p className="col-start-2 row-start-1 m-0 text-[13px] leading-[1.5] text-accent-soft min-[1000px]:hidden">
           {t.cityLine}
         </p>
 
@@ -81,7 +81,7 @@ export function Hero({ lang = 'ua', home = staticHome }: { lang?: string; home?:
           )}
           <div className="mt-auto flex flex-wrap items-center gap-x-[30px] gap-y-2 pt-6 min-[1000px]:mt-[clamp(28px,3.4vw,40px)] min-[1000px]:pt-0">
             {/* на телефоні й планшеті головна кнопка живе в MobileDock */}
-            <ButtonLink href="#contact" arrow className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)] max-[999px]:hidden">
+            <ButtonLink href="#contact" arrow className="min-h-[54px] max-[999px]:hidden">
               {home.heroCtaPrimary}
             </ButtonLink>
             <a href="#team" className="group inline-flex min-h-12 items-center gap-2.5 text-[16px] font-medium text-white">
@@ -132,10 +132,10 @@ export function TeamIntro({
             займало весь екран і не відсувало текст. */}
         {portrait && author && (
           <figure className="relative isolate m-0 hidden w-full max-w-[420px] min-[860px]:block">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-paper-2 shadow-[0_40px_80px_-48px_rgb(20_11_51/0.55)]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-paper-2 shadow-[0_40px_80px_-48px_rgb(11_7_16/0.55)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={portrait} alt={author.name} loading="lazy" decoding="async" className="size-full object-cover object-top" />
-              <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(180deg,transparent,rgb(20_11_51/0.82))]" />
+              <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(180deg,transparent,rgb(11_7_16/0.82))]" />
               <figcaption className="absolute inset-x-0 bottom-0 p-[clamp(18px,2.4vw,26px)]">
                 <span className="block font-serif text-[clamp(20px,2.3vw,24px)] font-semibold leading-tight text-white">{author.name}</span>
                 {author.role && <span className="mt-1 block text-[13.5px] text-accent-soft">{author.role}</span>}
@@ -161,7 +161,7 @@ export function TeamIntro({
                   alt={author.name}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-[9%] size-[82%] rounded-full bg-paper-2 object-cover object-top shadow-[0_16px_32px_-18px_rgb(20_11_51/0.55)]"
+                  className="absolute inset-[9%] size-[82%] rounded-full bg-paper-2 object-cover object-top shadow-[0_16px_32px_-18px_rgb(11_7_16/0.55)]"
                 />
               </div>
               <div className="min-w-0">
@@ -396,7 +396,7 @@ export function Team({ members = FALLBACK_TEAM }: { members?: TeamMember[] }) {
               key={m.slug ?? m.name}
               className={`flex flex-col gap-3.5 rounded-[12px] p-[clamp(12px,1.4vw,18px)] ${
                 m.highlight
-                  ? 'bg-ink text-white shadow-[0_12px_30px_-18px_rgb(20_11_51/0.5)]'
+                  ? 'bg-ink text-white shadow-[0_12px_30px_-18px_rgb(11_7_16/0.5)]'
                   : 'bg-white shadow-[inset_0_0_0_1px_var(--color-hair)]'
               }`}
             >
@@ -567,13 +567,13 @@ export function Footer({
           )}
         </div>
         {/* Нижній рядок: усе на одній базовій лінії. */}
-        <div className="mt-[clamp(34px,4vw,52px)] flex flex-wrap items-center gap-x-[26px] gap-y-1 border-t border-on-dark-hair pt-[14px] font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-dark-2 [&>*]:inline-flex [&>*]:min-h-11 [&>*]:items-center">
+        <div className="mt-[clamp(34px,4vw,52px)] flex flex-wrap items-center gap-x-[26px] gap-y-1 border-t border-on-dark-hair pt-[14px] text-[13px] text-on-dark-2 [&>*]:inline-flex [&>*]:min-h-11 [&>*]:items-center">
           <span>© {new Date().getFullYear()} {t.common.firmShort}</span>
           <a href={to('/privacy')} className="text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white">
             {t.common.privacy}
           </a>
           {/* Відкликати згоду так само легко, як дати: банер відкривається знову звідси. */}
-          <CookieSettingsLink className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white" />
+          <CookieSettingsLink className=" text-[13px] text-on-dark-2 underline decoration-on-dark-hair underline-offset-4 hover:text-white" />
           <a href="#top" className="group gap-2 text-on-dark-2 transition-colors hover:text-white min-[760px]:ml-auto">
             {t.footer.toTop}
             <Icon name="arrow" className="size-[13px] -rotate-90 transition-transform duration-200 group-hover:-translate-y-0.5" />
@@ -604,7 +604,7 @@ export function TrustBridge({
   return (
     <div className="mt-[clamp(34px,5vw,60px)] grid gap-6 rounded-2xl bg-white/[0.045] p-[clamp(22px,3vw,34px)] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] min-[820px]:grid-cols-[1fr_auto] min-[820px]:items-center">
       <div>
-        <p className="m-0 font-mono text-[10.5px] uppercase tracking-[0.12em] text-accent-soft">
+        <p className="m-0 text-[13px] text-accent-soft">
           {kicker}
         </p>
         <p className="m-0 mt-3 max-w-[54ch] font-serif text-[clamp(17px,2.2vw,22px)] font-normal leading-[1.32] text-white">

@@ -82,7 +82,7 @@ export function CookieConsent({ texts = staticCookieTexts }: { texts?: CookieTex
     <section
       role="region"
       aria-labelledby={titleId}
-      className="consent-card fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-[90] mx-auto max-w-[460px] rounded-[14px] bg-white p-[clamp(18px,2.4vw,24px)] text-ink shadow-[0_24px_70px_-24px_rgb(20_11_51/0.45),inset_0_0_0_1px_var(--color-hair)] min-[640px]:inset-x-auto min-[640px]:left-[max(20px,env(safe-area-inset-left))] min-[640px]:mx-0"
+      className="consent-card fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-[90] mx-auto max-w-[460px] rounded-[14px] bg-white p-[clamp(18px,2.4vw,24px)] text-ink shadow-[0_24px_70px_-24px_rgb(11_7_16/0.45),inset_0_0_0_1px_var(--color-hair)] min-[640px]:inset-x-auto min-[640px]:left-[max(20px,env(safe-area-inset-left))] min-[640px]:mx-0"
     >
       <h2 id={titleId} className="m-0 font-serif text-[18px] font-semibold leading-snug tracking-[-0.01em]">
         {texts.title}

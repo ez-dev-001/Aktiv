@@ -60,11 +60,11 @@ export function ThanksCard({ hours }: { hours: string }) {
   if (!r?.firstName) rows.push([t.hours, hours])
   return (
     <div className="thanks-rise rounded-[22px] bg-white/[0.05] p-[26px] shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] [animation-delay:240ms]">
-      <p className="m-0 mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-on-dark-2">{t.card}</p>
+      <p className="m-0 mb-4 text-[13px] font-medium text-on-dark-2">{t.card}</p>
       <dl className="m-0 grid gap-3.5">
         {rows.map(([k, v]) => (
           <div key={k}>
-            <dt className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-on-dark-2">{k}</dt>
+            <dt className=" text-[9.5px] font-medium text-on-dark-2">{k}</dt>
             <dd className="m-0 mt-[3px] font-serif text-[17px] font-semibold leading-[1.35] text-white">{v}</dd>
           </div>
         ))}
@@ -91,7 +91,7 @@ export function ThanksSteps() {
           <h2 className="m-0 mt-4 font-serif text-[19px] font-semibold leading-[1.25] text-ink">{s.title}</h2>
           <p className="m-0 mt-2 text-[14.5px] leading-[1.6] text-slate">{s.text}</p>
           <span className="mt-auto pt-3.5">
-            <span className="inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-slate shadow-[inset_0_0_0_1px_var(--color-hair)]">
+            <span className="inline-block rounded-full px-2.5 py-1 text-[13px] text-slate shadow-[inset_0_0_0_1px_var(--color-hair)]">
               {s.when}
             </span>
           </span>

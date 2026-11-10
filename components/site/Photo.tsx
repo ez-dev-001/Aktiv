@@ -31,8 +31,8 @@ type Tone = 'none' | 'ink' | 'deep' | 'wash'
 const TONES: Record<Tone, string> = {
   none: '',
   wash: 'after:absolute after:inset-0 after:bg-ink/15',
-  ink: 'after:absolute after:inset-0 after:bg-[linear-gradient(180deg,rgb(20_11_51/0.30)_0%,rgb(20_11_51/0.52)_52%,rgb(20_11_51/0.86)_100%)]',
-  deep: 'after:absolute after:inset-0 after:bg-[linear-gradient(175deg,rgb(20_11_51/0.62)_0%,rgb(20_11_51/0.78)_45%,rgb(20_11_51/0.94)_100%)]',
+  ink: 'after:absolute after:inset-0 after:bg-[linear-gradient(180deg,rgb(11_7_16/0.30)_0%,rgb(11_7_16/0.52)_52%,rgb(11_7_16/0.86)_100%)]',
+  deep: 'after:absolute after:inset-0 after:bg-[linear-gradient(175deg,rgb(11_7_16/0.62)_0%,rgb(11_7_16/0.78)_45%,rgb(11_7_16/0.94)_100%)]',
 }
 
 export function Photo({

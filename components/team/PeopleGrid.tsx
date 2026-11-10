@@ -68,13 +68,14 @@ function Photo({ src, name, className }: { src?: string; name: string; className
   )
 }
 
-export function PeopleGrid({ people }: { people: Person[] }) {
+/** filter={false} — без кнопок «Усі / Партнери / Адвокати…» (нова редакція). */
+export function PeopleGrid({ people, filter = true }: { people: Person[]; filter?: boolean }) {
   const T = useUi()
   const t = T.team
   const LABELS: Record<Group, string> = t.groups
   const [f, setF] = useState<Group | 'all'>('all')
   const groups = ORDER.filter((g) => people.some((p) => p.group === g))
-  const showFilter = groups.length > 1
+  const showFilter = filter && groups.length > 1
   const visible = people.filter((m) => f === 'all' || m.group === f)
 
   /* ── панель ── */
@@ -296,7 +297,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
           <div
             aria-hidden="true"
             onClick={close}
-            className={`absolute inset-0 bg-[rgb(20_11_51/0.45)] backdrop-blur-[3px] transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 bg-[rgb(11_7_16/0.45)] backdrop-blur-[3px] transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
           />
           <div
             ref={panel}
@@ -305,7 +306,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
             aria-labelledby="pg-name"
             data-shown={shown}
             style={{ ['--dy' as string]: `${dy}px` }}
-            className={`pg-panel absolute flex flex-col bg-paper shadow-[-30px_0_60px_-40px_rgb(20_11_51/0.6)] ${y0.current !== null ? 'is-drag' : ''}`}
+            className={`pg-panel absolute flex flex-col bg-paper shadow-[-30px_0_60px_-40px_rgb(11_7_16/0.6)] ${y0.current !== null ? 'is-drag' : ''}`}
           >
             <div aria-hidden="true" {...grab} className="pg-grab absolute inset-x-0 top-0 z-[4] h-7 touch-none min-[640px]:hidden" />
             <button
@@ -313,7 +314,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
               type="button"
               onClick={close}
               aria-label={t.close}
-              className="absolute right-3.5 top-3.5 z-[3] grid size-11 cursor-pointer place-items-center rounded-full border-0 bg-white/90 text-[24px] leading-none text-ink shadow-[0_6px_16px_-8px_rgb(20_11_51/0.4)] transition-colors hover:bg-accent-btn hover:text-white focus-visible:bg-accent-btn focus-visible:text-white focus-visible:outline-none"
+              className="absolute right-3.5 top-3.5 z-[3] grid size-11 cursor-pointer place-items-center rounded-full border-0 bg-white/90 text-[24px] leading-none text-ink shadow-[0_6px_16px_-8px_rgb(11_7_16/0.4)] transition-colors hover:bg-accent-btn hover:text-white focus-visible:bg-accent-btn focus-visible:text-white focus-visible:outline-none"
             >
               ×
             </button>
@@ -328,7 +329,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
                     {cur.practice}
                   </p>
                 )}
-                <p className="m-0 mb-1 mt-6 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate">
+                <p className="m-0 mb-1 mt-6 text-[13px] text-slate">
                   {t.handles} · {cur.practices?.length ?? 0}
                 </p>
                 <ul className="m-0 grid list-none p-0">
@@ -347,7 +348,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
                 <a
                   href="#contact"
                   onClick={close}
-                  className="mt-6 inline-flex min-h-[50px] items-center gap-2.5 whitespace-nowrap rounded-full bg-accent-btn px-6 text-[14.5px] font-semibold text-white no-underline shadow-[0_14px_30px_-14px_rgb(224_16_85/0.7)]"
+                  className="mt-6 inline-flex min-h-[50px] items-center gap-2.5 whitespace-nowrap rounded-full bg-accent-btn px-6 text-[14.5px] font-semibold text-white no-underline"
                 >
                   {T.common.discussCase}
                   <Arrow className="size-4" />
@@ -368,7 +369,7 @@ export function PeopleGrid({ people }: { people: Person[] }) {
                       d > 0 ? 'items-end border-l border-solid border-hair text-right' : 'items-start text-left'
                     }`}
                   >
-                    <small className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate">{label}</small>
+                    <small className=" text-[13px] text-slate">{label}</small>
                     <span className="font-serif text-[14px] font-semibold leading-tight text-ink">{p.name}</span>
                   </button>
                 ))}

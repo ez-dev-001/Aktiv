@@ -67,7 +67,7 @@ export function PostCard({
         ) : (
           <div
             aria-hidden="true"
-            className="grid place-items-center bg-paper-2 font-mono text-[10.5px] uppercase tracking-[0.13em] text-slate-2"
+            className="grid place-items-center bg-paper-2 text-[13px] text-slate-2"
             style={{ aspectRatio: String(RATIO) }}
           >
             {post.category}
@@ -75,7 +75,7 @@ export function PostCard({
         ))}
 
       <div className="flex flex-1 flex-col gap-3 p-[clamp(20px,2.4vw,26px)]">
-        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[10.5px] uppercase tracking-[0.11em] text-slate-2">
+        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-slate-2">
           {post.category && <span className="text-accent-ink">{post.category}</span>}
           {post.category && date && <span aria-hidden="true">·</span>}
           {date && <span>{date}</span>}
@@ -83,7 +83,7 @@ export function PostCard({
         <H className="m-0 font-serif text-[18px] font-semibold leading-snug text-ink">{post.title}</H>
         {post.excerpt && !hideExcerpt && <p className="m-0 text-[14px] leading-relaxed text-slate">{post.excerpt}</p>}
         {post.author && (
-          <span className="pt-1 font-mono text-[10.5px] uppercase tracking-[0.09em] text-slate-2">{post.author}</span>
+          <span className="pt-1 text-[13px] text-slate-2">{post.author}</span>
         )}
         {href && (
           <span className="mt-auto inline-flex items-center gap-2 pt-1 text-[14px] font-medium text-accent-ink">
@@ -101,7 +101,7 @@ export function PostCard({
   return href ? (
     <a
       href={href}
-      className={`${shell} transition-shadow duration-[240ms] hover:shadow-[inset_0_0_0_1px_var(--color-slate-2),0_14px_34px_-22px_rgb(20_11_51/0.35)]`}
+      className={`${shell} transition-shadow duration-[240ms] hover:shadow-[inset_0_0_0_1px_var(--color-slate-2),0_14px_34px_-22px_rgb(11_7_16/0.35)]`}
     >
       {body}
     </a>

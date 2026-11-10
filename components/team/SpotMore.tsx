@@ -31,7 +31,7 @@ export function SpotMore({
   return (
     <>
       <div className="mt-[26px] flex flex-wrap gap-2.5">
-        <ButtonLink href={ctaHref} arrow className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)]">
+        <ButtonLink href={ctaHref} arrow className="min-h-[54px]">
           {ctaLabel}
         </ButtonLink>
         {children && (

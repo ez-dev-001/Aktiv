@@ -47,7 +47,7 @@ export function DirectionPicker({ label, items }: { label: string; items: Direct
       aria-label={label}
       className="dir-picker rounded-[22px] bg-white/[0.05] p-1.5 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.1)] backdrop-blur-sm"
     >
-      <p className="m-0 flex items-center gap-2 px-3 pb-1.5 pt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">
+      <p className="m-0 flex items-center gap-2 px-3 pb-1.5 pt-1 text-[13px] text-white/55">
         {label}
         <svg viewBox="0 0 12 12" className="dir-picker-cue size-3 text-accent-soft" aria-hidden="true">
           <path d="M6 1.5v8M2.5 6.5 6 10l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />

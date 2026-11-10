@@ -36,7 +36,7 @@ export function Button({
   return (
     <button className={cls(variant, size, className)} {...rest}>
       {children}
-      {arrow && <Icon name="arrow" className="size-[17px] shrink-0" />}
+      {/* Стрілку в кнопках прибрано (UI/UX-ревізія): текст кнопки сам каже, що станеться. */}{void arrow}
     </button>
   )
 }
@@ -52,7 +52,7 @@ export function ButtonLink({
   return (
     <a className={cls(variant, size, className)} {...rest}>
       {children}
-      {arrow && <Icon name="arrow" className="size-[17px] shrink-0" />}
+      {/* Стрілку в кнопках прибрано (UI/UX-ревізія): текст кнопки сам каже, що станеться. */}{void arrow}
     </a>
   )
 }

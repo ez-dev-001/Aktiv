@@ -4,6 +4,7 @@ import { needsMedia } from '@/components/site/PostCard'
 import { blogCategoryId, getBlog, getTeam, teamPhoto, type Post } from '@/lib/sanity/content'
 import { localeHref } from '@/lib/i18n'
 import { ui } from '@/lib/ui'
+import { v2text } from '@/lib/v2/content'
 import { PageShell } from '@/components/site/PageShell'
 import { PageHero } from '@/components/site/PageHero'
 import { BlogCard, FeaturedCard, type CardAuthor } from '@/components/blog/BlogCard'
@@ -56,7 +57,9 @@ export default async function BlogPage({
   const href = (p: Post) => (clickable ? `${prefix}/blog/${p.slug}` : undefined)
   /* Место под обложку — если она есть хоть у одной статьи в списке.
      Почему решение принимается для всего списка сразу — в PostCard. */
-  const withMedia = needsMedia(posts)
+  /* Нова редакція: у кожної картки є кадр — обкладинка з Sanity або
+     тематичне фото-заглушка (DarkCover). */
+  const withMedia = true
 
   /* Автор у статті — лише імʼя; фото й роль беремо з команди. */
   const author = (p: Post): CardAuthor | undefined => {
@@ -85,12 +88,12 @@ export default async function BlogPage({
     <PageShell lang={lang} overDark>
       <BlogFilterProvider>
         <PageHero
-          compact
+          img="news-hero"
           crumbs={[{ label: T.common.home, href: localeHref(lang, '/') }, { label: T.common.blog }]}
           lang={lang}
-          title={T.blog.heroTitle}
-          accent={T.blog.heroAccent}
-          lede={T.blog.heroLede}
+          title={v2text(lang).news.title}
+          accent={v2text(lang).news.accent}
+          lede={v2text(lang).news.lede}
         >
           {posts.length >= SEARCH_FROM && <BlogSearch />}
         </PageHero>

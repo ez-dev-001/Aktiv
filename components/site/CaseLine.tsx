@@ -429,7 +429,7 @@ export function CaseLine({ stations }: { stations: Station[] }) {
                 поверх страницы и через полсекунды исчезает. Ничего не
                 обрезается и ни с чем не сталкивается по определению. */}
             <span
-              className="pointer-events-none absolute left-full ml-3 origin-left -translate-x-1 scale-95 whitespace-nowrap rounded-[3px] border border-hair bg-white/95 px-2.5 py-1 font-mono text-[10.5px] uppercase leading-none tracking-[0.12em] text-ink opacity-0 shadow-[0_6px_20px_-8px_rgb(17_17_20/0.35)] backdrop-blur-[2px] transition-[opacity,transform] duration-[260ms] ease-[cubic-bezier(.22,1,.36,1)] group-hover:translate-x-0 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:scale-100 group-focus-visible:opacity-100"
+              className="pointer-events-none absolute left-full ml-3 origin-left -translate-x-1 scale-95 whitespace-nowrap rounded-[3px] border border-hair bg-white/95 px-2.5 py-1 text-[13px] leading-none text-ink opacity-0 shadow-[0_6px_20px_-8px_rgb(17_17_20/0.35)] backdrop-blur-[2px] transition-[opacity,transform] duration-[260ms] ease-[cubic-bezier(.22,1,.36,1)] group-hover:translate-x-0 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:scale-100 group-focus-visible:opacity-100"
             >
               {s.label}
             </span>

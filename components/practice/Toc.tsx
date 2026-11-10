@@ -38,7 +38,7 @@ export function Toc({ items, label }: { items: { id: string; title: string }[]; 
 
   return (
     <nav aria-label={label}>
-      <p className="m-0 mb-3 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate">{label}</p>
+      <p className="m-0 mb-3 text-[13px] text-slate">{label}</p>
       <div className="relative">
         {/* рейка прогресу */}
         <span aria-hidden="true" className="absolute bottom-1 left-0 top-1 w-px bg-hair" />
@@ -59,7 +59,7 @@ export function Toc({ items, label }: { items: { id: string; title: string }[]; 
                     on ? 'text-ink' : 'text-slate-2 hover:text-ink'
                   }`}
                 >
-                  <span className={`font-mono text-[10.5px] leading-[1.9] ${on ? 'text-accent-ink' : ''}`}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className={` text-[13px] leading-[1.9] ${on ? 'text-accent-ink' : ''}`}>{String(i + 1).padStart(2, '0')}</span>
                   <span className={on ? 'font-medium' : ''}>{it.title}</span>
                 </a>
               </li>

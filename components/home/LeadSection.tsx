@@ -53,7 +53,7 @@ const FIELD =
   'placeholder:text-on-dark-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent)] focus:outline-none ' +
   'aria-[invalid=true]:shadow-[inset_0_0_0_1.5px_var(--color-accent-soft)]'
 
-const LABEL = 'font-mono text-[9.5px] uppercase tracking-[0.13em] text-on-dark-2'
+const LABEL = 'text-[13px] font-medium text-on-dark-2'
 
 export function LeadSection({
   contacts = staticContacts,
@@ -227,7 +227,7 @@ export function LeadSection({
                       key={m.label}
                       href={m.href}
                       onClick={() => trackMessenger(m.label.toLowerCase() as 'viber' | 'telegram' | 'whatsapp', 'contact_section')}
-                      className="rounded-full px-3.5 py-2.5 font-mono text-[11px] uppercase tracking-[0.09em] text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] transition-[color,box-shadow] hover:text-accent-soft hover:shadow-[inset_0_0_0_1px_var(--color-accent)]"
+                      className="rounded-full px-3.5 py-2.5 text-[13px] text-white shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] transition-[color,box-shadow] hover:text-accent-soft hover:shadow-[inset_0_0_0_1px_var(--color-accent)]"
                     >
                       {m.label}
                     </a>

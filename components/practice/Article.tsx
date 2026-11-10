@@ -161,10 +161,6 @@ function Cards({ items }: { items: Card[] }) {
       {items.map((t, i) => {
         const inner = (
           <>
-            <span className="flex items-center justify-between gap-3 font-mono text-[10.5px] tracking-[0.14em] text-accent-ink">
-              {String(i + 1).padStart(2, '0')}
-              {t.href && <span aria-hidden="true" className="text-[16px] text-accent transition-transform duration-300 group-hover:translate-x-1">→</span>}
-            </span>
             <span className="font-serif text-[19px] font-semibold leading-[1.2] text-ink">{t.term}</span>
             {t.body && (
               <span className="text-[14.5px] leading-[1.6] text-slate [&_p]:m-0 [&_p]:max-w-none [&_p]:text-[14.5px] [&_p]:leading-[1.6]">{t.body}</span>
@@ -172,7 +168,7 @@ function Cards({ items }: { items: Card[] }) {
           </>
         )
         const cls =
-          'group relative flex h-full flex-col gap-2 overflow-hidden rounded-[18px] bg-white p-[16px_18px_18px] no-underline shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1px_var(--color-accent),0_18px_40px_-28px_rgb(20_11_51/0.45)] min-[640px]:p-[20px_22px_22px]'
+          'group relative flex h-full flex-col gap-2 overflow-hidden rounded-[18px] bg-white p-[16px_18px_18px] no-underline shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1px_var(--color-accent),0_18px_40px_-28px_rgb(11_7_16/0.45)] min-[640px]:p-[20px_22px_22px]'
         return (
           <li key={t.term}>
             {t.href ? (
@@ -207,14 +203,14 @@ export function SectionBody({ blocks }: { blocks: Block[] }) {
   )
 }
 
-/** Розділ статті: номер, заголовок, тіло. */
+/** Розділ статті: заголовок і тіло (номерів немає — розділи не є кроками). */
 export function ArticleSectionView({ s, n, children }: { s: ArticleSection; n: number; children?: ReactNode }) {
   return (
-    <section id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-[calc(var(--hdr)+24px)] border-t border-hair pt-[clamp(28px,3.4vw,40px)] [&+&]:mt-[clamp(32px,4vw,52px)]">
-      <p className="m-0 font-mono text-[11px] tracking-[0.14em] text-accent-ink">{String(n).padStart(2, '0')}</p>
+    <section id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-[calc(var(--hdr)+24px)] [&+&]:mt-[clamp(36px,4.4vw,56px)]">
+      {void n}
       <h2
         id={`${s.id}-h`}
-        className="m-0 mb-5 mt-2.5 max-w-[26ch] font-serif text-[clamp(26px,3vw,36px)] font-normal leading-[1.12] tracking-[-0.015em] text-ink"
+        className="m-0 mb-5 max-w-[26ch] font-serif text-[clamp(28px,3vw,40px)] font-normal leading-[1.15] tracking-[-0.02em] text-ink"
       >
         {s.title}
       </h2>

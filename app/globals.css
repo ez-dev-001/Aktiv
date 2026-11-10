@@ -22,9 +22,9 @@
    ═══════════════════════════════════════════════════════════════════ */
 @theme {
   /* чернила */
-  --color-ink: #140b33;        /* заголовки */
-  --color-ink-2: #1c1242;      /* тёмные секции */
-  --color-ink-3: #241a4d;      /* футер */
+  --color-ink: #0b0710;        /* заголовки */
+  --color-ink-2: #161019;      /* тёмные секции */
+  --color-ink-3: #0b0710;      /* футер */
 
   /* акцент */
   --color-accent: #fa2163;     /* логотип — крупные заливки, цифры, графика */
@@ -35,21 +35,22 @@
   --color-accent-wash: #fdf0f3;/* бледная подложка */
 
   /* бумага */
-  --color-paper: #fbf9f8;
-  --color-paper-2: #f5f1ef;
+  --color-paper: #f7f3f1;
+  --color-paper-2: #efe8e5;
 
   /* нейтрали */
-  --color-slate: #6b6478;      /* основной текст body */
-  --color-slate-2: #9b94a6;
-  --color-hair: #e7e1e3;
+  --color-slate: #5e5763;      /* основной текст body */
+  --color-slate-2: #8d8592;
+  --color-hair: #e3dbdf;
   --color-hair-soft: #f0ebec;
 
   /* текст на тёмном */
-  --color-on-dark: #b8b2c8;
-  --color-on-dark-2: #9a93b0; /* 5.4:1 на #241a4d */
-  --color-on-dark-hair: #372c5e;
+  --color-on-dark: #b9b2bf;
+  --color-on-dark-2: #9d95a4; /* 5.4:1 на #241a4d */
+  --color-on-dark-hair: #3a2d40;
 
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-display: "Montserrat", "Manrope", "Segoe UI", system-ui, sans-serif;
   --font-sans: "Manrope", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -63,7 +64,7 @@
        и отступ контента, и геометрия SVG. */
     --rail: 0px;
     --gut: clamp(18px, 4.2vw, 40px);
-    --shell: 1200px;
+    --shell: calc(1280px + 2 * var(--gut));
     --hdr: 66px;
     color-scheme: light;
   }
@@ -79,6 +80,14 @@
   @media (min-width: 1000px) {
     :root { --rail: 0px; --hdr: 74px; }
   }
+
+  /* Нова редакція (макет клієнта): на великих моніторах сайт ширший —
+     контент 1280 px на 1440, до 1600 px від 1800 px екрана. */
+  @media (min-width: 1800px) {
+    :root { --shell: calc(1600px + 2 * var(--gut)); }
+  }
+  /* «Надалі писати без нахилу» — курсив вимкнено всюди, акцент лише кольором. */
+  em, i, cite { font-style: normal; }
 
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
@@ -141,19 +150,19 @@
   .mask[data-armed="true"][data-in="true"] { clip-path: inset(0 0 0% 0); }
 
   .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.17em;
-    text-transform: uppercase;
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0;
     display: flex;
     align-items: center;
     gap: 13px;
     margin: 0 0 20px;
   }
-  .eyebrow { color: var(--color-accent-ink); }
-  .eyebrow::after { content: ""; height: 1px; flex: 1; max-width: 120px; background: var(--color-hair); }
+  .eyebrow { color: var(--color-slate); }
+  .eyebrow::after { content: none; }
   .eyebrow[data-plain="true"]::after { display: none; }
-  .on-dark .eyebrow { color: var(--color-accent-soft); }
+  .on-dark .eyebrow { color: var(--color-on-dark-2); }
   .on-dark .eyebrow::after { background: var(--color-on-dark-hair); }
 
   /* Верх рельса гасится на высоту шапки: над тёмным первым экраном
@@ -428,7 +437,7 @@
 .hm { --hm-io: cubic-bezier(0.65, 0, 0.35, 1); --hm-out: cubic-bezier(0.16, 1, 0.3, 1); }
 
 .hm-glow {
-  background: radial-gradient(closest-side, rgb(250 33 99 / 0.3), rgb(120 40 144 / 0.16) 47%, rgb(60 34 120 / 0.1) 75%, rgb(20 11 51 / 0));
+  background: radial-gradient(closest-side, rgb(250 33 99 / 0.3), rgb(140 20 70 / 0.16) 47%, rgb(70 20 45 / 0.1) 75%, rgb(11 7 16 / 0));
   opacity: 0.78; animation: hm-glow 4.17s linear both;
 }
 @keyframes hm-glow { 0% { opacity: 0; } 32% { opacity: 0.55; } 59% { opacity: 0.7; } 69% { opacity: 1; } 100% { opacity: 0.78; } }
@@ -492,9 +501,9 @@
 /* Напрям, відкритий з першого екрана, коротко підсвічується рамкою. */
 .explorer-flash { animation: explorer-in 0.45s cubic-bezier(0.22, 1, 0.36, 1), explorer-flash 1.6s ease-out 0.35s; }
 @keyframes explorer-flash {
-  0% { box-shadow: 0 0 0 0 rgb(250 33 99 / 0), 0 18px 44px -24px rgb(20 11 51 / 0.18); }
-  25% { box-shadow: 0 0 0 4px rgb(250 33 99 / 0.45), 0 18px 44px -24px rgb(20 11 51 / 0.18); }
-  100% { box-shadow: 0 0 0 0 rgb(250 33 99 / 0), 0 18px 44px -24px rgb(20 11 51 / 0.18); }
+  0% { box-shadow: 0 0 0 0 rgb(250 33 99 / 0), 0 18px 44px -24px rgb(11 7 16 / 0.18); }
+  25% { box-shadow: 0 0 0 4px rgb(250 33 99 / 0.45), 0 18px 44px -24px rgb(11 7 16 / 0.18); }
+  100% { box-shadow: 0 0 0 0 rgb(250 33 99 / 0), 0 18px 44px -24px rgb(11 7 16 / 0.18); }
 }
 
 /* Панель напряму в провіднику практик: м'яка поява при перемиканні. */
@@ -633,10 +642,10 @@
 /* ═══ «Команда»: картки фахівців і панель з практиками (components/team/PeopleGrid.tsx) ═══ */
 .pg-tile { transition: box-shadow .3s, transform .35s cubic-bezier(.16, 1, .3, 1); -webkit-tap-highlight-color: transparent; }
 .pg-photo { transition: transform .8s cubic-bezier(.16, 1, .3, 1); }
-.pg-badge { box-shadow: 0 8px 20px -10px rgb(20 11 51 / .5); transition: background-color .3s, color .3s, transform .35s cubic-bezier(.16, 1, .3, 1); }
+.pg-badge { box-shadow: 0 8px 20px -10px rgb(11 7 16 / .5); transition: background-color .3s, color .3s, transform .35s cubic-bezier(.16, 1, .3, 1); }
 .pg-badge .pg-arrow { transition: transform .45s cubic-bezier(.16, 1, .3, 1); }
 @media (hover: hover) {
-  .pg-tile.is-click:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1.5px var(--color-accent), 0 26px 44px -32px rgb(20 11 51 / .55); }
+  .pg-tile.is-click:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1.5px var(--color-accent), 0 26px 44px -32px rgb(11 7 16 / .55); }
   .pg-tile.is-click:hover .pg-photo { transform: scale(1.035); }
   .pg-tile.is-click:hover .pg-badge { background: var(--color-ink); color: var(--color-accent-soft); transform: translateY(-2px); }
   .pg-tile.is-click:hover .pg-badge .pg-arrow { transform: translateX(-30px); }
@@ -647,13 +656,13 @@
 /* підказка на телефоні: знак пульсує, над першою карткою — бульбашка */
 .pg-hint .pg-badge { animation: pg-ring 1.6s cubic-bezier(.2, .6, .3, 1) 3; }
 @keyframes pg-ring {
-  0% { box-shadow: 0 8px 20px -10px rgb(20 11 51 / .5), 0 0 0 0 rgb(250 33 99 / .6); }
-  100% { box-shadow: 0 8px 20px -10px rgb(20 11 51 / .5), 0 0 0 14px rgb(250 33 99 / 0); }
+  0% { box-shadow: 0 8px 20px -10px rgb(11 7 16 / .5), 0 0 0 0 rgb(250 33 99 / .6); }
+  100% { box-shadow: 0 8px 20px -10px rgb(11 7 16 / .5), 0 0 0 14px rgb(250 33 99 / 0); }
 }
 .pg-tip {
   position: absolute; z-index: 6; left: 10px; top: 18px; width: max-content; max-width: min(300px, calc(200% + 12px));
   display: flex; align-items: center; gap: 10px; padding: 11px 14px 11px 12px; border-radius: 14px;
-  background: var(--color-ink); color: #fff; font-size: 13px; line-height: 1.35; box-shadow: 0 18px 36px -18px rgb(20 11 51 / .7);
+  background: var(--color-ink); color: #fff; font-size: 13px; line-height: 1.35; box-shadow: 0 18px 36px -18px rgb(11 7 16 / .7);
   pointer-events: none; animation: pg-tip .45s cubic-bezier(.16, 1, .3, 1) both;
 }
 .pg-tip::after { content: ""; position: absolute; left: 22px; bottom: -6px; width: 12px; height: 12px; background: var(--color-ink); transform: rotate(45deg); border-radius: 2px; }
@@ -666,7 +675,7 @@
   .pg-panel { top: auto; left: 0; width: 100%; max-height: 88dvh; border-radius: 22px 22px 0 0; transform: translateY(100%); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .pg-panel[data-shown="true"] { transform: translateY(var(--dy, 0px)); }
   .pg-panel.is-drag { transition: none; }
-  .pg-grab::after { content: ""; position: absolute; left: 50%; top: 9px; width: 42px; height: 5px; margin-left: -21px; border-radius: 3px; background: rgb(255 255 255 / .85); box-shadow: 0 0 0 1px rgb(20 11 51 / .12); }
+  .pg-grab::after { content: ""; position: absolute; left: 50%; top: 9px; width: 42px; height: 5px; margin-left: -21px; border-radius: 3px; background: rgb(255 255 255 / .85); box-shadow: 0 0 0 1px rgb(11 7 16 / .12); }
 }
 .pg-swap { animation: pg-swap .4s cubic-bezier(.16, 1, .3, 1); }
 @keyframes pg-swap { from { opacity: .2; transform: translateY(10px); } }
@@ -674,3 +683,60 @@
   .pg-tile, .pg-photo, .pg-badge, .pg-panel { transition: none; }
   .pg-hint .pg-badge, .pg-tip, .pg-swap { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   НОВА РЕДАКЦІЯ — АНІМАЦІЯ ГОЛОВНОЇ (components/v2/Home.tsx)
+
+   Майже все на CSS; JS — лише у Stack.tsx (висота блоків і --p):
+   • перший екран — заголовок, абзац і кнопка заходять знизу при
+     завантаженні; при прокрутці фото повільно відпливає (паралакс),
+     а текст тане;
+   • перший екран лишається на місці, а «Наша практика» наїжджає на
+     нього аркушем (.v2-stack, components/v2/Stack.tsx); перший екран під
+     ним трохи меншає й темніє;
+   • заголовки й картки (.v2-rise) спливають, коли заходять у кадр;
+   • фони секцій ([data-par]) — легкий паралакс.
+
+   Прив'язка до прокрутки — animation-timeline (Chrome, Edge, Safari 26+).
+   Де його немає (Firefox), усе просто стоїть на місці, нічого не ховається.
+   «Зменшити рух» у системі — анімації вимкнено повністю.
+   ═══════════════════════════════════════════════════════════════════ */
+/* Стопка блоків. --p (0…1) — наскільки наступний блок уже накрив цей;
+   рахує Stack.tsx. top для прилипання теж ставить він. */
+.v2-stack { position: sticky; top: 0; }
+.v2-stack > :first-child { transform: scale(calc(1 - var(--p, 0) * 0.06)); transform-origin: 50% 100%; will-change: transform; }
+.v2-stack-shade { pointer-events: none; position: absolute; inset: 0; background: #0b0710; opacity: calc(var(--p, 0) * 0.65); }
+/* наступний блок — «аркуш» із заокругленим верхом і тінню, що лягає на попередній */
+.v2-stack + .v2-stack > :first-child { border-radius: clamp(20px, 3vw, 40px) clamp(20px, 3vw, 40px) 0 0; box-shadow: 0 -24px 60px -12px rgb(0 0 0 / 0.45); }
+
+/* Колонки списку практик (/practices): вертикальні лінії між колонками,
+   у першої колонки рядка — без лінії й без лівого поля. */
+.v2-cols > li { border-left: 1px solid rgb(11 7 16 / 0.14); padding-inline: clamp(18px, 2vw, 28px); }
+@media (max-width: 639px) { .v2-cols > li { border-left: 0; padding-inline: 0; } }
+@media (min-width: 640px) and (max-width: 1099px) { .v2-cols > li:nth-child(2n + 1) { border-left: 0; padding-left: 0; } }
+@media (min-width: 1100px) { .v2-cols > li:nth-child(4n + 1) { border-left: 0; padding-left: 0; } }
+
+@keyframes v2-in { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+.v2-in { animation: v2-in 0.9s var(--ease-out-quint) var(--d, 0ms) both; }
+
+@supports (animation-timeline: view()) {
+  .v2-rise { animation: v2-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  .v2-rise:nth-child(even) { animation-range: entry 6% entry 55%; }
+  @keyframes v2-rise { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: none; } }
+
+  [data-par] { animation: v2-par linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  @keyframes v2-par { from { transform: translateY(-28px); } to { transform: translateY(28px); } }
+
+  .v2-hero-bg { animation: v2-hero-bg linear both; animation-timeline: scroll(root); animation-range: 0 100vh; }
+  @keyframes v2-hero-bg { to { transform: scale(1.1); } }
+  .v2-hero-copy { animation: v2-hero-copy linear both; animation-timeline: scroll(root); animation-range: 0 75vh; }
+  @keyframes v2-hero-copy { to { opacity: 0; transform: translateY(-90px) scale(0.97); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-in, .v2-rise, [data-par], .v2-hero-bg, .v2-hero-copy { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .v2-stack > :first-child { transform: none !important; }
+}
+/* На телефоні новини — горизонтальна стрічка: це власний скрол-контейнер,
+   і view() рахувався б від нього, а не від сторінки. Там картки без анімації. */
+@media (max-width: 899px) { #journal .v2-rise { animation: none; } }

@@ -36,7 +36,7 @@ export function OfficeMapCard({ contacts }: { contacts: Contacts }) {
   return (
     <figure className="m-0 grid gap-2 rounded-[22px] bg-ink-2 p-2 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] min-[800px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
       <figcaption className="order-2 flex flex-col p-[clamp(18px,2.6vw,30px)] min-[800px]:order-1">
-        <p className="m-0 flex items-center gap-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent-soft">
+        <p className="m-0 flex items-center gap-2.5 text-[13px] text-accent-soft">
           <span aria-hidden="true" className="h-px w-5 bg-accent" />
           {t.office}{city ? ` · ${city}` : ''}
         </p>

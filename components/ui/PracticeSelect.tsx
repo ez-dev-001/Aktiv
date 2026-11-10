@@ -309,7 +309,7 @@ export function PracticeSelect({
               return (
                 <li key={o.value}>
                   {head && (
-                    <p className="m-0 px-4 pb-1.5 pt-3.5 font-mono text-[9.5px] uppercase tracking-[0.13em] text-accent-soft">
+                    <p className="m-0 px-4 pb-1.5 pt-3.5 text-[9.5px] text-accent-soft">
                       {head}
                     </p>
                   )}

@@ -51,13 +51,13 @@ export function HeroDirections({ items }: { items: HeroDirection[] }) {
   return (
     <nav
       aria-label="Напрями практики"
-      className="w-full rounded-[18px] bg-[#140b33]/70 p-2 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.09),0_40px_80px_-40px_rgb(0_0_0/0.7)]"
+      className="w-full rounded-[18px] bg-[#0b0710]/70 p-2 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.09),0_40px_80px_-40px_rgb(0_0_0/0.7)]"
       onMouseLeave={() => setPaused(false)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false)
       }}
     >
-      <p className="m-0 px-4 pb-2 pt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
+      <p className="m-0 px-4 pb-2 pt-3 text-[13px] text-white/45">
         Чим ми займаємось
       </p>
       <ul className="m-0 list-none p-0">
@@ -98,7 +98,7 @@ export function HeroDirections({ items }: { items: HeroDirection[] }) {
                   >
                     {d.title}
                   </span>
-                  <span className="mt-1 block font-mono text-[10.5px] uppercase tracking-[0.1em] text-white/40">
+                  <span className="mt-1 block text-[13px] text-white/40">
                     {d.count} {d.count % 10 === 1 && d.count % 100 !== 11 ? 'послуга' : [2, 3, 4].includes(d.count % 10) && ![12, 13, 14].includes(d.count % 100) ? 'послуги' : 'послуг'}
                   </span>
                 </span>

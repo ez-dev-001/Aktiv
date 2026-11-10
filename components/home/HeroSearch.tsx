@@ -91,7 +91,7 @@ export function HeroSearch({ items, popular }: { items: SearchItem[]; popular: S
   }
 
   return (
-    <div className="w-full rounded-[18px] bg-[#140b33]/75 p-[clamp(18px,2.2vw,24px)] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.09),0_40px_80px_-40px_rgb(0_0_0/0.7)]">
+    <div className="w-full rounded-[18px] bg-[#0b0710]/75 p-[clamp(18px,2.2vw,24px)] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.09),0_40px_80px_-40px_rgb(0_0_0/0.7)]">
       <label htmlFor={`${listId}-q`} className="block font-serif text-[clamp(19px,2vw,22px)] font-semibold leading-snug text-white">
         Що у вас сталося?
       </label>
@@ -141,7 +141,7 @@ export function HeroSearch({ items, popular }: { items: SearchItem[]; popular: S
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-[14.5px] leading-snug text-white">{it.title}</span>
-                  <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.1em] text-white/40">{it.group}</span>
+                  <span className="mt-0.5 block text-[13px] text-white/40">{it.group}</span>
                 </span>
                 <Icon name="arrow" className={`size-[14px] shrink-0 ${i === cursor ? 'text-accent' : 'text-white/30'}`} />
               </a>
@@ -150,7 +150,7 @@ export function HeroSearch({ items, popular }: { items: SearchItem[]; popular: S
         </ul>
       ) : (
         <div className="mt-4">
-          <p className="m-0 font-mono text-[10px] uppercase tracking-[0.14em] text-white/40">Найчастіше звертаються</p>
+          <p className="m-0 text-[13px] text-white/40">Найчастіше звертаються</p>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {popular.map((it) => (
               <a

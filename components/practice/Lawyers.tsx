@@ -87,7 +87,7 @@ export function LawyerCards({
               </div>
               {links.length > 0 && (
                 <div className="mt-5 pb-1">
-                  <p className="m-0 mb-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-2">{label}</p>
+                  <p className="m-0 mb-2.5 text-[13px] text-slate-2">{label}</p>
                   <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                     {links.map((l) => (
                       <li key={l.href}>

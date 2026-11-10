@@ -75,7 +75,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 href={t === 'candidate' ? '/admin?type=candidate' : '/admin'}
                 aria-current={on ? 'page' : undefined}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-[14px] transition-colors ${
-                  on ? 'bg-white text-ink shadow-[0_1px_3px_rgb(20_11_51/0.08)]' : 'text-slate hover:text-ink'
+                  on ? 'bg-white text-ink shadow-[0_1px_3px_rgb(11_7_16/0.08)]' : 'text-slate hover:text-ink'
                 }`}
               >
                 {TYPE_LABEL[t]}

@@ -73,7 +73,7 @@ export function OfficeMap({ query, title }: { query: string; title: string }) {
           />
         </div>
         {/* Подкраска в фиолетовый сайта — обычная прозрачность, без mix-blend. */}
-        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[#1c1242]/25" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[#161019]/25" />
       </>
     )
   }
@@ -86,8 +86,8 @@ export function OfficeMap({ query, title }: { query: string; title: string }) {
       <svg aria-hidden="true" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full">
         <defs>
           <pattern id="office-grid-dark" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(-16)">
-            <rect width="30" height="30" fill="#1c1242" />
-            <rect x="3" y="3" width="24" height="24" rx="3" fill="#241a4d" />
+            <rect width="30" height="30" fill="#161019" />
+            <rect x="3" y="3" width="24" height="24" rx="3" fill="#161019" />
           </pattern>
           <radialGradient id="office-glow" cx="50%" cy="45%" r="42%">
             <stop offset="0" stopColor="#fa2163" stopOpacity="0.2" />
@@ -95,9 +95,9 @@ export function OfficeMap({ query, title }: { query: string; title: string }) {
           </radialGradient>
         </defs>
         <rect width="400" height="300" fill="url(#office-grid-dark)" />
-        <path d="M-20 190 C 90 160, 180 170, 420 90" stroke="#33285f" strokeWidth="12" fill="none" />
-        <path d="M130 -20 L 185 320" stroke="#33285f" strokeWidth="9" fill="none" />
-        <path d="M-20 70 L 420 128" stroke="#2c2256" strokeWidth="6" fill="none" />
+        <path d="M-20 190 C 90 160, 180 170, 420 90" stroke="#3a2433" strokeWidth="12" fill="none" />
+        <path d="M130 -20 L 185 320" stroke="#3a2433" strokeWidth="9" fill="none" />
+        <path d="M-20 70 L 420 128" stroke="#2e1c29" strokeWidth="6" fill="none" />
         <rect width="400" height="300" fill="url(#office-glow)" />
       </svg>
 

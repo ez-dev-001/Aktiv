@@ -54,10 +54,15 @@ export function formatDateTime(lang: string, iso: string, opts: Intl.DateTimeFor
 /* ═══════════════════════ УКРАЇНСЬКА ═══════════════════════ */
 
 const ua = {
+  v2menu: {
+    unsure: 'Не знаєте, який напрям ваш?',
+    unsureText: 'Опишіть ситуацію — юрист підкаже, з чого почати.',
+    all: 'Усі практики',
+  },
   common: {
     home: 'Головна',
     practices: 'Практики',
-    blog: 'Блог',
+    blog: 'Новини',
     team: 'Команда',
     about: 'Про компанію',
     career: 'Карʼєра',
@@ -147,7 +152,7 @@ const ua = {
     practicesAria: 'Наша практика',
     practicesTitle: ['Наша', 'практика'] as [string, string],
     allServices: (n: number) => `Усі ${n} послуг`,
-    readAll: 'Читати всі статті',
+    readAll: 'Усі новини',
     practiceAreas: 'Напрями практики',
     /** роль керуючого партнера — автора цитати в «Команді» */
     managingRole: /керуюч/i,
@@ -503,10 +508,15 @@ export type Dict = typeof ua
 /* ═══════════════════════ ENGLISH ═══════════════════════ */
 
 const en: Dict = {
+  v2menu: {
+    unsure: 'Not sure which area is yours?',
+    unsureText: 'Describe your situation — a lawyer will suggest where to start.',
+    all: 'All practices',
+  },
   common: {
     home: 'Home',
     practices: 'Practices',
-    blog: 'Blog',
+    blog: 'News',
     team: 'Team',
     about: 'About us',
     career: 'Careers',
@@ -593,7 +603,7 @@ const en: Dict = {
     practicesAria: 'Our practice',
     practicesTitle: ['Our', 'practice'],
     allServices: (n: number) => `All ${n} ${pluralEn(n, 'service', 'services')}`,
-    readAll: 'Read all articles',
+    readAll: 'All news',
     practiceAreas: 'Practice areas',
     managingRole: /managing|керуюч/i,
   },

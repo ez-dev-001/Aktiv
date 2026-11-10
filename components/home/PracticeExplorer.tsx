@@ -178,7 +178,7 @@ export function PracticeExplorer({ groups }: { groups: ExplorerGroup[] }) {
           placeholder="Знайти послугу, напр. ТЦК або борг"
           enterKeyHint="search"
           autoComplete="off"
-          className="h-14 w-full rounded-full border-0 bg-white pl-12 pr-5 font-sans text-[15.5px] text-ink shadow-[inset_0_0_0_1px_var(--color-hair),0_10px_30px_-22px_rgb(20_11_51/0.35)] transition-shadow placeholder:text-slate-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_10px_30px_-22px_rgb(20_11_51/0.35)] focus:outline-none"
+          className="h-14 w-full rounded-full border-0 bg-white pl-12 pr-5 font-sans text-[15.5px] text-ink shadow-[inset_0_0_0_1px_var(--color-hair),0_10px_30px_-22px_rgb(11_7_16/0.35)] transition-shadow placeholder:text-slate-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_10px_30px_-22px_rgb(11_7_16/0.35)] focus:outline-none"
         />
       </label>
 
@@ -211,12 +211,12 @@ export function PracticeExplorer({ groups }: { groups: ExplorerGroup[] }) {
                 searching ? 'opacity-60' : ''
               } ${
                 on
-                  ? 'bg-ink text-white shadow-[0_18px_40px_-24px_rgb(20_11_51/0.6)]'
+                  ? 'bg-ink text-white shadow-[0_18px_40px_-24px_rgb(11_7_16/0.6)]'
                   : 'bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] hover:bg-paper-2 min-[960px]:bg-transparent min-[960px]:shadow-none'
               }`}
             >
               <span
-                className={`hidden font-mono text-[11px] tracking-[0.1em] min-[960px]:inline ${on ? 'text-accent-soft' : 'text-slate-2'}`}
+                className={`hidden text-[13px] min-[960px]:inline ${on ? 'text-accent-soft' : 'text-slate-2'}`}
               >
                 {String(i + 1).padStart(2, '0')}
               </span>
@@ -224,7 +224,7 @@ export function PracticeExplorer({ groups }: { groups: ExplorerGroup[] }) {
               <span className="min-w-0 flex-1 whitespace-nowrap font-serif text-[15px] font-semibold leading-tight min-[960px]:whitespace-normal min-[960px]:text-[clamp(18px,1.8vw,21px)]">
                 {x.title}
               </span>
-              <span className={`hidden font-mono text-[11px] tabular-nums min-[960px]:inline ${on ? 'text-white/55' : 'text-slate-2'}`}>
+              <span className={`hidden text-[13px] tabular-nums min-[960px]:inline ${on ? 'text-white/55' : 'text-slate-2'}`}>
                 {x.practices.length}
               </span>
             </button>
@@ -246,8 +246,8 @@ export function PracticeExplorer({ groups }: { groups: ExplorerGroup[] }) {
 
       {/* ── результати пошуку замість панелі ── */}
       {searching ? (
-        <div className="explorer-panel min-w-0 rounded-[20px] bg-white p-[clamp(20px,2.8vw,32px)] shadow-[0_1px_2px_rgb(20_11_51/0.045),0_18px_44px_-24px_rgb(20_11_51/0.18)]" aria-live="polite">
-          <p className="m-0 mb-3 font-mono text-[10.5px] uppercase tracking-[0.14em] text-slate-2">
+        <div className="explorer-panel min-w-0 rounded-[20px] bg-white p-[clamp(20px,2.8vw,32px)] shadow-[0_1px_2px_rgb(11_7_16/0.045),0_18px_44px_-24px_rgb(11_7_16/0.18)]" aria-live="polite">
+          <p className="m-0 mb-3 text-[13px] text-slate-2">
             {results.length ? `Знайдено: ${results.length}` : 'Нічого не знайшли'}
           </p>
           {results.length ? (
@@ -257,7 +257,7 @@ export function PracticeExplorer({ groups }: { groups: ExplorerGroup[] }) {
                   <a href={`/practices/${r.group.slug}/${r.slug}`} className="group/row grid min-h-12 grid-cols-[1fr_auto] items-center gap-x-4 py-3">
                     <span className="min-w-0">
                       <span className="block text-[15px] leading-snug text-ink transition-colors group-hover/row:text-accent-ink">{r.title}</span>
-                      <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.1em] text-slate-2">{r.group.title}</span>
+                      <span className="mt-0.5 block text-[13px] text-slate-2">{r.group.title}</span>
                     </span>
                     <Icon name="arrow" className="size-[14px] text-slate-2 transition-[color,transform] duration-[240ms] group-hover/row:translate-x-1 group-hover/row:text-accent-ink" />
                   </a>
@@ -281,7 +281,7 @@ export function PracticeExplorer({ groups }: { groups: ExplorerGroup[] }) {
         id={`${base}-panel`}
         role="tabpanel"
         aria-labelledby={`${base}-tab-${active}`}
-        className={`explorer-panel min-w-0 overflow-hidden rounded-[20px] bg-white shadow-[0_1px_2px_rgb(20_11_51/0.045),0_18px_44px_-24px_rgb(20_11_51/0.18)] ${
+        className={`explorer-panel min-w-0 overflow-hidden rounded-[20px] bg-white shadow-[0_1px_2px_rgb(11_7_16/0.045),0_18px_44px_-24px_rgb(11_7_16/0.18)] ${
           flash ? 'explorer-flash' : ''
         }`}
       >

@@ -72,10 +72,10 @@ export function LeadTeam({ people, contactHref, lang = 'ua' }: { people: Practic
       >
         {lead?.photoUrl && (
           <figure className="relative isolate m-0 hidden w-full max-w-[420px] min-[860px]:block">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-paper-2 shadow-[0_40px_80px_-48px_rgb(20_11_51/0.55)]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-paper-2 shadow-[0_40px_80px_-48px_rgb(11_7_16/0.55)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={portraitUrl(lead.photoUrl)} alt={lead.name} loading="lazy" decoding="async" className="size-full object-cover object-top" />
-              <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(180deg,transparent,rgb(20_11_51/0.82))]" />
+              <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(180deg,transparent,rgb(11_7_16/0.82))]" />
               <figcaption className="absolute inset-x-0 bottom-0 p-[clamp(18px,2.4vw,26px)]">
                 <span className="block font-serif text-[clamp(20px,2.3vw,24px)] font-semibold leading-tight text-white">{lead.name}</span>
                 {lead.role && <span className="mt-1 block text-[13.5px] text-accent-soft">{lead.role}</span>}
@@ -98,7 +98,7 @@ export function LeadTeam({ people, contactHref, lang = 'ua' }: { people: Practic
                   alt={lead.name}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-[9%] size-[82%] rounded-full bg-paper-2 object-cover object-top shadow-[0_16px_32px_-18px_rgb(20_11_51/0.55)]"
+                  className="absolute inset-[9%] size-[82%] rounded-full bg-paper-2 object-cover object-top shadow-[0_16px_32px_-18px_rgb(11_7_16/0.55)]"
                 />
               </div>
               <div className="min-w-0">
@@ -159,7 +159,7 @@ export function CheckList({ items, dark = false }: { items: ReactNode[]; dark?: 
 /** Дрібний mono-підпис над списком. */
 export function MiniLabel({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
   return (
-    <p className={`m-0 mb-2.5 font-mono text-[10px] uppercase tracking-[0.14em] ${dark ? 'text-on-dark-2' : 'text-slate'}`}>
+    <p className={`m-0 mb-2.5 text-[13px] ${dark ? 'text-on-dark-2' : 'text-slate'}`}>
       {children}
     </p>
   )
@@ -222,7 +222,7 @@ export function OtherServices({
             <li key={it.href} className="flex">
               <a
                 href={it.href}
-                className="flex min-h-16 w-full items-center justify-center rounded-[14px] bg-white px-4 py-3 text-center text-[14.5px] font-medium leading-[1.35] text-ink no-underline shadow-[0_1px_2px_rgb(20_11_51/0.05)] transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_12px_24px_-16px_rgb(20_11_51/0.35)]"
+                className="flex min-h-16 w-full items-center justify-center rounded-[14px] bg-white px-4 py-3 text-center text-[14.5px] font-medium leading-[1.35] text-ink no-underline shadow-[0_1px_2px_rgb(11_7_16/0.05)] transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_12px_24px_-16px_rgb(11_7_16/0.35)]"
               >
                 {it.label}
               </a>

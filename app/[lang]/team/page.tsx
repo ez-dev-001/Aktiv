@@ -4,11 +4,13 @@ import { pageMeta } from '@/lib/seo'
 import { getCategories, getTeam, getTeamPage, type TeamMember } from '@/lib/sanity/content'
 import { PageShell } from '@/components/site/PageShell'
 import { DownLink, HeroActions, PageHero } from '@/components/site/PageHero'
-import { Band, SEC, SecHead } from '@/components/site/Blocks'
+import { Band, SEC } from '@/components/site/Blocks'
 import { ButtonLink } from '@/components/ui/Button'
 import { Bold } from '@/components/ui/Bold'
 import { Icon } from '@/components/site/Icon'
-import { ExecutorSpot } from '@/components/team/ExecutorSpot'
+import { ArrowUR, H2, Kick, V2Icon } from '@/components/v2/ui'
+import { v2text } from '@/lib/v2/content'
+import { v2img } from '@/lib/v2/practices'
 import { PeopleGrid, type Group } from '@/components/team/PeopleGrid'
 import { ui } from '@/lib/ui'
 
@@ -58,56 +60,94 @@ export default async function TeamPage({ params }: { params: Promise<{ lang: str
      убирались все выделенные: пока выделен был один исполнитель, это
      совпадало, но с галочкой у двоих второй исчез бы со страницы совсем —
      ни в блоке, ни в списке. */
-  const executor = team.find((m) => m.highlight)
-  const rest = team.filter((m) => m !== executor)
+  /* Нова редакція (макет клієнта): окремим блоком — керуючий партнер,
+     у сітці «Наша команда» — усі інші, без фільтра. Виділений виконавець
+     (highlight) тепер просто в сітці. */
+  const T = ui(lang)
+  const v = v2text(lang).team
+  const partner = team.find((m) => m.kind === 'managing') ?? team.find((m) => T.home.managingRole.test(m.role))
+  const rest = team.filter((m) => m !== partner)
   const home = lang === 'ua' ? '/' : `/${lang}`
   const career = lang === 'ua' ? '/career' : `/${lang}/career`
-  const T = ui(lang)
+  const about = lang === 'ua' ? '/about' : `/${lang}/about`
+  const partnerPhoto = partner?.photoUrl ? `${partner.photoUrl}?w=900&h=1040&fit=crop&crop=top&auto=format&q=80` : v2img('shaiko')
 
   return (
     <PageShell lang={lang} overDark>
       <PageHero
+        img="team-hero"
         crumbs={[{ label: T.common.home, href: home }, { label: T.common.team }]}
         lang={lang}
-        title={t.headTitle}
-        accent={t.headTitleAccent}
-        lede={<Bold text={t.headLede} onDark />}
+        title={v.title}
+        accent={v.accent}
+        lede={v.lede}
       >
         <HeroActions>
           <ButtonLink
-            href="#contact"
-            arrow
-            className="min-h-[54px] shadow-[0_14px_34px_-14px_rgb(224_16_85/0.7)] max-[640px]:w-full"
+            href="#people"
+            className="min-h-[54px] max-[640px]:w-full"
           >
-            {t.ctaPrimary}
+            {v.meet}
           </ButtonLink>
-          <DownLink href="#people">{T.team.specialists}</DownLink>
+          <DownLink href={about}>{v.approach}</DownLink>
         </HeroActions>
       </PageHero>
 
-      {/* ── ВИДІЛЕНИЙ СПІВРОБІТНИК ── одразу під шапкою, перед сіткою */}
-      {executor && (
-        <ExecutorSpot
-          member={executor}
-          kicker={t.executorKicker}
-          title={t.executorTitle}
-          text={t.executorText}
-          categories={cats}
-          lang={lang}
-        />
+      {/* ── КЕРУЮЧИЙ ПАРТНЕР ── темний блок: портрет із малиновим кільцем і напрями */}
+      {partner && (
+        <section id="partner" className="on-dark relative isolate overflow-clip bg-ink py-[clamp(64px,9vw,128px)] text-on-dark">
+          <div aria-hidden="true" className="absolute inset-0 -z-[1] bg-[radial-gradient(45%_70%_at_22%_50%,rgb(250_33_99/0.22),transparent_70%),linear-gradient(180deg,#0b0710,#161019)]" />
+          <div className="shell inner grid items-center gap-[clamp(36px,6vw,96px)] min-[900px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+            <div className="v2-rise relative mx-auto w-full max-w-[460px]">
+              {/* малинове кільце за портретом — як у макеті клієнта */}
+              <span aria-hidden="true" className="absolute left-1/2 top-1/2 aspect-square w-[112%] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[inset_0_0_0_3px_rgb(250_33_99/0.9),0_0_90px_rgb(250_33_99/0.35),inset_0_0_90px_rgb(250_33_99/0.25)]" />
+              {/* фото з Sanity; якщо не завантажилось — під ним лежить локальне */}
+              <div
+                role="img"
+                aria-label={partner.name}
+                className="relative aspect-[45/52] overflow-hidden rounded-[28px] bg-ink-2 bg-cover bg-top"
+                style={{ backgroundImage: `url(${partnerPhoto}), url(${v2img('shaiko')})` }}
+              >
+                <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-[linear-gradient(180deg,transparent,rgb(11_7_16/0.85))]" />
+                <span className="absolute bottom-5 left-5 inline-flex items-center gap-2.5 rounded-full bg-ink/70 px-4 py-2.5 text-[13.5px] font-semibold text-white shadow-[inset_0_0_0_1px_rgb(250_33_99/0.6)] backdrop-blur">
+                  <span aria-hidden="true" className="size-2 rounded-full bg-accent" />
+                  {v.partnerBadge}
+                </span>
+              </div>
+            </div>
+            <div className="v2-rise">
+              <Kick dark>{v.partnerKick}</Kick>
+              <h2 className="m-0 mt-5 font-display text-[clamp(38px,5vw,68px)] font-extrabold leading-[1.02] tracking-[-0.04em] text-white">{partner.name}</h2>
+              <p className="m-0 mt-3 text-[17px] font-semibold text-accent">{partner.role}</p>
+              <p className="m-0 mt-6 max-w-[52ch] text-[clamp(16px,1.35vw,19px)] leading-[1.65] text-on-dark">{v.partnerText}</p>
+              <ul className="m-0 mt-7 flex list-none flex-wrap gap-2.5 p-0">
+                {v.partnerAreas.map((x, i) => (
+                  <li key={x} className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.04] px-4 py-2.5 text-[15px] font-medium text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.16)]">
+                    <V2Icon name={['home', 'crane', 'tax', 'scale'][i] ?? 'scale'} className="size-[18px] text-accent" />
+                    {x}
+                  </li>
+                ))}
+              </ul>
+              <ButtonLink href="#contact" arrow className="mt-8 min-h-[54px]">
+                {v.partnerCta}
+              </ButtonLink>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* ── УСІ ФАХІВЦІ ── */}
       {rest.length > 0 && (
         <section id="people" className={`scroll-mt-[var(--hdr)] ${SEC}`}>
           <div className="shell inner">
-            <SecHead
-              eyebrow={`${t.peopleEyebrow} · ${team.length}`}
-              title={t.peopleTitle}
-              lede={t.peopleLede}
-              row
-            />
+            <div className="v2-rise mb-[clamp(30px,4vw,52px)] flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <H2 a={v.gridTitle} b={v.gridAccent} className="mt-5" />
+              </div>
+              <p className="m-0 max-w-[40ch] text-[16px] leading-[1.6] text-slate">{v.gridLede}</p>
+            </div>
             <PeopleGrid
+              filter={false}
               people={rest.map((m) => ({
                 name: m.name,
                 role: m.role,

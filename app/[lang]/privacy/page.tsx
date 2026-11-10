@@ -73,12 +73,12 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
           {/* Ліва колонка: на компʼютері липне збоку, на телефоні — звичайні картки над текстом. */}
           <aside className="grid gap-3 min-[960px]:sticky min-[960px]:top-[calc(var(--hdr)+24px)]">
             <nav aria-label={P_.tocAria} className="rounded-[22px] bg-white p-6 shadow-[inset_0_0_0_1px_var(--color-hair)]">
-              <p className="m-0 mb-3.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate">{P_.sections}</p>
+              <p className="m-0 mb-3.5 text-[13px] font-medium text-slate">{P_.sections}</p>
               <ol className="m-0 grid list-none gap-0.5 p-0">
                 {toc.map(([id, label], i) => (
                   <li key={id}>
                     <a href={`#${id}`} className="group flex gap-2.5 py-2 text-[14.5px] leading-[1.4] text-slate transition-colors hover:text-ink">
-                      <span className="font-mono text-[11px] font-medium leading-[1.9] text-slate-2 transition-colors group-hover:text-accent-ink">
+                      <span className=" text-[13px] font-medium leading-[1.9] text-slate-2 transition-colors group-hover:text-accent-ink">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       {label}
@@ -88,7 +88,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
               </ol>
             </nav>
             <div className="on-dark rounded-[22px] bg-ink p-6 text-white">
-              <p className="m-0 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-on-dark-2">{P_.questions}</p>
+              <p className="m-0 text-[13px] font-medium text-on-dark-2">{P_.questions}</p>
               <p className="m-0 mt-3 text-[14.5px] leading-[1.6] text-on-dark">{P_.questionsText}</p>
               <a
                 href={`mailto:${c.email}`}
@@ -188,9 +188,9 @@ function BodyUa({ c }: { c: Contacts }) {
           <table className="w-full border-collapse text-left text-[14.5px] max-[600px]:block">
             <thead className="max-[600px]:hidden">
               <tr>
-                <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">Категорія</th>
-                <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">Що це</th>
-                <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">Строк</th>
+                <th className="border-b border-hair px-3 py-2.5 text-[13px] font-medium text-slate">Категорія</th>
+                <th className="border-b border-hair px-3 py-2.5 text-[13px] font-medium text-slate">Що це</th>
+                <th className="border-b border-hair px-3 py-2.5 text-[13px] font-medium text-slate">Строк</th>
               </tr>
             </thead>
             <tbody className="text-[#3b3450] max-[600px]:block">
@@ -198,7 +198,7 @@ function BodyUa({ c }: { c: Contacts }) {
                 cat="Необхідні"
                 what={
                   <>
-                    <code className="font-mono text-[12.5px] text-ink">{CONSENT_COOKIE}</code> — памʼятає ваш вибір у
+                    <code className=" text-[12.5px] text-ink">{CONSENT_COOKIE}</code> — памʼятає ваш вибір у
                     банері cookie. Вимкнути не можна: без неї банер зʼявлявся б на кожній сторінці.
                   </>
                 }
@@ -279,7 +279,7 @@ function BodyUa({ c }: { c: Contacts }) {
           Якщо ми змінимо, які дані збираємо або як їх використовуємо, оновимо цю сторінку. Якщо зміниться перелік
           cookie, банер згоди зʼявиться знову, і ви зможете обрати заново.
         </P>
-        <p className="m-0 mt-8 border-t border-hair pt-5 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-2">
+        <p className="m-0 mt-8 border-t border-hair pt-5 text-[13px] text-slate-2">
           Оновлено {ui('ua').privacy.updated}
         </p>
       </Part>
@@ -368,9 +368,9 @@ function BodyEn({ c }: { c: Contacts }) {
           <table className="w-full border-collapse text-left text-[14.5px] max-[600px]:block">
             <thead className="max-[600px]:hidden">
               <tr>
-                <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">{t.category}</th>
-                <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">{t.what}</th>
-                <th className="border-b border-hair px-3 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate">{t.term}</th>
+                <th className="border-b border-hair px-3 py-2.5 text-[13px] font-medium text-slate">{t.category}</th>
+                <th className="border-b border-hair px-3 py-2.5 text-[13px] font-medium text-slate">{t.what}</th>
+                <th className="border-b border-hair px-3 py-2.5 text-[13px] font-medium text-slate">{t.term}</th>
               </tr>
             </thead>
             <tbody className="text-[#3b3450] max-[600px]:block">
@@ -378,7 +378,7 @@ function BodyEn({ c }: { c: Contacts }) {
                 cat="Necessary"
                 what={
                   <>
-                    <code className="font-mono text-[12.5px] text-ink">{CONSENT_COOKIE}</code> — remembers your choice in the
+                    <code className=" text-[12.5px] text-ink">{CONSENT_COOKIE}</code> — remembers your choice in the
                     cookie banner. Cannot be turned off: without it, the banner would appear on every page.
                   </>
                 }
@@ -459,7 +459,7 @@ function BodyEn({ c }: { c: Contacts }) {
           If we change what data we collect or how we use it, we will update this page. If the list of cookies changes, the
           consent banner will appear again so you can choose anew.
         </P>
-        <p className="m-0 mt-8 border-t border-hair pt-5 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-2">
+        <p className="m-0 mt-8 border-t border-hair pt-5 text-[13px] text-slate-2">
           {t.updatedLabel} {t.updated}
         </p>
       </Part>
@@ -473,7 +473,7 @@ function Part({ id, n, title, children }: { id: string; n: number; title: string
   return (
     <section id={id} className="mb-[30px] scroll-mt-[calc(var(--hdr)+24px)] border-b border-hair pb-[30px] last:mb-0 last:border-b-0 last:pb-0">
       <h2 className="m-0 mb-3.5 flex gap-3.5 font-serif text-[clamp(24px,2.6vw,30px)] font-normal leading-[1.2] text-ink">
-        <span className="font-mono text-[12px] font-medium leading-[2.6] text-accent-ink">{String(n).padStart(2, '0')}</span>
+        <span className=" text-[13px] font-medium leading-[2.6] text-accent-ink">{String(n).padStart(2, '0')}</span>
         {title}
       </h2>
       {children}
@@ -516,7 +516,7 @@ function Row({ cat, what, term, termLabel = 'Строк' }: { cat: string; what:
         {what}
       </td>
       <td className="whitespace-nowrap border-b border-hair px-3 py-3.5 max-[600px]:block max-[600px]:border-0 max-[600px]:px-0 max-[600px]:py-[3px]">
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate min-[601px]:hidden">{termLabel} · </span>
+        <span className=" text-[13px] text-slate min-[601px]:hidden">{termLabel} · </span>
         {term}
       </td>
     </tr>

@@ -39,9 +39,10 @@ export function SecHead({
       className={`mb-[clamp(28px,4vw,48px)] grid gap-3.5 ${row && lede ? 'min-[900px]:grid-cols-2 min-[900px]:items-end' : ''} ${className}`}
     >
       <div className="min-w-0">
-        {eyebrow && <Kicker dark={dark}>{eyebrow}</Kicker>}
+        {/* Надзаголовки над секціями прибрано (UI/UX-ревізія) — заголовок говорить сам. */}
+        {void eyebrow}
         <Tag
-          className={`m-0 mt-3.5 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] [text-wrap:balance] ${
+          className={`m-0 font-serif text-[clamp(30px,4.6vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] [text-wrap:balance] ${
             dark ? 'text-white' : 'text-ink'
           }`}
         >
@@ -49,7 +50,7 @@ export function SecHead({
           {accent && (
             <>
               {' '}
-              <em className={dark ? 'text-accent-soft' : 'text-accent-ink'}>{accent}</em>
+              <em>{accent}</em>
             </>
           )}
         </Tag>
@@ -67,13 +68,11 @@ export function SecHead({
   )
 }
 
-/** Дрібний рядок над заголовком: mono, рожевий, з тонкою лінією. */
+/** Дрібний підпис над блоком (роль, етап) — звичайним регістром, без риски. */
 export function Kicker({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
   return (
     <p
-      className={`m-0 flex items-center gap-3 font-mono text-[10.5px] uppercase leading-none tracking-[0.16em] after:h-px after:w-[60px] after:content-[''] ${
-        dark ? 'text-accent-soft after:bg-on-dark-hair' : 'text-accent-ink after:bg-hair'
-      }`}
+      className={`m-0 text-[14px] font-semibold leading-snug ${dark ? 'text-on-dark' : 'text-slate'}`}
     >
       {children}
     </p>
@@ -97,7 +96,7 @@ export function NumRows({
       {items.map((it, i) => {
         const body = (
           <>
-            <span className={`font-mono text-[12px] leading-[1.9] ${dark ? 'text-accent-soft' : 'text-accent-ink'}`}>
+            <span className={` text-[13px] leading-[1.9] ${dark ? 'text-accent-soft' : 'text-accent-ink'}`}>
               {String(i + 1).padStart(2, '0')}
             </span>
             <span
@@ -151,18 +150,24 @@ export function NumRows({
 
 /** Питання-відповідь: нативний <details>, «+» обертається в «×». */
 export function Faq({ items, firstOpen = true }: { items: { q: ReactNode; a: ReactNode }[]; firstOpen?: boolean }) {
+  /* Кожне питання — біла картка; відкрите — з тонким малиновим контуром.
+     Кнопка-плюс 44 px (зручна ціль для пальця), відкрите — темна. */
   return (
-    <div className="border-t border-hair">
+    <div className="grid gap-3">
       {items.map((it, i) => (
-        <details key={i} open={firstOpen && i === 0} className="group border-b border-hair">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-[18px] py-[22px] text-[clamp(16px,1.6vw,18.5px)] font-medium leading-[1.4] text-ink [&::-webkit-details-marker]:hidden">
+        <details
+          key={i}
+          open={firstOpen && i === 0}
+          className="group rounded-[18px] bg-white px-[clamp(18px,2vw,28px)] shadow-[inset_0_0_0_1px_rgb(23_18_28/0.06)] open:shadow-[inset_0_0_0_1px_rgb(250_33_99/0.22)]"
+        >
+          <summary className="flex min-h-[72px] cursor-pointer list-none items-center justify-between gap-[18px] py-4 font-serif text-[clamp(18px,1.6vw,22px)] font-normal leading-[1.3] text-ink [&::-webkit-details-marker]:hidden">
             {it.q}
             <span
               aria-hidden="true"
-              className="relative size-9 shrink-0 rounded-full shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[transform,background-color] duration-200 before:absolute before:left-1/2 before:top-1/2 before:h-[1.6px] before:w-3 before:-translate-x-1/2 before:-translate-y-1/2 before:bg-current before:content-[''] after:absolute after:left-1/2 after:top-1/2 after:h-3 after:w-[1.6px] after:-translate-x-1/2 after:-translate-y-1/2 after:bg-current after:content-[''] group-open:rotate-45 group-open:bg-accent-btn group-open:text-white group-open:shadow-none"
+              className="relative size-11 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(23_18_28/0.25)] transition-[transform,background-color] duration-200 before:absolute before:left-1/2 before:top-1/2 before:h-[1.6px] before:w-3.5 before:-translate-x-1/2 before:-translate-y-1/2 before:bg-current before:content-[''] after:absolute after:left-1/2 after:top-1/2 after:h-3.5 after:w-[1.6px] after:-translate-x-1/2 after:-translate-y-1/2 after:bg-current after:content-[''] group-open:rotate-45 group-open:bg-ink group-open:text-white group-open:shadow-none"
             />
           </summary>
-          <div className="-mt-1.5 mb-6 max-w-[66ch] text-[15.5px] leading-[1.7] text-slate">{it.a}</div>
+          <div className="-mt-1 pb-6 pr-[60px] text-[16px] leading-[1.65] text-[#3b3440] max-[640px]:pr-0">{it.a}</div>
         </details>
       ))}
     </div>
@@ -239,7 +244,7 @@ export function Band({
           {accent && (
             <>
               {' '}
-              <em className={dark ? 'text-accent-soft' : 'text-accent-ink'}>{accent}</em>
+              <em>{accent}</em>
             </>
           )}
         </p>
@@ -254,7 +259,7 @@ export function Band({
 export function Chip({ children, dot = false, dark = false }: { children: ReactNode; dot?: boolean; dark?: boolean }) {
   return (
     <span
-      className={`inline-flex min-h-[34px] items-center gap-2 rounded-full px-3.5 font-mono text-[11px] uppercase tracking-[0.09em] ${
+      className={`inline-flex min-h-[34px] items-center gap-2 rounded-full px-3.5 text-[13px] ${
         dark ? 'text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.22)]' : 'text-ink shadow-[inset_0_0_0_1px_var(--color-hair)]'
       }`}
     >

@@ -30,39 +30,30 @@ export function LogoMark({ className = 'size-6', ...rest }: React.SVGProps<SVGSV
 }
 
 /**
- * Знак плюс словесная часть — шапка, футер, CRM.
+ * Логотип нової редакції (макет клієнта, 2026):
  *
- * ── Один цвет везде ──
- * Раньше поверх фотографии знак перекрашивался в белый, а на бумаге
- * возвращался в малиновый — логотип менялся на глазах при каждой
- * прокрутке. Фирменный знак так себя не ведёт: цвет — часть узнавания.
+ *   AKTIV ⊖→        — «AKTIV» жирним гротеском (Montserrat ExtraBold),
+ *   L A W  F I R M   малиновий; знак — маленький, вгорі праворуч;
+ *                    «LAW FIRM» — розрідженими капітелями під словом.
  *
- * Теперь знак всегда малиновый. Читаемость поверх любого кадра держит
- * не перекраска, а подложка: у прозрачной шапки сверху лёгкое тёмное
- * затемнение (см. Header), а сами первые экраны с фото и так затемнены
- * сверху. Малиновый #fa2163 на тёмно-фиолетовом даёт контраст около
- * 4.9:1 — выше порога для крупного текста.
- *
- * «LAW FIRM» — чёрный, как просил клиент. На тёмном фоне (прозрачная
- * шапка над фото, футер) чёрный пропал бы совсем, поэтому там подпись
- * белая: onDark. Знак и «AKTIV» цвет не меняют никогда.
- *
- * Размер увеличен по просьбе клиента: знак 22 → 30 px по высоте,
- * «AKTIV» 21 → 28 px (на телефоне 25 px, чтобы шапка не теснилась).
+ * Знак і «AKTIV» завжди малинові. «LAW FIRM» — чорний на світлому,
+ * білий на темному (onDark).
  */
 export function Logo({ className = '', onDark = false }: { className?: string; onDark?: boolean }) {
   return (
-    <span className={`flex items-center gap-3 leading-none ${className}`}>
-      <LogoMark className="h-[26px] w-[35px] shrink-0 text-accent min-[980px]:h-[30px] min-[980px]:w-[41px]" />
-      <span className="flex flex-col">
-        <span className="font-serif text-[25px] font-bold leading-none tracking-[0.05em] text-accent min-[980px]:text-[28px]">AKTIV</span>
-        <span
-          className={`mt-1 font-mono text-[8.5px] font-medium leading-none tracking-[0.3em] transition-colors duration-[420ms] min-[980px]:text-[9.5px] ${
-            onDark ? 'text-white' : 'text-ink'
-          }`}
-        >
-          LAW FIRM
+    <span className={`relative inline-flex flex-col leading-none ${className}`}>
+      <span className="flex items-start">
+        <span className="font-display text-[29px] font-extrabold leading-[0.86] tracking-[-0.075em] text-accent min-[980px]:text-[34px]">
+          AKTIV
         </span>
+        <LogoMark className="-mt-[3px] ml-[3px] h-[15px] w-[21px] shrink-0 text-accent min-[980px]:h-[17px] min-[980px]:w-[24px]" />
+      </span>
+      <span
+        className={`mt-[5px] font-display text-[8.5px] font-bold leading-none tracking-[0.62em] transition-colors duration-[420ms] min-[980px]:text-[9.5px] ${
+          onDark ? 'text-white' : 'text-ink'
+        }`}
+      >
+        LAW FIRM
       </span>
     </span>
   )

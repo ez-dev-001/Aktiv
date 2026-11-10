@@ -82,7 +82,7 @@ export function PracticeTabs({ groups }: { groups: PracticeGroup[] }) {
               }`}
             >
               {x.title}
-              <span className="font-mono text-[11px] opacity-60">{x.practices.length}</span>
+              <span className=" text-[13px] opacity-60">{x.practices.length}</span>
             </button>
           )
         })}
@@ -102,7 +102,7 @@ export function PracticeTabs({ groups }: { groups: PracticeGroup[] }) {
           <li key={p.slug} className="min-w-0">
             <a
               href={localeHref(lang, `/practices/${g.slug}/${p.slug}`)}
-              className="flex min-h-16 items-center justify-center rounded-[14px] bg-white px-4 py-3 text-center text-[14.5px] font-medium leading-[1.35] text-ink shadow-[0_1px_2px_rgb(20_11_51/0.05)] transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_12px_24px_-16px_rgb(20_11_51/0.35)]"
+              className="flex min-h-16 items-center justify-center rounded-[14px] bg-white px-4 py-3 text-center text-[14.5px] font-medium leading-[1.35] text-ink shadow-[0_1px_2px_rgb(11_7_16/0.05)] transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-[inset_0_0_0_1.5px_var(--color-accent),0_12px_24px_-16px_rgb(11_7_16/0.35)]"
             >
               {p.title}
             </a>

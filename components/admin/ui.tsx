@@ -22,5 +22,5 @@ export function StatusPill({ status }: { status: LeadStatus }) {
   )
 }
 
-export const CARD = 'rounded-[14px] bg-white shadow-[0_1px_2px_rgb(20_11_51/0.04),inset_0_0_0_1px_var(--color-hair-soft)]'
+export const CARD = 'rounded-[14px] bg-white shadow-[0_1px_2px_rgb(11_7_16/0.04),inset_0_0_0_1px_var(--color-hair-soft)]'
 export const LABEL = 'font-mono text-[10px] uppercase tracking-[0.12em] text-slate-2'

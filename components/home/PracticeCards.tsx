@@ -61,7 +61,7 @@ export function PracticeCards({ categories }: { categories: Category[] }) {
         const cardBadge = (
           <div className="flex size-full items-end justify-between gap-3 p-[clamp(18px,2.2vw,26px)]">
             <Icon name={c.icon} className="size-[34px] shrink-0 text-white" />
-            <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.11em] text-white/70">
+            <span className="whitespace-nowrap text-[13px] text-white/70">
               {c.practices.length} напрямів
             </span>
           </div>
@@ -70,7 +70,7 @@ export function PracticeCards({ categories }: { categories: Category[] }) {
         return (
           <div
             key={c.slug}
-            className="group/card relative flex flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgb(20_11_51/0.045),0_14px_34px_-20px_rgb(20_11_51/0.13)] transition-shadow duration-300 hover:shadow-[0_1px_2px_rgb(20_11_51/0.05),0_22px_46px_-22px_rgb(20_11_51/0.20)]"
+            className="group/card relative flex flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgb(11_7_16/0.045),0_14px_34px_-20px_rgb(11_7_16/0.13)] transition-shadow duration-300 hover:shadow-[0_1px_2px_rgb(11_7_16/0.05),0_22px_46px_-22px_rgb(11_7_16/0.20)]"
           >
             {/* Кадр наверху карточки, знак практики лежит на нём.
                 Масштаб 1.04 на наведении — единственное движение здесь:

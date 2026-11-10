@@ -55,7 +55,7 @@ export function ExecutorSpot({
   return (
     <section id="executor" aria-labelledby="executor-title" className="pt-[clamp(56px,8vw,112px)]">
       <div className="shell inner">
-        <div className="on-dark relative isolate grid items-center gap-[clamp(24px,4vw,56px)] overflow-hidden rounded-[28px] bg-ink p-[clamp(28px,4.6vw,64px)] text-white shadow-[0_40px_80px_-50px_rgb(20_11_51/0.7)] min-[860px]:grid-cols-[auto_minmax(0,1fr)]">
+        <div className="on-dark relative isolate grid items-center gap-[clamp(24px,4vw,56px)] overflow-hidden rounded-[28px] bg-ink p-[clamp(28px,4.6vw,64px)] text-white shadow-[0_40px_80px_-50px_rgb(11_7_16/0.7)] min-[860px]:grid-cols-[auto_minmax(0,1fr)]">
           {/* декоративний знак у куті: кільце + стріла */}
           <svg
             viewBox="-26.5 -19.5 300 220"
@@ -145,7 +145,7 @@ export function ExecutorSpot({
                   )}
                   {bio && (
                     <div className="min-[700px]:col-span-2">
-                      <dt className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-on-dark-2">{t.team.aboutSpecialist}</dt>
+                      <dt className=" text-[13px] text-on-dark-2">{t.team.aboutSpecialist}</dt>
                       <dd className="m-0 mt-2 max-w-[64ch] whitespace-pre-line text-[15px] leading-[1.65] text-on-dark">{bio}</dd>
                     </div>
                   )}
@@ -162,7 +162,7 @@ export function ExecutorSpot({
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-on-dark-2">{label}</dt>
+      <dt className=" text-[13px] text-on-dark-2">{label}</dt>
       <dd className="m-0 mt-2 text-[15px] leading-[1.5]">{children}</dd>
     </div>
   )

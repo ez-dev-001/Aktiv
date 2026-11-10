@@ -11,7 +11,7 @@ import { useUi } from '@/components/site/LangProvider'
  * підсвічується розділ, який зараз читають.
  */
 
-const H4 = 'm-0 mb-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate'
+const H4 = 'm-0 mb-2.5 text-[13px] font-medium text-slate'
 
 export function Toc({ items }: { items: Heading[] }) {
   const t = useUi().post
@@ -58,7 +58,7 @@ export function Toc({ items }: { items: Heading[] }) {
                   active ? 'font-semibold text-ink' : 'text-slate'
                 }`}
               >
-                <span className={`shrink-0 font-mono text-[11px] font-medium leading-[1.9] ${active ? 'text-accent-ink' : 'text-slate-2'}`}>
+                <span className={`shrink-0 text-[13px] font-medium leading-[1.9] ${active ? 'text-accent-ink' : 'text-slate-2'}`}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 {h.text}
@@ -72,7 +72,7 @@ export function Toc({ items }: { items: Heading[] }) {
 }
 
 const ROUND =
-  'grid size-10 place-items-center rounded-full font-mono text-[11px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[background-color,color,box-shadow] hover:bg-ink hover:text-white hover:shadow-none'
+  'grid size-10 place-items-center rounded-full text-[13px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-hair)] transition-[background-color,color,box-shadow] hover:bg-ink hover:text-white hover:shadow-none'
 
 export function Share({ url, title }: { url: string; title: string }) {
   const T = useUi()

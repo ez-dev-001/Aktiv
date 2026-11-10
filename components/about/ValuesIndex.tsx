@@ -72,7 +72,7 @@ export function ValuesIndex({ values }: { values: ValueItem[] }) {
                   on ? 'text-ink' : 'text-slate-2 hover:text-ink'
                 }`}
               >
-                <span className={`font-mono text-[11px] tracking-[0.12em] ${on ? 'text-accent-ink' : ''}`}>
+                <span className={` text-[13px] ${on ? 'text-accent-ink' : ''}`}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span
@@ -107,7 +107,7 @@ export function ValuesIndex({ values }: { values: ValueItem[] }) {
           <div key={`${active}-${round}`} className="vx-panel flex flex-1 flex-col">
             {cur.icon && <ValueIcon name={cur.icon} dark play className="size-[132px]" />}
             <p className="m-0 mt-auto pt-8 font-serif text-[clamp(19px,1.8vw,22px)] leading-[1.5] text-white">{cur.text}</p>
-            <span className="mt-[22px] font-mono text-[11px] tracking-[0.14em] text-accent-soft">
+            <span className="mt-[22px] text-[13px] text-accent-soft">
               {String(active + 1).padStart(2, '0')} / {String(values.length).padStart(2, '0')}
             </span>
           </div>

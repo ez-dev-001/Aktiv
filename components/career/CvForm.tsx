@@ -31,7 +31,7 @@ const FIELD =
   'shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)] transition-shadow duration-200 ' +
   'placeholder:text-on-dark-2 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent)] focus:outline-none ' +
   'aria-[invalid=true]:shadow-[inset_0_0_0_1.5px_var(--color-accent-soft)]'
-const LABEL = 'font-mono text-[9.5px] uppercase tracking-[0.13em] text-on-dark-2'
+const LABEL = 'text-[13px] font-medium text-on-dark-2'
 const MAX = 4 * 1024 * 1024
 
 const size = (n: number, t: Dict['cv']) =>
@@ -211,12 +211,12 @@ export function CvForm({ positions }: { positions: string[] }) {
           />
         ) : file ? (
           <div className="flex items-center gap-3 rounded-[10px] bg-white/[0.055] px-4 py-3.5 shadow-[inset_0_0_0_1px_var(--color-on-dark-hair)]">
-            <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-[8px] bg-accent/15 font-mono text-[10px] uppercase text-accent-soft">
+            <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-[8px] bg-accent/15 text-[13px] text-accent-soft">
               {file.name.split('.').pop()}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14.5px] text-white">{file.name}</span>
-              <span className="font-mono text-[11.5px] text-on-dark-2">{size(file.size, t)}</span>
+              <span className=" text-[13px] text-on-dark-2">{size(file.size, t)}</span>
             </span>
             <button
               type="button"
@@ -303,7 +303,7 @@ export function CvForm({ positions }: { positions: string[] }) {
           </>
         ) : (
           <>
-            {t.submit} <Icon name="arrow" className="size-[16px]" />
+            {t.submit}
           </>
         )}
       </button>

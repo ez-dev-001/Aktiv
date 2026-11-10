@@ -25,10 +25,19 @@ export interface CardAuthor {
 
 export const fmtDate = (iso?: string, lang = 'ua') => formatDate(lang, iso)
 
+/* Фото-заглушки нової редакції для статей без обкладинки (public/v2/img).
+   Вибір — за назвою статті, тож у картки завжди той самий кадр. */
+const FALLBACK_COVERS = ['n-court', 'n-gavel', 'n-code', 'n-papers', 'n-tower', 'n-pen']
+const coverFor = (title: string) => {
+  let h = 0
+  for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return FALLBACK_COVERS[h % FALLBACK_COVERS.length]!
+}
+
 /**
- * Темна обкладинка для статті без фото: рубрика й назва на тлі
- * першого екрана сайту, у куті — розімкнене кільце знака.
- * aria-hidden: назва й рубрика вже є в тексті картки.
+ * Обкладинка для статті без фото: тематичний кадр нової редакції
+ * (суд, молоток, кодекс…) під темним градієнтом, у куті — рубрика.
+ * aria-hidden: рубрика вже є в тексті картки.
  */
 export function DarkCover({
   category,
@@ -44,24 +53,16 @@ export function DarkCover({
   return (
     <div
       aria-hidden="true"
-      className={`relative overflow-hidden bg-[radial-gradient(70%_90%_at_85%_30%,rgb(250_33_99/0.28),transparent_70%),linear-gradient(160deg,#241a4d,#140b33)] text-white ${
+      className={`relative overflow-hidden bg-ink bg-cover bg-center text-white ${
         big ? 'p-[clamp(22px,2.6vw,30px)]' : 'p-[18px]'
       } ${className}`}
+      style={{ backgroundImage: `linear-gradient(180deg, rgb(11 7 16 / 0.15), rgb(11 7 16 / 0.55)), url(/v2/img/${coverFor(title)}.jpg), linear-gradient(160deg,#161019,#0b0710)` }}
     >
-      <svg viewBox="0 0 200 200" className="absolute -bottom-[22%] -right-[10%] w-[52%] opacity-70">
-        <path d="M168 126 A 72 72 0 1 1 168 74" fill="none" stroke="#fa2163" strokeOpacity=".55" strokeWidth="5" strokeLinecap="round" />
-        <path d="M168 126 A 58 58 0 1 1 168 74" fill="none" stroke="#fff" strokeOpacity=".1" strokeWidth="1" />
-      </svg>
       {category && (
-        <small className="relative block font-mono text-[10px] uppercase tracking-[0.12em] text-accent-soft">{category}</small>
+        <small className="relative inline-block rounded-full bg-ink/70 px-3 py-1.5 text-[13px] text-accent-soft backdrop-blur">
+          {category}
+        </small>
       )}
-      <b
-        className={`relative mt-2.5 block font-serif font-normal leading-[1.15] [text-wrap:balance] ${
-          big ? 'max-w-[16ch] text-[clamp(26px,3vw,36px)]' : 'max-w-[15ch] text-[21px]'
-        }`}
-      >
-        {title}
-      </b>
     </div>
   )
 }
@@ -74,7 +75,7 @@ function Meta({ date, minutes, category, lang }: { date: string | null; minutes?
   ].filter(Boolean)
   if (!parts.length) return null
   return (
-    <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11.5px] text-slate-2">
+    <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-slate-2">
       {parts.map((p, i) => (
         <span key={i} className="contents">
           {i > 0 && <i aria-hidden="true" className="size-[3px] rounded-full bg-current" />}
@@ -95,14 +96,13 @@ function ReadPill({ big = false, lang }: { big?: boolean; lang: string }) {
       }`}
     >
       {ui(lang).common.read}
-      <Icon name="arrow" className="size-[14px] transition-transform duration-[240ms] group-hover:translate-x-0.5" />
     </span>
   )
 }
 
 const SHELL =
   'group relative flex h-full flex-col overflow-hidden bg-white shadow-[inset_0_0_0_1px_var(--color-hair)] transition-shadow duration-[240ms] has-[a:focus-visible]:outline has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent'
-const HOVER = 'hover:shadow-[inset_0_0_0_1px_var(--color-slate-2),0_14px_34px_-22px_rgb(20_11_51/0.35)]'
+const HOVER = 'hover:shadow-[inset_0_0_0_1px_var(--color-slate-2),0_14px_34px_-22px_rgb(11_7_16/0.35)]'
 /* розтягнуте посилання: ::after покриває всю картку */
 const STRETCH = "after:absolute after:inset-0 after:z-[1] after:content-[''] focus-visible:outline-none"
 

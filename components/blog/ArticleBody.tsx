@@ -11,7 +11,7 @@ import { splitByH2 } from './text'
  * менше двох — після тексту.
  */
 const H2 =
-  'mb-4 mt-11 max-w-[30ch] scroll-mt-[calc(var(--hdr)+24px)] text-[clamp(21px,3vw,28px)] leading-[1.18]'
+  'mb-4 mt-11 max-w-[30ch] scroll-mt-[calc(var(--hdr)+24px)] text-[clamp(26px,3vw,38px)] font-serif font-normal leading-[1.18] tracking-[-0.015em]'
 
 export function ArticleBody({ body, middle }: { body: unknown; middle?: ReactNode }) {
   const parts = splitByH2(body)
